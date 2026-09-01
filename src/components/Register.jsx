@@ -9,15 +9,10 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-  Shield,
-  ShieldCheck,
 } from 'lucide-react';
 
-export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
+export const Register = ({ onSwitchToLogin }) => {
   const { register } = useAuth();
-
-  // Dual role state: 'manager' | 'user'
-  const [registerRole, setRegisterRole] = useState(initialRole === 'manager' ? 'manager' : 'user');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -67,15 +62,12 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
     if (!validate()) return;
 
     setIsLoading(true);
-    const targetRole = registerRole === 'manager' ? 'Manager' : 'User';
-    const targetDept = registerRole === 'manager' ? 'Management' : 'Operations';
-
     const res = await register({
       name: name.trim(),
       email: email.trim(),
       password,
-      role: targetRole,
-      department: targetDept,
+      role: 'User',
+      department: 'Operations',
     });
     setIsLoading(false);
 
@@ -85,8 +77,8 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
         if (onSwitchToLogin) {
           onSwitchToLogin({
             prefillEmail: email.trim(),
-            initialRole: registerRole,
-            successMessage: `Account created successfully as ${targetRole}! Please sign in with your credentials.`,
+            initialRole: 'user',
+            successMessage: `Account created successfully! Please sign in with your credentials.`,
           });
         }
       }, 1500);
@@ -97,106 +89,22 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
 
   return (
     <div className="login-page-wrapper">
-      <div className="login-card" style={{ maxWidth: '460px', width: '100%' }}>
+      <div className="login-card" style={{ maxWidth: '440px', width: '100%' }}>
         {/* Header Block */}
         <div className="login-header-block">
           <div
             className="login-icon-box"
             style={{
-              background:
-                registerRole === 'manager'
-                  ? 'linear-gradient(135deg, #2563eb, #3b82f6)'
-                  : 'linear-gradient(135deg, #059669, #10b981)',
-              boxShadow:
-                registerRole === 'manager'
-                  ? '0 4px 14px rgba(37, 99, 235, 0.25)'
-                  : '0 4px 14px rgba(5, 150, 105, 0.25)',
+              background: 'linear-gradient(135deg, #059669, #10b981)',
+              boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)',
             }}
           >
-            {registerRole === 'manager' ? (
-              <ShieldCheck size={28} color="#ffffff" />
-            ) : (
-              <UserPlus size={28} color="#ffffff" />
-            )}
+            <UserPlus size={28} color="#ffffff" />
           </div>
-          <h1 className="login-title">
-            {registerRole === 'manager' ? 'Manager Registration' : 'Employee Registration'}
-          </h1>
+          <h1 className="login-title">Employee Registration</h1>
           <p className="login-subtitle">
-            {registerRole === 'manager'
-              ? 'Register as an executive manager to oversee employees, track workloads, and assign tasks'
-              : 'Register as a team member to access your personal workspace and assigned tasks'}
+            Register as a team member to access your personal workspace and assigned tasks
           </p>
-        </div>
-
-        {/* Dual Role Toggle Switch Tabs */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '6px',
-            background: '#f1f5f9',
-            padding: '5px',
-            borderRadius: '10px',
-            marginBottom: '24px',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setRegisterRole('manager');
-              setGeneralError('');
-            }}
-            style={{
-              padding: '9px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              background: registerRole === 'manager' ? '#2563eb' : 'transparent',
-              color: registerRole === 'manager' ? '#ffffff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow:
-                registerRole === 'manager' ? '0 2px 6px rgba(37, 99, 235, 0.25)' : 'none',
-            }}
-          >
-            <Shield size={16} />
-            <span>Manager Portal</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setRegisterRole('user');
-              setGeneralError('');
-            }}
-            style={{
-              padding: '9px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              background: registerRole === 'user' ? '#059669' : 'transparent',
-              color: registerRole === 'user' ? '#ffffff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow:
-                registerRole === 'user' ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
-            }}
-          >
-            <User size={16} />
-            <span>User Portal</span>
-          </button>
         </div>
 
         {/* Success Alert */}
@@ -348,7 +256,7 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
-                  color: showPassword ? '#2563eb' : '#94a3b8',
+                  color: showPassword ? '#059669' : '#94a3b8',
                   cursor: 'pointer',
                   padding: '4px',
                   display: 'flex',
@@ -408,7 +316,7 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
-                  color: showConfirmPassword ? '#2563eb' : '#94a3b8',
+                  color: showConfirmPassword ? '#059669' : '#94a3b8',
                   cursor: 'pointer',
                   padding: '4px',
                   display: 'flex',
@@ -432,9 +340,9 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
             style={{
               width: '100%',
               padding: '12px',
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              borderColor: '#1d4ed8',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              borderColor: '#047857',
+              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -472,7 +380,7 @@ export const Register = ({ onSwitchToLogin, initialRole = 'user' }) => {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#2563eb',
+              color: '#059669',
               fontWeight: 700,
               cursor: 'pointer',
               textDecoration: 'underline',
