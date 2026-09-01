@@ -347,35 +347,37 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
           </button>
         </form>
 
-        {/* Register CTA Link */}
-        <div
-          style={{
-            marginTop: '22px',
-            paddingTop: '18px',
-            borderTop: '1px solid #e2e8f0',
-            textAlign: 'center',
-            fontSize: '0.875rem',
-            color: '#475569',
-          }}
-        >
-          <span>New to TaskFlow Pro? </span>
-          <button
-            type="button"
-            onClick={() => onSwitchToRegister && onSwitchToRegister(loginRole)}
+        {/* Register CTA Link - Only shown for Employee/User Portal */}
+        {loginRole === 'user' && (
+          <div
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#2563eb',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: 0,
+              marginTop: '22px',
+              paddingTop: '18px',
+              borderTop: '1px solid #e2e8f0',
+              textAlign: 'center',
               fontSize: '0.875rem',
+              color: '#475569',
             }}
           >
-            Register / Create Account
-          </button>
-        </div>
+            <span>New to TaskFlow Pro? </span>
+            <button
+              type="button"
+              onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#059669',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: 0,
+                fontSize: '0.875rem',
+              }}
+            >
+              Register as Employee
+            </button>
+          </div>
+        )}
 
         <div
           style={{
