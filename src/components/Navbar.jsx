@@ -7,11 +7,11 @@ import {
   LogOut,
   User as UserIcon,
   Bell,
-  Shield,
-  Briefcase,
+  Menu,
+  X,
 } from 'lucide-react';
 
-export const Navbar = ({ activeSection, setActiveSection }) => {
+export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user, logout } = useAuth();
   const { unreadCount } = useTasks();
   const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
@@ -22,56 +22,67 @@ export const Navbar = ({ activeSection, setActiveSection }) => {
     <>
       <header className="navbar">
         <div className="navbar-brand">
+          {/* Mobile Hamburger Drawer Toggle Button */}
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            title={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
           <div className="navbar-logo">
-            <CheckSquare size={22} />
+            <CheckSquare size={20} />
           </div>
           <span className="navbar-title">TaskFlow Pro</span>
           <span
+            className="navbar-role-pill"
             style={{
               fontSize: '0.72rem',
               fontWeight: 700,
               padding: '2px 8px',
               borderRadius: '999px',
-              marginLeft: '8px',
+              marginLeft: '4px',
               background: isManager ? '#eff6ff' : '#ecfdf5',
               color: isManager ? '#1d4ed8' : '#047857',
               border: `1px solid ${isManager ? '#bfdbfe' : '#a7f3d0'}`,
             }}
           >
-            {isManager ? 'Manager Portal' : 'Employee Workspace'}
+            {isManager ? 'Manager' : 'Employee'}
           </span>
         </div>
 
         <div className="navbar-actions">
-          {/* Notification Inbox Bell (for both Manager & User) */}
+          {/* Notification Inbox Bell */}
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary navbar-inbox-btn"
             onClick={() => setIsInboxModalOpen(true)}
             style={{
               position: 'relative',
-              padding: '8px 12px',
+              padding: '7px 10px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: unreadCount > 0 ? (isManager ? '#eff6ff' : '#ecfdf5') : '#ffffff',
               borderColor: unreadCount > 0 ? (isManager ? '#93c5fd' : '#86efac') : '#cbd5e1',
             }}
-            title={isManager ? "Manager Inbox & Task Alerts" : "My Task Inbox & Manager Assignment Alerts"}
+            title={isManager ? "Manager Inbox & Task Alerts" : "My Task Inbox & Alerts"}
           >
             <Bell size={17} color={unreadCount > 0 ? (isManager ? '#2563eb' : '#059669') : '#64748b'} />
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a' }}>Inbox</span>
+            <span className="hide-on-mobile" style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a' }}>Inbox</span>
             {unreadCount > 0 && (
               <span
                 style={{
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   fontWeight: 700,
-                  padding: '1px 6px',
+                  padding: '1px 5px',
                   borderRadius: '999px',
                   background: '#ef4444',
                   color: '#ffffff',
-                  marginLeft: '2px',
-                  boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
+                  boxShadow: '0 0 6px rgba(239, 68, 68, 0.5)',
                 }}
               >
                 {unreadCount}
@@ -97,12 +108,14 @@ export const Navbar = ({ activeSection, setActiveSection }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
                   }}
                 >
-                  <UserIcon size={16} />
+                  {user.name ? user.name.charAt(0).toUpperCase() : <UserIcon size={14} />}
                 </div>
               )}
-              <div className="user-meta-header">
+              <div className="user-meta-header hide-on-tablet">
                 <span className="user-name-header">{user.name}</span>
                 <span className="user-role-header">{user.role}</span>
               </div>
@@ -111,13 +124,13 @@ export const Navbar = ({ activeSection, setActiveSection }) => {
 
           {/* Logout Button */}
           <button
-            className="btn btn-secondary"
+            className="btn btn-secondary navbar-logout-btn"
             onClick={logout}
-            style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+            style={{ padding: '7px 10px', fontSize: '0.825rem' }}
             title="Sign Out"
           >
             <LogOut size={16} />
-            <span>Sign Out</span>
+            <span className="hide-on-mobile">Sign Out</span>
           </button>
         </div>
       </header>

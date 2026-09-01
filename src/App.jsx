@@ -24,6 +24,7 @@ const MainApplication = () => {
 
   // Set default active section depending on role
   const [activeSection, setActiveSection] = useState(isManager ? 'manager' : 'user-workspace');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -35,6 +36,12 @@ const MainApplication = () => {
       }
     }
   }, [user]);
+
+  // Close mobile sidebar on section change
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    setIsMobileMenuOpen(false);
+  };
 
   if (loading) {
     return (
@@ -106,26 +113,28 @@ const MainApplication = () => {
     <UserProvider>
       <TaskProvider>
         <div className="app-container">
-          {/* Dynamic Role-Based Sidebar */}
-          <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          {/* Dynamic Role-Based Sidebar with Mobile Drawer support */}
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={handleSectionChange}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
 
           <div className="main-content">
-            {/* Top Navbar */}
-            <Navbar activeSection={activeSection} setActiveSection={setActiveSection} />
+            {/* Top Navbar with Mobile Hamburger */}
+            <Navbar
+              activeSection={activeSection}
+              setActiveSection={handleSectionChange}
+              isMobileMenuOpen={isMobileMenuOpen}
+              setIsMobileMenuOpen={setIsMobileMenuOpen}
+            />
 
-            {/* Dynamic Section Routing:
-                - Manager Portal:
-                  - 'manager' -> Manager Dashboard
-                  - 'user' -> Team Directory & Management
-                  - 'tasks' -> All Tasks Hub
-                - Employee Portal:
-                  - 'user-workspace' -> My Assigned Work (assignment statistics, alert banner, horizontal drilldown tiles)
-                  - 'user-profile' -> My Profile Details (credentials, department, security & account info)
-            */}
+            {/* Dynamic Section Routing: */}
             <main className="page-body">
               {/* Manager Sections */}
               {isManager && activeSection === 'manager' && (
-                <ManagerDashboard setActiveSection={setActiveSection} />
+                <ManagerDashboard setActiveSection={handleSectionChange} />
               )}
 
               {isManager && activeSection === 'user' && (
