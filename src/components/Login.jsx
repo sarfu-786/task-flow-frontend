@@ -462,37 +462,35 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
           </button>
         </form>
 
-        {/* Register CTA Link - Only shown for Employee/User Portal */}
-        {loginRole === 'user' && (
-          <div
+        {/* Register CTA Link - Accessible from both Manager and Employee portals */}
+        <div
+          style={{
+            marginTop: '22px',
+            paddingTop: '18px',
+            borderTop: '1px solid #e2e8f0',
+            textAlign: 'center',
+            fontSize: '0.875rem',
+            color: '#475569',
+          }}
+        >
+          <span>Need to create a new user account? </span>
+          <button
+            type="button"
+            onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
             style={{
-              marginTop: '22px',
-              paddingTop: '18px',
-              borderTop: '1px solid #e2e8f0',
-              textAlign: 'center',
+              background: 'transparent',
+              border: 'none',
+              color: loginRole === 'manager' ? '#2563eb' : '#059669',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              padding: 0,
               fontSize: '0.875rem',
-              color: '#475569',
             }}
           >
-            <span>New to TaskFlow Pro? </span>
-            <button
-              type="button"
-              onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#059669',
-                fontWeight: 700,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                padding: 0,
-                fontSize: '0.875rem',
-              }}
-            >
-              Register as Employee
-            </button>
-          </div>
-        )}
+            Go to Registration Page
+          </button>
+        </div>
       </div>
     </div>
   );

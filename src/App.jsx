@@ -17,11 +17,18 @@ const MainApplication = () => {
   const { isAuthenticated, loading, user } = useAuth();
   const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
 
-  // Unauthenticated view toggle: 'login' | 'register'
-  const [authView, setAuthView] = useState('login');
+  // Unauthenticated view toggle: default to 'register' so any link visit lands on Register page first
+  const [authView, setAuthView] = useState('register');
   const [loginInitialEmail, setLoginInitialEmail] = useState('');
   const [loginInitialRole, setLoginInitialRole] = useState('manager');
   const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
+
+  // Reset to register view if user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAuthView('register');
+    }
+  }, [isAuthenticated]);
 
   // Set default active section depending on role
   const [activeSection, setActiveSection] = useState(isManager ? 'manager' : 'user-workspace');

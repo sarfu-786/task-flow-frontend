@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Briefcase,
+  LogIn,
 } from 'lucide-react';
 
 const DEPARTMENT_OPTIONS = [
@@ -123,7 +124,7 @@ export const Register = ({ onSwitchToLogin }) => {
         }}
       >
         {/* Header Block */}
-        <div className="login-header-block" style={{ marginBottom: '24px' }}>
+        <div className="login-header-block" style={{ marginBottom: '20px' }}>
           <div
             className="login-icon-box"
             style={{
@@ -136,7 +137,69 @@ export const Register = ({ onSwitchToLogin }) => {
           >
             <UserPlus size={30} color="#ffffff" />
           </div>
-          <h1 className="login-title" style={{ fontSize: '1.65rem', marginBottom: 0 }}>Employee Registration</h1>
+          <h1 className="login-title" style={{ fontSize: '1.65rem', marginBottom: '4px' }}>Create Your Account</h1>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+            Welcome to TaskFlow Pro. Register below or sign in to your existing account.
+          </p>
+        </div>
+
+        {/* Top Switch Tabs: Register vs Sign In */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '6px',
+            background: '#f1f5f9',
+            padding: '5px',
+            borderRadius: '12px',
+            marginBottom: '22px',
+            border: '1px solid #e2e8f0',
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              padding: '10px 14px',
+              borderRadius: '9px',
+              border: 'none',
+              background: '#059669',
+              color: '#ffffff',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'default',
+              boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+            }}
+          >
+            <UserPlus size={16} />
+            <span>Register Account</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSwitchToLogin && onSwitchToLogin()}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '9px',
+              border: 'none',
+              background: 'transparent',
+              color: '#475569',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <LogIn size={16} />
+            <span>Sign In / Login</span>
+          </button>
         </div>
 
         {/* Success Alert */}
@@ -455,7 +518,7 @@ export const Register = ({ onSwitchToLogin }) => {
             color: '#475569',
           }}
         >
-          <span>Already have an account? </span>
+          <span>Already registered with TaskFlow Pro? </span>
           <button
             type="button"
             onClick={() => onSwitchToLogin && onSwitchToLogin()}
@@ -470,7 +533,7 @@ export const Register = ({ onSwitchToLogin }) => {
               fontSize: '0.875rem',
             }}
           >
-            Sign In here
+            Sign In here (Manager & Employee)
           </button>
         </div>
       </div>
