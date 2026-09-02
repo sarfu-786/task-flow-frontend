@@ -1510,3 +1510,139 @@ button, input, select, textarea {
     font-size: 0.8rem;
   }
 }
+
+/* ==========================================================================
+   Approval Section Dynamic Hover & Interactive Styles
+   ========================================================================== */
+.approval-metric-card {
+  border-radius: 16px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.approval-metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+.approval-metric-card.pending:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 12px 24px -6px rgba(245, 158, 11, 0.25) !important;
+}
+
+.approval-metric-card.approved:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 12px 24px -6px rgba(16, 185, 129, 0.25) !important;
+}
+
+.approval-metric-card.total:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.25) !important;
+}
+
+.approval-tab-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.approval-tab-btn:hover:not(.active) {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.approval-tab-btn.active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.12);
+}
+
+.approval-table-row {
+  transition: all 0.18s ease;
+}
+
+.approval-table-row:hover {
+  background-color: #f8fafc !important;
+  box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+.approval-btn-approve {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  border: 1px solid #047857;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.approval-btn-approve:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+}
+
+.approval-btn-approve:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.approval-btn-reject {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  color: #e11d48;
+  border: 1px solid #fca5a5;
+  background: #fff1f2;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.approval-btn-reject:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #f87171;
+  color: #be123c;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+}
+
+.approval-btn-reject:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.approval-dept-select {
+  transition: all 0.2s ease;
+}
+
+.approval-dept-select:hover {
+  border-color: #94a3b8;
+  background-color: #ffffff;
+}
+
+.approval-dept-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+

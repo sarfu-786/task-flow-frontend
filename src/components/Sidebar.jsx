@@ -5,6 +5,7 @@ import {
   Users,
   User,
   Briefcase,
+  UserCheck,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -35,11 +36,8 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
         <div className="sidebar-header">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {isManager ? 'Manager Workspace' : 'Employee Workspace'}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {isManager ? 'Executive Team Hub' : 'Personal Task Workspace'}
               </span>
             </div>
 
@@ -84,6 +82,15 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 <CheckSquare className="nav-icon" />
                 <span>All Tasks Management</span>
               </button>
+
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
+                onClick={() => handleNavClick('approvals')}
+              >
+                <UserCheck className="nav-icon" />
+                <span>Registration Approvals</span>
+              </button>
             </>
           ) : (
             <>
@@ -109,17 +116,24 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
         </nav>
 
         <div className="sidebar-footer">
-          <div
+          <button
+            type="button"
+            onClick={() => handleNavClick('user-profile')}
             style={{
+              width: '100%',
               padding: '12px 14px',
-              background: '#f8fafc',
+              background: activeSection === 'user-profile' ? '#eff6ff' : '#f8fafc',
               borderRadius: '12px',
-              border: '1px solid var(--border-color)',
+              border: activeSection === 'user-profile' ? '1px solid #93c5fd' : '1px solid var(--border-color)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              boxShadow: activeSection === 'user-profile' ? '0 2px 8px rgba(37, 99, 235, 0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.15s ease',
             }}
+            title="View My Profile Details"
           >
             {user?.avatar ? (
               <img
@@ -165,7 +179,7 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                   style={{
                     fontSize: '0.85rem',
                     fontWeight: 700,
-                    color: 'var(--text-primary)',
+                    color: activeSection === 'user-profile' ? '#1d4ed8' : 'var(--text-primary)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -199,11 +213,11 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {user?.department || 'Operations'}
+                  {user?.department || 'Internet Work'}
                 </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
     </>

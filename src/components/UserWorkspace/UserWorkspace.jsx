@@ -251,9 +251,6 @@ export const UserWorkspace = () => {
       >
         <div>
           <h2 className="section-title">My Assigned Work</h2>
-          <p className="section-subtitle">
-            All assignments allocated to you by management. Click any horizontal category below to open its task details pop-up.
-          </p>
         </div>
 
         {/* Dedicated My Inbox Button for User */}
@@ -653,9 +650,6 @@ export const UserWorkspace = () => {
                       {modalTasksList.length} task(s)
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                    Tasks assigned specifically to you by management for this section.
-                  </p>
                 </div>
               </div>
 
@@ -986,10 +980,7 @@ export const UserWorkspace = () => {
                   <CheckCircle2 size={22} />
                 </div>
                 <div>
-                  <h3 className="modal-title" style={{ color: 'var(--text-primary)' }}>Complete Task & Notify Manager</h3>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-                    Add your completion remark to send directly to the manager.
-                  </p>
+                  <h3 className="modal-title" style={{ color: 'var(--text-primary)', margin: 0 }}>Complete Task & Notify Manager</h3>
                 </div>
               </div>
 

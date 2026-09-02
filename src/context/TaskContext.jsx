@@ -7,8 +7,22 @@ const TaskContext = createContext(null);
 export const TaskProvider = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
 
-  const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_tasks');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [stats, setStats] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_stats');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,6 +60,7 @@ export const TaskProvider = ({ children }) => {
       });
       if (res.success) {
         setTasks(res.tasks);
+        localStorage.setItem('taskflow_cached_tasks', JSON.stringify(res.tasks));
       }
     } catch (err) {
       console.error('Fetch tasks error:', err);
@@ -63,6 +78,7 @@ export const TaskProvider = ({ children }) => {
       const res = await api.getStats({ myTasksOnly: !isManager });
       if (res.success) {
         setStats(res.stats);
+        localStorage.setItem('taskflow_cached_stats', JSON.stringify(res.stats));
       }
     } catch (err) {
       console.error('Fetch stats error:', err);
@@ -109,6 +125,11 @@ export const TaskProvider = ({ children }) => {
     try {
       const res = await api.createTask(taskData);
       if (res.success) {
+        setTasks((prev) => {
+          const next = [res.task, ...prev.filter(t => t._id !== res.task._id)];
+          localStorage.setItem('taskflow_cached_tasks', JSON.stringify(next));
+          return next;
+        });
         await fetchTasks();
         await fetchStats();
         await fetchNotifications();
@@ -125,6 +146,11 @@ export const TaskProvider = ({ children }) => {
     try {
       const res = await api.updateTask(id, taskData);
       if (res.success) {
+        setTasks((prev) => {
+          const next = prev.map(t => (t._id === id ? res.task : t));
+          localStorage.setItem('taskflow_cached_tasks', JSON.stringify(next));
+          return next;
+        });
         await fetchTasks();
         await fetchStats();
         await fetchNotifications();
@@ -141,6 +167,11 @@ export const TaskProvider = ({ children }) => {
     try {
       const res = await api.updateTaskStatus(id, status, completionRemark);
       if (res.success) {
+        setTasks((prev) => {
+          const next = prev.map(t => (t._id === id ? { ...t, status, completionRemark } : t));
+          localStorage.setItem('taskflow_cached_tasks', JSON.stringify(next));
+          return next;
+        });
         await fetchTasks();
         await fetchStats();
         await fetchNotifications();
@@ -161,6 +192,11 @@ export const TaskProvider = ({ children }) => {
     try {
       const res = await api.deleteTask(id);
       if (res.success) {
+        setTasks((prev) => {
+          const next = prev.filter(t => t._id !== id);
+          localStorage.setItem('taskflow_cached_tasks', JSON.stringify(next));
+          return next;
+        });
         await fetchTasks();
         await fetchStats();
         await fetchNotifications();

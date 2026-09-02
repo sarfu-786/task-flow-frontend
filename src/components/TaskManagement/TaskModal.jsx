@@ -152,11 +152,13 @@ export const TaskModal = () => {
                 }}
               >
                 <option value="">Select Assignee</option>
-                {users.map((u) => (
-                  <option key={u._id} value={u.name}>
-                    {u.name} ({u.role} — {u.department || 'Operations'})
-                  </option>
-                ))}
+                {users
+                  .filter((u) => u.status !== 'Rejected' && u.status !== 'Pending')
+                  .map((u) => (
+                    <option key={u._id} value={u.name}>
+                      {u.name} ({u.role} — {u.department || 'Operations'})
+                    </option>
+                  ))}
               </select>
               {errors.assignedTo && <span className="form-error-msg">{errors.assignedTo}</span>}
             </div>

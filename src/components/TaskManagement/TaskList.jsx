@@ -168,9 +168,6 @@ export const TaskList = () => {
       >
         <div>
           <h2 className="section-title">Task Management & Operations</h2>
-          <p className="section-subtitle">
-            Create, track, filter, and manage operational tasks across your organization workflows.
-          </p>
         </div>
         <button
           className="btn btn-primary"
@@ -195,7 +192,6 @@ export const TaskList = () => {
         <MetricCard
           title="Total Assigned Tasks"
           value={total}
-          subtitle="All active and completed tasks"
           icon={ListTodo}
           color="#2563eb"
           bgLight="#eff6ff"
@@ -205,7 +201,6 @@ export const TaskList = () => {
         <MetricCard
           title="Completed Workflows"
           value={completed}
-          subtitle={`${completionRate}% overall completion rate`}
           icon={CheckCircle2}
           color="#059669"
           bgLight="#ecfdf5"
@@ -215,7 +210,6 @@ export const TaskList = () => {
         <MetricCard
           title="In Progress"
           value={inProgress}
-          subtitle="Currently active in progress"
           icon={Clock}
           color="#d97706"
           bgLight="#fffbeb"
@@ -225,7 +219,6 @@ export const TaskList = () => {
         <MetricCard
           title="Pending To-Do"
           value={toDo}
-          subtitle="Awaiting start and action"
           icon={AlertCircle}
           color="#475569"
           bgLight="#f1f5f9"

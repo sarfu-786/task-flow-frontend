@@ -11,6 +11,7 @@ import { TaskList } from './components/TaskManagement/TaskList';
 import { UserSection } from './components/UserSection';
 import { UserWorkspace } from './components/UserWorkspace/UserWorkspace';
 import { UserProfile } from './components/UserWorkspace/UserProfile';
+import { ApprovalSection } from './components/ManagerDashboard/ApprovalSection';
 
 const MainApplication = () => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -30,7 +31,7 @@ const MainApplication = () => {
     if (user) {
       const managerRole = ['Manager', 'Executive', 'Administrator'].includes(user.role);
       if (managerRole) {
-        setActiveSection((prev) => (prev === 'user-workspace' || prev === 'user-profile' ? 'manager' : prev));
+        setActiveSection((prev) => (prev === 'user-workspace' ? 'manager' : prev));
       } else {
         setActiveSection((prev) => (prev === 'manager' || prev === 'user' || prev === 'tasks' ? 'user-workspace' : prev));
       }
@@ -145,12 +146,17 @@ const MainApplication = () => {
                 <TaskList />
               )}
 
+              {isManager && activeSection === 'approvals' && (
+                <ApprovalSection />
+              )}
+
               {/* User Sections */}
               {!isManager && activeSection === 'user-workspace' && (
                 <UserWorkspace />
               )}
 
-              {!isManager && activeSection === 'user-profile' && (
+              {/* Profile Details (for both Manager and User) */}
+              {activeSection === 'user-profile' && (
                 <UserProfile />
               )}
             </main>

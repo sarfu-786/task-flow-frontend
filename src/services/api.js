@@ -1,5 +1,14 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://task-flow-backend-f0gp.onrender.com/api';
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5000/api';
+  }
+  return 'https://task-flow-backend-f0gp.onrender.com/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('taskflow_token');
@@ -19,7 +28,9 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Registration failed. Please check your inputs.');
+      const err = new Error(data.message || 'Registration failed. Please check your inputs.');
+      err.status = res.status;
+      throw err;
     }
     return data;
   },
@@ -32,7 +43,55 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Login failed. Please check your credentials.');
+      const err = new Error(data.message || 'Login failed. Please check your credentials.');
+      err.status = res.status;
+      err.approvalStatus = data.approvalStatus;
+      throw err;
+    }
+    return data;
+  },
+
+  async forgotPassword(usernameOrEmail) {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEmail }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Failed to generate OTP');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  async verifyOtp(usernameOrEmail, otp) {
+    const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEmail, otp }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Invalid or expired OTP');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  },
+
+  async resetPassword(usernameOrEmail, otp, newPassword) {
+    const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameOrEmail, otp, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Failed to reset password');
+      err.status = res.status;
+      throw err;
     }
     return data;
   },
@@ -44,7 +103,9 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Failed to fetch user profile');
+      const err = new Error(data.message || 'Failed to fetch user profile');
+      err.status = res.status;
+      throw err;
     }
     return data;
   },
@@ -259,6 +320,37 @@ export const api = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to remove user');
+    }
+    return data;
+  },
+
+  // Registration Approvals API
+  async getUserApprovals(params = {}) {
+    const query = new URLSearchParams();
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/users/approvals${queryString}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch user approvals');
+    }
+    return data;
+  },
+
+  async updateUserApproval(id, approvalData) {
+    const res = await fetch(`${API_BASE_URL}/users/${id}/approval`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(approvalData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update approval status');
     }
     return data;
   },

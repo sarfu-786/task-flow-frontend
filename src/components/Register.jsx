@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   UserPlus,
@@ -9,13 +9,22 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
+  Briefcase,
 } from 'lucide-react';
+
+const DEPARTMENT_OPTIONS = [
+  'Internet Work',
+  'Documentation',
+  'Backend',
+  'Social Media',
+];
 
 export const Register = ({ onSwitchToLogin }) => {
   const { register } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [department, setDepartment] = useState('Internet Work');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +34,16 @@ export const Register = ({ onSwitchToLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Auto-remove success message after 4 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const validate = () => {
     const errors = {};
@@ -36,6 +55,10 @@ export const Register = ({ onSwitchToLogin }) => {
       errors.email = 'Email address is required';
     } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
       errors.email = 'Please provide a valid email address';
+    }
+
+    if (!department) {
+      errors.department = 'Please select your department';
     }
 
     if (!password) {
@@ -67,21 +90,21 @@ export const Register = ({ onSwitchToLogin }) => {
       email: email.trim(),
       password,
       role: 'User',
-      department: 'Operations',
+      department: department.trim(),
     });
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMessage(res.message || 'Account created successfully! Redirecting to login...');
+      setSuccessMessage('Registration submitted! Your account is pending manager approval. Redirecting to login...');
       setTimeout(() => {
         if (onSwitchToLogin) {
           onSwitchToLogin({
             prefillEmail: email.trim(),
             initialRole: 'user',
-            successMessage: `Account created successfully! Please sign in with your credentials.`,
+            successMessage: 'Registration submitted! Your account is pending manager approval before you can login.',
           });
         }
-      }, 1500);
+      }, 2000);
     } else {
       setGeneralError(res.message || 'Registration failed. Please check your inputs.');
     }
@@ -89,22 +112,31 @@ export const Register = ({ onSwitchToLogin }) => {
 
   return (
     <div className="login-page-wrapper">
-      <div className="login-card" style={{ maxWidth: '440px', width: '100%' }}>
+      <div
+        className="login-card"
+        style={{
+          maxWidth: '540px',
+          width: '100%',
+          padding: '36px 36px 32px',
+          borderRadius: '24px',
+          boxShadow: '0 20px 45px -15px rgba(0, 0, 0, 0.1), 0 0 1px 1px rgba(0, 0, 0, 0.03)',
+        }}
+      >
         {/* Header Block */}
-        <div className="login-header-block">
+        <div className="login-header-block" style={{ marginBottom: '24px' }}>
           <div
             className="login-icon-box"
             style={{
               background: 'linear-gradient(135deg, #059669, #10b981)',
-              boxShadow: '0 4px 14px rgba(5, 150, 105, 0.25)',
+              boxShadow: '0 6px 18px rgba(5, 150, 105, 0.28)',
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
             }}
           >
-            <UserPlus size={28} color="#ffffff" />
+            <UserPlus size={30} color="#ffffff" />
           </div>
-          <h1 className="login-title">Employee Registration</h1>
-          <p className="login-subtitle">
-            Register as a team member to access your personal workspace and assigned tasks
-          </p>
+          <h1 className="login-title" style={{ fontSize: '1.65rem', marginBottom: 0 }}>Employee Registration</h1>
         </div>
 
         {/* Success Alert */}
@@ -113,7 +145,7 @@ export const Register = ({ onSwitchToLogin }) => {
             style={{
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
-              borderRadius: '8px',
+              borderRadius: '12px',
               padding: '12px 16px',
               display: 'flex',
               alignItems: 'center',
@@ -122,6 +154,7 @@ export const Register = ({ onSwitchToLogin }) => {
               fontSize: '0.875rem',
               fontWeight: 500,
               marginBottom: '20px',
+              animation: 'fadeIn 0.3s ease',
             }}
           >
             <CheckCircle2 size={18} color="#059669" />
@@ -131,7 +164,7 @@ export const Register = ({ onSwitchToLogin }) => {
 
         {/* Error Alert */}
         {generalError && (
-          <div className="alert alert-danger" role="alert" style={{ marginBottom: '20px' }}>
+          <div className="alert alert-danger" role="alert" style={{ marginBottom: '20px', borderRadius: '12px' }}>
             <AlertCircle size={18} />
             <span>{generalError}</span>
           </div>
@@ -139,10 +172,87 @@ export const Register = ({ onSwitchToLogin }) => {
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Full Name */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" htmlFor="register-name">
-              Full Name <span className="required">*</span>
+          {/* Row 1: Full Name & Email */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            {/* Full Name */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="register-name">
+                Full Name <span className="required">*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <User size={16} />
+                </div>
+                <input
+                  id="register-name"
+                  type="text"
+                  className="form-control"
+                  style={{ paddingLeft: '38px' }}
+                  placeholder="Enter your full name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: '' }));
+                  }}
+                  disabled={isLoading || !!successMessage}
+                  autoComplete="name"
+                />
+              </div>
+              {fieldErrors.name && <span className="form-error-msg">{fieldErrors.name}</span>}
+            </div>
+
+            {/* Email Address */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="register-email">
+                Email Address <span className="required">*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Mail size={16} />
+                </div>
+                <input
+                  id="register-email"
+                  type="email"
+                  className="form-control"
+                  style={{ paddingLeft: '38px' }}
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }));
+                  }}
+                  disabled={isLoading || !!successMessage}
+                  autoComplete="email"
+                />
+              </div>
+              {fieldErrors.email && <span className="form-error-msg">{fieldErrors.email}</span>}
+            </div>
+          </div>
+
+          {/* Department Selection */}
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label" htmlFor="register-department">
+              Department <span className="required">*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <div
@@ -154,183 +264,153 @@ export const Register = ({ onSwitchToLogin }) => {
                   color: '#94a3b8',
                   display: 'flex',
                   alignItems: 'center',
+                  pointerEvents: 'none',
                 }}
               >
-                <User size={16} />
+                <Briefcase size={16} />
               </div>
-              <input
-                id="register-name"
-                type="text"
-                className="form-control"
+              <select
+                id="register-department"
+                className="form-control select-filter"
                 style={{ paddingLeft: '38px' }}
-                placeholder="Enter your full name (e.g. Alex Morgan)"
-                value={name}
+                value={department}
                 onChange={(e) => {
-                  setName(e.target.value);
-                  if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: '' }));
+                  setDepartment(e.target.value);
+                  if (fieldErrors.department) setFieldErrors((prev) => ({ ...prev, department: '' }));
                 }}
                 disabled={isLoading || !!successMessage}
-                autoComplete="name"
-              />
+              >
+                {DEPARTMENT_OPTIONS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
             </div>
-            {fieldErrors.name && <span className="form-error-msg">{fieldErrors.name}</span>}
+            {fieldErrors.department && <span className="form-error-msg">{fieldErrors.department}</span>}
           </div>
 
-          {/* Email Address */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" htmlFor="register-email">
-              Email Address <span className="required">*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Mail size={16} />
+          {/* Row 2: Password & Confirm Password */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '22px' }}>
+            {/* Password */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="register-password">
+                Password <span className="required">*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Lock size={16} />
+                </div>
+                <input
+                  id="register-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-control"
+                  style={{ paddingLeft: '38px', paddingRight: '36px' }}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: '' }));
+                  }}
+                  disabled={isLoading || !!successMessage}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: showPassword ? '#059669' : '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-              <input
-                id="register-email"
-                type="email"
-                className="form-control"
-                style={{ paddingLeft: '38px' }}
-                placeholder="name@company.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }));
-                }}
-                disabled={isLoading || !!successMessage}
-                autoComplete="email"
-              />
+              {fieldErrors.password && <span className="form-error-msg">{fieldErrors.password}</span>}
             </div>
-            {fieldErrors.email && <span className="form-error-msg">{fieldErrors.email}</span>}
-          </div>
 
-          {/* Password */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" htmlFor="register-password">
-              Password <span className="required">*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Lock size={16} />
+            {/* Confirm Password */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="register-confirm-password">
+                Confirm Password <span className="required">*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Lock size={16} />
+                </div>
+                <input
+                  id="register-confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="form-control"
+                  style={{ paddingLeft: '38px', paddingRight: '36px' }}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (fieldErrors.confirmPassword) {
+                      setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
+                    }
+                  }}
+                  disabled={isLoading || !!successMessage}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: showConfirmPassword ? '#059669' : '#94a3b8',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-              <input
-                id="register-password"
-                type={showPassword ? 'text' : 'password'}
-                className="form-control"
-                style={{ paddingLeft: '38px', paddingRight: '42px' }}
-                placeholder="Create a password (min. 4 characters)"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: '' }));
-                }}
-                disabled={isLoading || !!successMessage}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: showPassword ? '#059669' : '#94a3b8',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              {fieldErrors.confirmPassword && (
+                <span className="form-error-msg">{fieldErrors.confirmPassword}</span>
+              )}
             </div>
-            {fieldErrors.password && <span className="form-error-msg">{fieldErrors.password}</span>}
-          </div>
-
-          {/* Confirm Password */}
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label" htmlFor="register-confirm-password">
-              Confirm Password <span className="required">*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Lock size={16} />
-              </div>
-              <input
-                id="register-confirm-password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                className="form-control"
-                style={{ paddingLeft: '38px', paddingRight: '42px' }}
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (fieldErrors.confirmPassword) {
-                    setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
-                  }
-                }}
-                disabled={isLoading || !!successMessage}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: showConfirmPassword ? '#059669' : '#94a3b8',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title={showConfirmPassword ? 'Hide password' : 'Show password'}
-              >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {fieldErrors.confirmPassword && (
-              <span className="form-error-msg">{fieldErrors.confirmPassword}</span>
-            )}
           </div>
 
           {/* Submit Button */}
@@ -339,15 +419,17 @@ export const Register = ({ onSwitchToLogin }) => {
             className="btn btn-primary"
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '13px',
+              borderRadius: '12px',
               background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
               borderColor: '#047857',
-              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+              boxShadow: '0 3px 12px rgba(5, 150, 105, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
               fontWeight: 600,
+              fontSize: '0.95rem',
             }}
             disabled={isLoading || !!successMessage}
           >
@@ -390,17 +472,6 @@ export const Register = ({ onSwitchToLogin }) => {
           >
             Sign In here
           </button>
-        </div>
-
-        <div
-          style={{
-            marginTop: '16px',
-            textAlign: 'center',
-            fontSize: '0.78rem',
-            color: '#64748b',
-          }}
-        >
-          <span>Official TaskFlow Pro Enterprise System</span>
         </div>
       </div>
     </div>

@@ -62,14 +62,16 @@ export const ManagerDashboard = ({ setActiveSection }) => {
     };
   }, [isEmployeeModalOpen, isWorkModalOpen]);
 
-  // Filter ONLY regular employees (exclude Managers, Executives, Administrators)
+  // Filter ONLY active approved regular employees (exclude Rejected/Pending users and Managers)
   const employeeUsers = users.filter(
     (u) =>
-      u.role === 'User' ||
-      (!u.role &&
-        u.role !== 'Manager' &&
-        u.role !== 'Executive' &&
-        u.role !== 'Administrator')
+      u.status !== 'Rejected' &&
+      u.status !== 'Pending' &&
+      (u.role === 'User' ||
+        (!u.role &&
+          u.role !== 'Manager' &&
+          u.role !== 'Executive' &&
+          u.role !== 'Administrator'))
   );
 
   const totalEmployees = employeeUsers.length;
@@ -92,9 +94,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
       >
         <div>
           <h2 className="section-title">Manager Dashboard</h2>
-          <p className="section-subtitle">
-            Overview of team members, employee workload distribution, and task execution progress.
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -124,7 +123,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
         <MetricCard
           title="Total Employees"
           value={totalEmployees}
-          subtitle="Active Team Members"
           icon={Users}
           color="#0284c7"
           bgLight="#f0f9ff"
@@ -136,7 +134,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
         <MetricCard
           title="In Progress"
           value={inProgressTasksCount}
-          subtitle="Active tasks in execution"
           icon={Clock}
           color="#d97706"
           bgLight="#fffbeb"
@@ -148,7 +145,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
         <MetricCard
           title="Completed"
           value={completedTasksCount}
-          subtitle="Successfully delivered"
           icon={CheckCircle2}
           color="#059669"
           bgLight="#ecfdf5"
@@ -160,7 +156,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
         <MetricCard
           title="Pending Tasks"
           value={pendingTasksCount}
-          subtitle="Awaiting action"
           icon={ListTodo}
           color="#6366f1"
           bgLight="#eef2ff"

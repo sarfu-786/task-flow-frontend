@@ -161,10 +161,6 @@ export const ManagerTasksDrilldownModal = ({
               <span
                 style={{
                   fontSize: '0.75rem',
-                  padding: '3px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  background: '#eff6ff',
-                  color: '#1d4ed8',
                   fontWeight: 700,
                   border: '1px solid #bfdbfe',
                 }}
@@ -172,9 +168,6 @@ export const ManagerTasksDrilldownModal = ({
                 {filtered.length} Records
               </span>
             </div>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Manager Oversight & Real-time Task Synchronization
-            </p>
           </div>
 
           <button type="button" className="btn-icon" onClick={onClose} aria-label="Close dialog">

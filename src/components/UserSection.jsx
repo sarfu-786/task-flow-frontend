@@ -83,7 +83,7 @@ export const UserSection = () => {
     email: '',
     username: '',
     role: 'User',
-    department: 'Engineering',
+    department: 'Internet Work',
     password: '',
     avatar: '',
   });
@@ -99,7 +99,7 @@ export const UserSection = () => {
         email: selectedUser.email || '',
         username: selectedUser.username || '',
         role: selectedUser.role || 'User',
-        department: selectedUser.department || 'Operations',
+        department: selectedUser.department || 'Internet Work',
         password: '',
         avatar: selectedUser.avatar || '',
       });
@@ -109,7 +109,7 @@ export const UserSection = () => {
         email: '',
         username: '',
         role: 'User',
-        department: 'Operations',
+        department: 'Internet Work',
         password: '',
         avatar: '',
       });
@@ -245,9 +245,6 @@ export const UserSection = () => {
       >
         <div>
           <h2 className="section-title">User Management</h2>
-          <p className="section-subtitle">
-            Manage organization members, account details, and inspect completed & pending workloads
-          </p>
         </div>
 
         <button
@@ -774,7 +771,7 @@ export const UserSection = () => {
                     id="user-fullname"
                     type="text"
                     className="form-control"
-                    placeholder="e.g. Aarav Sharma"
+                    placeholder="Enter full name"
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -793,7 +790,7 @@ export const UserSection = () => {
                     id="user-email"
                     type="email"
                     className="form-control"
-                    placeholder="e.g. aarav.sharma@taskflow.com"
+                    placeholder="Enter email address"
                     value={formData.email}
                     onChange={(e) => {
                       setFormData({ ...formData, email: e.target.value });
@@ -812,7 +809,7 @@ export const UserSection = () => {
                     id="user-username"
                     type="text"
                     className="form-control"
-                    placeholder="e.g. aarav"
+                    placeholder="Enter username"
                     value={formData.username}
                     onChange={(e) => {
                       setFormData({ ...formData, username: e.target.value });
@@ -847,14 +844,17 @@ export const UserSection = () => {
                   <label className="form-label" htmlFor="user-dept">
                     Department
                   </label>
-                  <input
+                  <select
                     id="user-dept"
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. Project Operations, Backend Engineering"
+                    className="form-control select-filter"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  />
+                  >
+                    <option value="Internet Work">Internet Work</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Backend">Backend</option>
+                    <option value="Social Media">Social Media</option>
+                  </select>
                 </div>
 
                 {/* Password (Optional for Edit) */}

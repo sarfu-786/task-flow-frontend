@@ -81,11 +81,6 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0 0' }}>
-                {isManager
-                  ? 'Live completion messages and remarks submitted by team members.'
-                  : 'Messages about new tasks assigned to you by managers with instructions and deadlines.'}
-              </p>
             </div>
           </div>
 

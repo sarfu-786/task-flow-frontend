@@ -7,7 +7,14 @@ const UserContext = createContext(null);
 export const UserProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_users');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -37,6 +44,7 @@ export const UserProvider = ({ children }) => {
       });
       if (res.success) {
         setUsers(res.users);
+        localStorage.setItem('taskflow_cached_users', JSON.stringify(res.users));
       }
     } catch (err) {
       console.error('Fetch users error:', err);
@@ -61,6 +69,11 @@ export const UserProvider = ({ children }) => {
     try {
       const res = await api.createUser(userData);
       if (res.success) {
+        setUsers((prev) => {
+          const next = [res.user, ...prev.filter(u => u._id !== res.user._id)];
+          localStorage.setItem('taskflow_cached_users', JSON.stringify(next));
+          return next;
+        });
         await fetchUsers();
         closeUserModal();
         return { success: true, user: res.user };
@@ -75,6 +88,11 @@ export const UserProvider = ({ children }) => {
     try {
       const res = await api.updateUser(id, userData);
       if (res.success) {
+        setUsers((prev) => {
+          const next = prev.map(u => (u._id === id ? res.user : u));
+          localStorage.setItem('taskflow_cached_users', JSON.stringify(next));
+          return next;
+        });
         await fetchUsers();
         closeUserModal();
         return { success: true, user: res.user };
@@ -89,6 +107,11 @@ export const UserProvider = ({ children }) => {
     try {
       const res = await api.deleteUser(id);
       if (res.success) {
+        setUsers((prev) => {
+          const next = prev.filter(u => u._id !== id);
+          localStorage.setItem('taskflow_cached_users', JSON.stringify(next));
+          return next;
+        });
         await fetchUsers();
         closeDeleteModal();
         return { success: true };

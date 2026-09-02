@@ -41,14 +41,16 @@ export const EmployeeDrilldownModal = ({
 
   if (!isOpen) return null;
 
-  // Filter ONLY regular employees (exclude Managers, Executives, Administrators)
+  // Filter ONLY active approved regular employees (exclude Rejected/Pending users and Managers)
   const employeeUsers = users.filter(
     (u) =>
-      u.role === 'User' ||
-      (!u.role &&
-        u.role !== 'Manager' &&
-        u.role !== 'Executive' &&
-        u.role !== 'Administrator')
+      u.status !== 'Rejected' &&
+      u.status !== 'Pending' &&
+      (u.role === 'User' ||
+        (!u.role &&
+          u.role !== 'Manager' &&
+          u.role !== 'Executive' &&
+          u.role !== 'Administrator'))
   );
 
   // Extract unique departments from employees only
@@ -90,9 +92,6 @@ export const EmployeeDrilldownModal = ({
                 {filtered.length} Employee{filtered.length === 1 ? '' : 's'}
               </span>
             </div>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Team Member Profiles, Department Allocation & Assigned Task Workloads
-            </p>
           </div>
 
           <button type="button" className="btn-icon" onClick={onClose} aria-label="Close modal">
