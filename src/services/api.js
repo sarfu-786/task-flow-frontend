@@ -1,13 +1,30 @@
-const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+export const getApiBaseUrl = () => {
+  // 1. If running in browser and on local machine
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '0.0.0.0')
+  ) {
     return 'http://localhost:5000/api';
   }
-  return 'https://task-flow-backend-f0gp.onrender.com/api';
+
+  // 2. If an environment variable is explicitly set to a valid remote HTTPS URL
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (
+    envUrl &&
+    typeof envUrl === 'string' &&
+    envUrl.startsWith('https://') &&
+    !envUrl.includes('localhost') &&
+    !envUrl.includes('127.0.0.1')
+  ) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  // 3. Default to live deployed Render backend for Vercel and all production domains
 };
 
+const getBaseUrl = () => getApiBaseUrl();
 const API_BASE_URL = getApiBaseUrl();
 
 const getAuthHeaders = () => {
@@ -21,7 +38,7 @@ const getAuthHeaders = () => {
 export const api = {
   // Auth API
   async register(userData) {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await fetch(`${getBaseUrl()}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
