@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
+import { socketService } from '../services/socket';
 
 const TaskContext = createContext(null);
 
@@ -31,6 +32,10 @@ export const TaskProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isInboxOpen, setIsInboxOpen] = useState(false);
 
+  // Live Instant Toast Alert State
+  const [liveToast, setLiveToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
   // Filtering & Pagination State
   const [search, setSearch] = useState('');
   const [taskTypeFilter, setTaskTypeFilter] = useState('all');
@@ -45,10 +50,28 @@ export const TaskProvider = ({ children }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
 
+  // Trigger live toast with auto-dismiss
+  const showLiveToast = useCallback((toastData) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setLiveToast(toastData);
+    toastTimeoutRef.current = setTimeout(() => {
+      setLiveToast(null);
+    }, 6500);
+  }, []);
+
+  const dismissLiveToast = useCallback(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setLiveToast(null);
+  }, []);
+
   // Fetch tasks
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (silent = false) => {
     if (!isAuthenticated) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
     try {
       const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
@@ -64,9 +87,9 @@ export const TaskProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Fetch tasks error:', err);
-      setError(err.message || 'Failed to load tasks');
+      if (!silent) setError(err.message || 'Failed to load tasks');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [isAuthenticated, user, search, taskTypeFilter, statusFilter]);
 
@@ -100,17 +123,102 @@ export const TaskProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  // Real-Time Socket Connection & Event Handlers
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    // Connect socket and join user/role rooms
+    socketService.connect(user);
+
+    const isManager = ['Manager', 'Executive', 'Administrator'].includes(user.role);
+    const myName = (user.name || '').toLowerCase().trim();
+    const myUsername = (user.username || '').toLowerCase().trim();
+    const myId = user._id ? user._id.toString() : (user.id ? user.id.toString() : '');
+
+    // 1. Listen for new real-time notifications
+    const handleNewNotification = (data) => {
+      console.log('[Real-Time] Received new notification:', data);
+      const notif = data.notification || data;
+
+      // Filter relevance for this client
+      let isRelevant = false;
+      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All')) {
+        isRelevant = true;
+      } else if (!isManager) {
+        const rName = (notif.recipientName || '').toLowerCase().trim();
+        const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
+        if (
+          rUser === myId ||
+          rName === myName ||
+          rName === myUsername ||
+          notif.forRole === 'User' ||
+          notif.forRole === 'All'
+        ) {
+          isRelevant = true;
+        }
+      }
+
+      if (isRelevant) {
+        setNotifications((prev) => {
+          const exists = prev.some((n) => n._id === notif._id);
+          if (exists) return prev;
+          return [notif, ...prev];
+        });
+        setUnreadCount((prev) => prev + 1);
+
+        // Trigger Instant Live Toast Banner
+        showLiveToast({
+          title: data.title || notif.title || (isManager ? 'Task Completed Alert' : 'New Task Assigned'),
+          message: data.message || notif.message || notif.taskDescription,
+          remark: data.remark || notif.remark || notif.completionRemark,
+          type: data.type || notif.type,
+          forRole: notif.forRole,
+          assignedBy: notif.assignedBy,
+        });
+
+        // Instant silent background data update
+        fetchTasks(true);
+        fetchStats();
+      }
+    };
+
+    // 2. Listen for real-time task changes
+    const handleTasksUpdated = (payload) => {
+      console.log('[Real-Time] Tasks updated event received');
+      fetchTasks(true);
+      fetchStats();
+    };
+
+    // 3. Listen for notification read/clear updates from other tabs/devices
+    const handleNotificationUpdated = () => {
+      fetchNotifications();
+    };
+
+    const cleanupNotif = socketService.on('notification:new', handleNewNotification);
+    const cleanupTasks = socketService.on('tasks:updated', handleTasksUpdated);
+    const cleanupStats = socketService.on('stats:updated', () => fetchStats());
+    const cleanupNotifUpdate = socketService.on('notification:updated', handleNotificationUpdated);
+
+    return () => {
+      cleanupNotif();
+      cleanupTasks();
+      cleanupStats();
+      cleanupNotifUpdate();
+    };
+  }, [isAuthenticated, user, showLiveToast, fetchTasks, fetchStats, fetchNotifications]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchTasks();
       fetchStats();
       fetchNotifications();
 
-      // Refresh data when user switches back to tab/app (traffic-free when idle/hidden)
+      // Refresh data when user switches back to tab/app
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
           fetchNotifications();
           fetchStats();
+          fetchTasks(true);
         }
       };
 
@@ -325,6 +433,9 @@ export const TaskProvider = ({ children }) => {
         taskToDelete,
         notifications,
         unreadCount,
+        liveToast,
+        showLiveToast,
+        dismissLiveToast,
         isInboxOpen,
         setIsInboxOpen,
         fetchTasks,

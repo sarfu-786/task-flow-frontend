@@ -45,17 +45,20 @@ export const UserProfile = () => {
     }
   }, [errorMsg]);
 
-  const userIdentifier = user?.name ? user.name.toLowerCase() : '';
-  const userUsername = user?.username ? user.username.toLowerCase() : '';
-  const userId = user?._id || user?.id || '';
+  const userIdentifier = (user?.name || '').toLowerCase().trim();
+  const userUsername = (user?.username || '').toLowerCase().trim();
+  const userId = (user?._id || user?.id || '').toString();
 
-  const myTasks = tasks.filter((t) => {
-    const tAssigned = (t.assignedTo || '').toLowerCase();
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
+  const myTasks = safeTasks.filter((t) => {
+    if (!t) return false;
+    const tAssigned = (t.assignedTo || '').toLowerCase().trim();
     const tUser = t.user ? t.user.toString() : '';
     return (
-      tAssigned === userIdentifier ||
-      tAssigned === userUsername ||
-      tUser === userId.toString() ||
+      (userIdentifier && tAssigned === userIdentifier) ||
+      (userUsername && tAssigned === userUsername) ||
+      (userId && tUser === userId) ||
       tAssigned === 'current user'
     );
   });

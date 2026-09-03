@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { TaskProvider } from './context/TaskContext';
+import { TaskProvider, useTasks } from './context/TaskContext';
 import { UserProvider } from './context/UserContext';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
@@ -12,6 +12,79 @@ import { UserSection } from './components/UserSection';
 import { UserWorkspace } from './components/UserWorkspace/UserWorkspace';
 import { UserProfile } from './components/UserWorkspace/UserProfile';
 import { ApprovalSection } from './components/ManagerDashboard/ApprovalSection';
+
+import { RealtimeToast } from './components/RealtimeToast';
+
+const AuthenticatedLayout = ({
+  activeSection,
+  handleSectionChange,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+  isManager,
+}) => {
+  const { liveToast, dismissLiveToast } = useTasks();
+
+  return (
+    <>
+      {/* Real-time floating instant toast alert */}
+      <RealtimeToast
+        toast={liveToast}
+        onClose={dismissLiveToast}
+        onAction={() => {
+          dismissLiveToast();
+          if (isManager) {
+            handleSectionChange('manager');
+          } else {
+            handleSectionChange('user-workspace');
+          }
+        }}
+      />
+
+      <div className="app-container">
+        {/* Dynamic Role-Based Sidebar with Mobile Drawer support */}
+        <Sidebar
+          activeSection={activeSection}
+          setActiveSection={handleSectionChange}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
+
+        <div className="main-content">
+          {/* Top Navbar with Mobile Hamburger */}
+          <Navbar
+            activeSection={activeSection}
+            setActiveSection={handleSectionChange}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
+
+          {/* Dynamic Section Routing: */}
+          <main className="page-body">
+            {isManager ? (
+              <>
+                {activeSection === 'user' && <UserSection />}
+                {activeSection === 'tasks' && <TaskList />}
+                {activeSection === 'approvals' && <ApprovalSection />}
+                {activeSection === 'user-profile' && <UserProfile />}
+                {(activeSection === 'manager' || !['user', 'tasks', 'approvals', 'user-profile'].includes(activeSection)) && (
+                  <ManagerDashboard setActiveSection={handleSectionChange} />
+                )}
+              </>
+            ) : (
+              <>
+                {activeSection === 'user-profile' ? (
+                  <UserProfile />
+                ) : (
+                  <UserWorkspace />
+                )}
+              </>
+            )}
+          </main>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const MainApplication = () => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -30,24 +103,53 @@ const MainApplication = () => {
     }
   }, [isAuthenticated]);
 
-  // Set default active section depending on role
-  const [activeSection, setActiveSection] = useState(isManager ? 'manager' : 'user-workspace');
+  // Set active section depending on role and persisted preference
+  const [activeSection, setActiveSection] = useState(() => {
+    try {
+      const savedSection = localStorage.getItem('taskflow_active_section');
+      if (savedSection) {
+        if (isManager && ['manager', 'user', 'tasks', 'approvals', 'user-profile'].includes(savedSection)) {
+          return savedSection;
+        }
+        if (!isManager && ['user-workspace', 'user-profile'].includes(savedSection)) {
+          return savedSection;
+        }
+      }
+    } catch {
+      // ignore storage access error
+    }
+    return isManager ? 'manager' : 'user-workspace';
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
       const managerRole = ['Manager', 'Executive', 'Administrator'].includes(user.role);
-      if (managerRole) {
-        setActiveSection((prev) => (prev === 'user-workspace' ? 'manager' : prev));
-      } else {
-        setActiveSection((prev) => (prev === 'manager' || prev === 'user' || prev === 'tasks' ? 'user-workspace' : prev));
-      }
+      setActiveSection((prev) => {
+        let next = prev;
+        if (managerRole) {
+          if (!['manager', 'user', 'tasks', 'approvals', 'user-profile'].includes(prev)) {
+            next = 'manager';
+          }
+        } else {
+          if (!['user-workspace', 'user-profile'].includes(prev)) {
+            next = 'user-workspace';
+          }
+        }
+        try {
+          localStorage.setItem('taskflow_active_section', next);
+        } catch {}
+        return next;
+      });
     }
   }, [user]);
 
-  // Close mobile sidebar on section change
+  // Close mobile sidebar on section change & persist selection
   const handleSectionChange = (section) => {
     setActiveSection(section);
+    try {
+      localStorage.setItem('taskflow_active_section', section);
+    } catch {}
     setIsMobileMenuOpen(false);
   };
 
@@ -120,55 +222,13 @@ const MainApplication = () => {
   return (
     <UserProvider>
       <TaskProvider>
-        <div className="app-container">
-          {/* Dynamic Role-Based Sidebar with Mobile Drawer support */}
-          <Sidebar
-            activeSection={activeSection}
-            setActiveSection={handleSectionChange}
-            isMobileMenuOpen={isMobileMenuOpen}
-            setIsMobileMenuOpen={setIsMobileMenuOpen}
-          />
-
-          <div className="main-content">
-            {/* Top Navbar with Mobile Hamburger */}
-            <Navbar
-              activeSection={activeSection}
-              setActiveSection={handleSectionChange}
-              isMobileMenuOpen={isMobileMenuOpen}
-              setIsMobileMenuOpen={setIsMobileMenuOpen}
-            />
-
-            {/* Dynamic Section Routing: */}
-            <main className="page-body">
-              {/* Manager Sections */}
-              {isManager && activeSection === 'manager' && (
-                <ManagerDashboard setActiveSection={handleSectionChange} />
-              )}
-
-              {isManager && activeSection === 'user' && (
-                <UserSection />
-              )}
-
-              {isManager && activeSection === 'tasks' && (
-                <TaskList />
-              )}
-
-              {isManager && activeSection === 'approvals' && (
-                <ApprovalSection />
-              )}
-
-              {/* User Sections */}
-              {!isManager && activeSection === 'user-workspace' && (
-                <UserWorkspace />
-              )}
-
-              {/* Profile Details (for both Manager and User) */}
-              {activeSection === 'user-profile' && (
-                <UserProfile />
-              )}
-            </main>
-          </div>
-        </div>
+        <AuthenticatedLayout
+          activeSection={activeSection}
+          handleSectionChange={handleSectionChange}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          isManager={isManager}
+        />
       </TaskProvider>
     </UserProvider>
   );

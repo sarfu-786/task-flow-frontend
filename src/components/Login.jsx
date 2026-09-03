@@ -68,8 +68,8 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
     }
     if (!password) {
       errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (password.length < 4) {
+      errors.password = 'Password must be at least 4 characters';
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;

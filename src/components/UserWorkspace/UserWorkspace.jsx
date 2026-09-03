@@ -41,33 +41,37 @@ export const UserWorkspace = () => {
   const [successToast, setSuccessToast] = useState('');
 
   // Strictly filter tasks assigned to this user
-  const userIdentifier = user?.name ? user.name.toLowerCase() : '';
-  const userUsername = user?.username ? user.username.toLowerCase() : '';
-  const userId = user?._id ? user._id.toString() : '';
+  const userIdentifier = (user?.name || '').toLowerCase().trim();
+  const userUsername = (user?.username || '').toLowerCase().trim();
+  const userId = (user?._id || user?.id || '').toString();
 
-  const myTasks = tasks.filter((t) => {
-    const tAssigned = (t.assignedTo || '').toLowerCase();
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
+  const myTasks = safeTasks.filter((t) => {
+    if (!t) return false;
+    const tAssigned = (t.assignedTo || '').toLowerCase().trim();
     const tUser = t.user ? t.user.toString() : '';
     return (
-      tAssigned === userIdentifier ||
-      tAssigned === userUsername ||
-      tUser === userId ||
+      (userIdentifier && tAssigned === userIdentifier) ||
+      (userUsername && tAssigned === userUsername) ||
+      (userId && tUser === userId) ||
       tAssigned === 'current user'
     );
   });
 
   // Self Metrics
   const totalMyTasks = myTasks.length;
-  const completedTasks = myTasks.filter((t) => t.status === 'Completed');
-  const inProgressTasks = myTasks.filter((t) => t.status === 'In Progress');
-  const todoTasks = myTasks.filter((t) => t.status === 'To Do');
+  const completedTasks = myTasks.filter((t) => t && t.status === 'Completed');
+  const inProgressTasks = myTasks.filter((t) => t && t.status === 'In Progress');
+  const todoTasks = myTasks.filter((t) => t && t.status === 'To Do');
 
   const completionPercentage =
     totalMyTasks > 0 ? Math.round((completedTasks.length / totalMyTasks) * 100) : 0;
 
   // Check for latest task assignment notification for this user
-  const latestAssignmentNotif = notifications.find(
-    (n) => n.type === 'task_assigned' || (n.assignedBy && n.forRole !== 'Manager') || n.forRole === 'User'
+  const latestAssignmentNotif = safeNotifications.find(
+    (n) => n && (n.type === 'task_assigned' || (n.assignedBy && n.forRole !== 'Manager') || n.forRole === 'User')
   );
 
   // Open specific detail section popup
@@ -409,50 +413,23 @@ export const UserWorkspace = () => {
         </div>
 
         {/* 4 HORIZONTAL ASSIGNMENT TILES IN ONE ROW */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '14px',
-          }}
-        >
+        <div className="user-workspace-tiles-grid">
           {/* Tile 1: Total Assigned Work */}
           <div
             onClick={() => openSectionModal('all')}
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderLeft: '4px solid #2563eb',
-              borderRadius: '10px',
-              padding: '16px 18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#2563eb';
-              e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 99, 235, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            className="user-workspace-metric-tile tile-total"
             title="Click to view all assigned work"
           >
             <div>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
+              <span className="tile-label">
                 Total Assigned Work
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{totalMyTasks}</span>
-                <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 600 }}>Click to View ↗</span>
+                <span className="tile-value">{totalMyTasks}</span>
+                <span className="tile-cta cta-blue">Click to View ↗</span>
               </div>
             </div>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb' }}>
+            <div className="tile-icon-box icon-blue">
               <Briefcase size={20} />
             </div>
           </div>
@@ -460,40 +437,19 @@ export const UserWorkspace = () => {
           {/* Tile 2: What Done (Completed) */}
           <div
             onClick={() => openSectionModal('Completed')}
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderLeft: '4px solid #059669',
-              borderRadius: '10px',
-              padding: '16px 18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#059669';
-              e.currentTarget.style.boxShadow = '0 6px 18px rgba(5, 150, 105, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            className="user-workspace-metric-tile tile-completed"
             title="Click to view completed tasks"
           >
             <div>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
+              <span className="tile-label">
                 What Done (Completed)
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669' }}>{completedTasks.length}</span>
-                <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>Click to View ↗</span>
+                <span className="tile-value val-green">{completedTasks.length}</span>
+                <span className="tile-cta cta-green">Click to View ↗</span>
               </div>
             </div>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#ecfdf5', color: '#059669' }}>
+            <div className="tile-icon-box icon-green">
               <CheckCircle2 size={20} />
             </div>
           </div>
@@ -501,40 +457,19 @@ export const UserWorkspace = () => {
           {/* Tile 3: What Incomplete (Ongoing) */}
           <div
             onClick={() => openSectionModal('In Progress')}
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderLeft: '4px solid #d97706',
-              borderRadius: '10px',
-              padding: '16px 18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#d97706';
-              e.currentTarget.style.boxShadow = '0 6px 18px rgba(217, 119, 6, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            className="user-workspace-metric-tile tile-progress"
             title="Click to view in-progress work"
           >
             <div>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
+              <span className="tile-label">
                 What Incomplete (Ongoing)
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#d97706' }}>{inProgressTasks.length}</span>
-                <span style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: 600 }}>Click to View ↗</span>
+                <span className="tile-value val-amber">{inProgressTasks.length}</span>
+                <span className="tile-cta cta-amber">Click to View ↗</span>
               </div>
             </div>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#fffbeb', color: '#d97706' }}>
+            <div className="tile-icon-box icon-amber">
               <Clock size={20} />
             </div>
           </div>
@@ -542,40 +477,19 @@ export const UserWorkspace = () => {
           {/* Tile 4: What To Do (Pending) */}
           <div
             onClick={() => openSectionModal('To Do')}
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderLeft: '4px solid #7c3aed',
-              borderRadius: '10px',
-              padding: '16px 18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#7c3aed';
-              e.currentTarget.style.boxShadow = '0 6px 18px rgba(124, 58, 237, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            className="user-workspace-metric-tile tile-todo"
             title="Click to view to-do tasks"
           >
             <div>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
+              <span className="tile-label">
                 What To Do (Pending)
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>{todoTasks.length}</span>
-                <span style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: 600 }}>Click to View ↗</span>
+                <span className="tile-value val-purple">{todoTasks.length}</span>
+                <span className="tile-cta cta-purple">Click to View ↗</span>
               </div>
             </div>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#f5f3ff', color: '#7c3aed' }}>
+            <div className="tile-icon-box icon-purple">
               <ListTodo size={20} />
             </div>
           </div>
@@ -586,7 +500,7 @@ export const UserWorkspace = () => {
       {activeModalSection !== null && (
         <div className="modal-backdrop" onClick={closeSectionModal}>
           <div
-            className="modal-content"
+            className="modal-content user-section-modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: '850px',
@@ -620,6 +534,10 @@ export const UserWorkspace = () => {
                         : activeModalSection === 'To Do'
                         ? '#7c3aed'
                         : '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   {activeModalSection === 'Completed' && <CheckCircle2 size={22} />}
@@ -629,8 +547,8 @@ export const UserWorkspace = () => {
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h3 className="modal-title" style={{ margin: 0, color: 'var(--text-primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 className="modal-title" style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem' }}>
                       {activeModalSection === 'Completed' && 'What Done (Completed Tasks)'}
                       {activeModalSection === 'In Progress' && 'What Incomplete (In Progress Work)'}
                       {activeModalSection === 'To Do' && 'What To Do (Pending Tasks)'}
@@ -645,6 +563,7 @@ export const UserWorkspace = () => {
                         background: '#f1f5f9',
                         color: 'var(--text-primary)',
                         border: '1px solid #e2e8f0',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {modalTasksList.length} task(s)
@@ -658,19 +577,9 @@ export const UserWorkspace = () => {
               </button>
             </div>
 
-            {/* Modal Filter Toolbar */}
-            <div
-              style={{
-                padding: '12px 24px',
-                background: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
+            {/* Modal Filter Toolbar - Responsive Stack on Mobile */}
+            <div className="user-modal-filter-toolbar">
+              <div className="user-modal-search-box">
                 <Search
                   size={15}
                   style={{
@@ -679,6 +588,7 @@ export const UserWorkspace = () => {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: '#64748b',
+                    pointerEvents: 'none',
                   }}
                 />
                 <input
@@ -687,29 +597,32 @@ export const UserWorkspace = () => {
                   placeholder="Filter tasks in this section..."
                   value={modalSearch}
                   onChange={(e) => setModalSearch(e.target.value)}
-                  style={{ paddingLeft: '32px', fontSize: '0.825rem', height: '36px' }}
+                  style={{ paddingLeft: '32px', fontSize: '0.85rem', height: '38px', width: '100%' }}
                 />
               </div>
 
-              <select
-                className="form-control"
-                value={modalTypeFilter}
-                onChange={(e) => setModalTypeFilter(e.target.value)}
-                style={{ fontSize: '0.825rem', width: 'auto', minWidth: '160px', height: '36px' }}
-              >
-                <option value="all">All Task Types</option>
-                <option value="internet work">Internet Work</option>
-                <option value="documentation">Documentation</option>
-                <option value="social media">Social Media</option>
-                <option value="backend work">Backend Work</option>
-              </select>
+              <div className="user-modal-select-box">
+                <select
+                  className="form-control select-filter"
+                  value={modalTypeFilter}
+                  onChange={(e) => setModalTypeFilter(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%', height: '38px' }}
+                  aria-label="Filter by task type"
+                >
+                  <option value="all">All Task Types</option>
+                  <option value="internet work">Internet Work</option>
+                  <option value="documentation">Documentation</option>
+                  <option value="social media">Social Media</option>
+                  <option value="backend work">Backend Work</option>
+                </select>
+              </div>
             </div>
 
             {/* Modal Task List Body */}
             <div
-              className="modal-body"
+              className="modal-body user-modal-task-body"
               style={{
-                padding: '20px 24px',
+                padding: '16px 20px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '14px',
@@ -752,6 +665,7 @@ export const UserWorkspace = () => {
                   return (
                     <div
                       key={task._id}
+                      className="user-task-modal-card"
                       style={{
                         background: isTaskCompleted
                           ? '#f0fdf4'
@@ -759,25 +673,20 @@ export const UserWorkspace = () => {
                         border: isTaskCompleted
                           ? '1px solid #bbf7d0'
                           : '1px solid #e2e8f0',
-                        borderRadius: '10px',
-                        padding: '16px 18px',
+                        borderRadius: '12px',
+                        padding: '16px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px',
                         boxShadow: 'var(--shadow-sm)',
+                        boxSizing: 'border-box',
+                        width: '100%',
+                        overflow: 'hidden',
                       }}
                     >
-                      {/* Top Badges */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {/* Top Badges & Status Row */}
+                      <div className="user-task-badges-row">
+                        <div className="user-task-badges-left">
                           <span
                             style={{
                               fontSize: '0.72rem',
@@ -788,6 +697,7 @@ export const UserWorkspace = () => {
                               background: typeStyle.bg,
                               color: typeStyle.color,
                               border: `1px solid ${typeStyle.border}`,
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {task.taskType}
@@ -803,9 +713,10 @@ export const UserWorkspace = () => {
                               background: '#eff6ff',
                               color: '#1d4ed8',
                               border: '1px solid #bfdbfe',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             <Shield size={11} />
@@ -813,18 +724,24 @@ export const UserWorkspace = () => {
                           </span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className="user-task-badges-right">
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                             <Calendar size={13} />
                             <span>Due: {formattedDate}</span>
                           </span>
 
                           <span
+                            className="user-task-status-badge"
                             style={{
                               fontSize: '0.75rem',
                               fontWeight: 600,
                               padding: '2px 10px',
                               borderRadius: '999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
                               background:
                                 task.status === 'Completed'
                                   ? '#ecfdf5'
@@ -846,13 +763,37 @@ export const UserWorkspace = () => {
                               }`,
                             }}
                           >
-                            {task.status}
+                            <span
+                              style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background:
+                                  task.status === 'Completed'
+                                    ? '#059669'
+                                    : task.status === 'In Progress'
+                                    ? '#d97706'
+                                    : '#7c3aed',
+                                display: 'inline-block',
+                              }}
+                            />
+                            <span>{task.status}</span>
                           </span>
                         </div>
                       </div>
 
                       {/* Description */}
-                      <p style={{ color: 'var(--text-primary)', fontSize: '0.92rem', fontWeight: 600, margin: 0 }}>
+                      <p
+                        style={{
+                          color: 'var(--text-primary)',
+                          fontSize: '0.92rem',
+                          fontWeight: 600,
+                          margin: '2px 0',
+                          lineHeight: 1.45,
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}
+                      >
                         {task.description}
                       </p>
 
@@ -867,6 +808,8 @@ export const UserWorkspace = () => {
                             borderLeft: '3px solid #2563eb',
                             fontSize: '0.8rem',
                             color: 'var(--text-secondary)',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
                           }}
                         >
                           <span style={{ fontWeight: 600, color: '#1d4ed8', display: 'block', fontSize: '0.72rem' }}>
@@ -887,6 +830,8 @@ export const UserWorkspace = () => {
                             borderLeft: '3px solid #059669',
                             fontSize: '0.8rem',
                             color: 'var(--text-secondary)',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
                           }}
                         >
                           <span style={{ fontWeight: 600, color: '#047857', display: 'block', fontSize: '0.72rem' }}>
@@ -897,14 +842,14 @@ export const UserWorkspace = () => {
                       )}
 
                       {/* Action Buttons */}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '4px' }}>
+                      <div className="user-task-actions-row">
                         {task.status === 'To Do' && (
                           <button
-                            className="btn btn-secondary"
+                            className="btn btn-secondary user-task-action-btn"
                             onClick={() => handleStartTask(task)}
                             style={{
                               fontSize: '0.8rem',
-                              padding: '6px 12px',
+                              padding: '7px 12px',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
@@ -920,11 +865,11 @@ export const UserWorkspace = () => {
 
                         {task.status !== 'Completed' && (
                           <button
-                            className="btn btn-primary"
+                            className="btn btn-primary user-task-action-btn"
                             onClick={() => openCompletionModal(task)}
                             style={{
                               fontSize: '0.8rem',
-                              padding: '6px 14px',
+                              padding: '7px 14px',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
@@ -938,7 +883,7 @@ export const UserWorkspace = () => {
                         )}
 
                         {isTaskCompleted && (
-                          <span style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0' }}>
                             <CheckCircle2 size={15} />
                             <span>Completed & Notified</span>
                           </span>

@@ -4,20 +4,67 @@ import { api } from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // Always start unauthenticated on application link access so user lands on Register page first
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => {
+    try {
+      return sessionStorage.getItem('taskflow_token') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = sessionStorage.getItem('taskflow_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Clear any residual storage keys on fresh initialization
+  // Validate existing session in background on application refresh
   useEffect(() => {
+    let isMounted = true;
+
+    // Clear stale permanent localStorage tokens so fresh visits face Login page first
     try {
       localStorage.removeItem('taskflow_token');
       localStorage.removeItem('taskflow_user');
-    } catch {
-      // ignore storage access errors if in restricted environment
-    }
+    } catch {}
+
+    const validateSession = async () => {
+      const savedToken = sessionStorage.getItem('taskflow_token');
+      if (!savedToken) {
+        return;
+      }
+
+      try {
+        const res = await api.getProfile();
+        if (isMounted && res.success && res.user) {
+          setUser(res.user);
+          sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        }
+      } catch (err) {
+        console.warn('Session background sync notice:', err.message);
+        // Only clear credentials if token is explicitly invalid or expired
+        if (err.status === 401 && err.message && (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid'))) {
+          sessionStorage.removeItem('taskflow_token');
+          sessionStorage.removeItem('taskflow_user');
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+          }
+        }
+      }
+    };
+
+    validateSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const register = async (userData) => {
@@ -36,8 +83,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.login(usernameOrEmail, password);
       if (res.success) {
-        localStorage.setItem('taskflow_token', res.token);
-        localStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        sessionStorage.setItem('taskflow_token', res.token);
+        sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
         setToken(res.token);
         setUser(res.user);
         return { success: true, user: res.user };
@@ -56,14 +103,22 @@ export const AuthProvider = ({ children }) => {
   const updateUserProfile = (updatedUserData) => {
     setUser((prev) => {
       const next = { ...prev, ...updatedUserData };
-      localStorage.setItem('taskflow_user', JSON.stringify(next));
+      sessionStorage.setItem('taskflow_user', JSON.stringify(next));
       return next;
     });
   };
 
   const logout = () => {
-    localStorage.removeItem('taskflow_token');
-    localStorage.removeItem('taskflow_user');
+    try {
+      sessionStorage.removeItem('taskflow_token');
+      sessionStorage.removeItem('taskflow_user');
+      sessionStorage.removeItem('taskflow_active_section');
+      localStorage.removeItem('taskflow_token');
+      localStorage.removeItem('taskflow_user');
+      localStorage.removeItem('taskflow_active_section');
+    } catch {
+      // ignore storage errors
+    }
     setToken(null);
     setUser(null);
     setError('');

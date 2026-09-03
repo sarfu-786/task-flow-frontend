@@ -52,7 +52,7 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
 };
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('taskflow_token');
+  const token = (typeof window !== 'undefined' && (sessionStorage.getItem('taskflow_token') || localStorage.getItem('taskflow_token'))) || null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
