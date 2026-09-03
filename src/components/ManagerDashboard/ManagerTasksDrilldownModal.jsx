@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  ListTodo,
   Calendar,
   Globe,
   FileText,
@@ -12,7 +11,6 @@ import {
   Database,
   Search,
   Users,
-  Filter,
 } from 'lucide-react';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
@@ -20,19 +18,19 @@ import { useUserManagement } from '../../context/UserContext';
 export const ManagerTasksDrilldownModal = ({
   isOpen,
   onClose,
-  initialFilter = 'all', // 'all' | 'Completed' | 'In Progress' | 'To Do'
+  initialFilter = 'Completed', // 'Completed' | 'In Progress' | 'To Do'
   modalTitle = 'Tasks Overview',
 }) => {
   const { tasks, updateStatus } = useTasks();
   const { users } = useUserManagement();
 
-  const [statusFilter, setStatusFilter] = useState(initialFilter);
+  const [statusFilter, setStatusFilter] = useState(initialFilter || 'Completed');
   const [memberFilter, setMemberFilter] = useState('all');
   const [modalSearch, setModalSearch] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setStatusFilter(initialFilter);
+      setStatusFilter(initialFilter || 'Completed');
       setMemberFilter('all');
       setModalSearch('');
       document.body.style.overflow = 'hidden';
@@ -52,18 +50,26 @@ export const ManagerTasksDrilldownModal = ({
   // Filter tasks dynamically
   let filtered = [...tasks];
 
-  // Status Filter
-  if (statusFilter !== 'all') {
+  // Status Filter (Completed, In Progress, To Do)
+  if (statusFilter && statusFilter !== 'all') {
     filtered = filtered.filter((t) => t.status === statusFilter);
   }
 
   // Member Filter
   if (memberFilter !== 'all') {
-    filtered = filtered.filter(
-      (t) =>
-        t.assignedTo === memberFilter ||
-        (t.user && t.user === memberFilter)
-    );
+    const mLower = memberFilter.toLowerCase();
+    filtered = filtered.filter((t) => {
+      const assigned = (t.assignedTo || '').toLowerCase();
+      const userName = t.user ? (t.user.name || '').toLowerCase() : '';
+      const userUsername = t.user ? (t.user.username || '').toLowerCase() : '';
+      const userId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+      return (
+        assigned === mLower ||
+        userName === mLower ||
+        userUsername === mLower ||
+        userId === memberFilter
+      );
+    });
   }
 
   // Search Filter
@@ -71,14 +77,15 @@ export const ManagerTasksDrilldownModal = ({
     const q = modalSearch.trim().toLowerCase();
     filtered = filtered.filter(
       (t) =>
-        t.description.toLowerCase().includes(q) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
         (t.remark && t.remark.toLowerCase().includes(q)) ||
-        t.taskType.toLowerCase().includes(q) ||
+        (t.completionRemark && t.completionRemark.toLowerCase().includes(q)) ||
+        (t.taskType && t.taskType.toLowerCase().includes(q)) ||
         (t.assignedTo && t.assignedTo.toLowerCase().includes(q))
     );
   }
 
-  const totalAll = tasks.length;
+  const totalTasksCount = tasks.length;
   const totalCompleted = tasks.filter((t) => t.status === 'Completed').length;
   const totalInProgress = tasks.filter((t) => t.status === 'In Progress').length;
   const totalToDo = tasks.filter((t) => t.status === 'To Do').length;
@@ -144,12 +151,93 @@ export const ManagerTasksDrilldownModal = ({
     );
   };
 
+  const getHeaderBadge = () => {
+    if (statusFilter === 'Completed') {
+      return (
+        <span
+          style={{
+            fontSize: '0.75rem',
+            padding: '3px 10px',
+            borderRadius: 'var(--radius-full)',
+            background: '#ecfdf5',
+            color: '#047857',
+            fontWeight: 700,
+            border: '1px solid #a7f3d0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+          }}
+        >
+          <CheckCircle2 size={13} />
+          <span>{filtered.length} Completed</span>
+        </span>
+      );
+    }
+    if (statusFilter === 'In Progress') {
+      return (
+        <span
+          style={{
+            fontSize: '0.75rem',
+            padding: '3px 10px',
+            borderRadius: 'var(--radius-full)',
+            background: '#fffbeb',
+            color: '#b45309',
+            fontWeight: 700,
+            border: '1px solid #fde68a',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+          }}
+        >
+          <Clock size={13} />
+          <span>{filtered.length} In Progress</span>
+        </span>
+      );
+    }
+    if (statusFilter === 'To Do') {
+      return (
+        <span
+          style={{
+            fontSize: '0.75rem',
+            padding: '3px 10px',
+            borderRadius: 'var(--radius-full)',
+            background: '#f1f5f9',
+            color: '#475569',
+            fontWeight: 700,
+            border: '1px solid #cbd5e1',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+          }}
+        >
+          <AlertCircle size={13} />
+          <span>{filtered.length} Pending</span>
+        </span>
+      );
+    }
+    return (
+      <span
+        style={{
+          fontSize: '0.75rem',
+          padding: '3px 10px',
+          borderRadius: 'var(--radius-full)',
+          background: '#eff6ff',
+          color: '#1d4ed8',
+          fontWeight: 700,
+          border: '1px solid #bfdbfe',
+        }}
+      >
+        {filtered.length} Tasks
+      </span>
+    );
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '960px', width: '95%' }}
+        style={{ maxWidth: '980px', width: '95%' }}
       >
         {/* Header */}
         <div className="modal-header" style={{ padding: '18px 24px' }}>
@@ -158,15 +246,7 @@ export const ManagerTasksDrilldownModal = ({
               <h3 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>
                 {modalTitle}
               </h3>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  border: '1px solid #bfdbfe',
-                }}
-              >
-                {filtered.length} Records
-              </span>
+              {getHeaderBadge()}
             </div>
           </div>
 
@@ -177,27 +257,30 @@ export const ManagerTasksDrilldownModal = ({
 
         {/* Body */}
         <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
-          {/* Quick 1-Click Status Filter Tabs */}
+          {/* Quick 1-Click Status Filter Tabs & Member Filter */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              flexWrap: 'wrap',
               gap: '12px',
+              flexWrap: 'wrap',
               paddingBottom: '14px',
               borderBottom: '1px solid var(--border-color)',
             }}
           >
+            {/* Status Tabs */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className={`btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setStatusFilter('all')}
-                style={{ padding: '6px 14px', fontSize: '0.825rem' }}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.825rem',
+                }}
               >
-                <ListTodo size={15} />
-                <span>All Tasks ({totalAll})</span>
+                <span>All Tasks ({totalTasksCount})</span>
               </button>
 
               <button
@@ -242,7 +325,7 @@ export const ManagerTasksDrilldownModal = ({
                 }}
               >
                 <AlertCircle size={15} />
-                <span>To Do ({totalToDo})</span>
+                <span>Pending / To Do ({totalToDo})</span>
               </button>
             </div>
 
@@ -284,12 +367,12 @@ export const ManagerTasksDrilldownModal = ({
               <thead>
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
-                  <th style={{ width: '160px' }}>Assigned Member</th>
-                  <th style={{ width: '130px' }}>Type of Work</th>
                   <th>Task Description</th>
+                  <th style={{ width: '140px' }}>Type of Work</th>
+                  <th style={{ width: '160px' }}>Assigned Employee</th>
                   <th style={{ width: '120px' }}>Due Date</th>
                   <th style={{ width: '120px' }}>Status</th>
-                  <th>Remark</th>
+                  <th>Remark / Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -297,7 +380,7 @@ export const ManagerTasksDrilldownModal = ({
                   <tr>
                     <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        No matching tasks found
+                        No {statusFilter !== 'all' ? statusFilter.toLowerCase() : ''} tasks found
                       </p>
                       <p style={{ fontSize: '0.85rem' }}>
                         Try switching the status filter or clearing your search input.
@@ -307,7 +390,10 @@ export const ManagerTasksDrilldownModal = ({
                 ) : (
                   filtered.map((task, idx) => {
                     const assignedUserObj = users.find(
-                      (u) => u.name === task.assignedTo || u.username === task.assignedTo
+                      (u) =>
+                        (u.name && u.name.toLowerCase() === (task.assignedTo || '').toLowerCase()) ||
+                        (u.username && u.username.toLowerCase() === (task.assignedTo || '').toLowerCase()) ||
+                        (task.user && (task.user._id ? task.user._id.toString() : task.user.toString()) === u._id?.toString())
                     );
 
                     return (
@@ -315,6 +401,16 @@ export const ManagerTasksDrilldownModal = ({
                         <td style={{ textAlign: 'center' }}>
                           <span className="sr-no-badge">{idx + 1}</span>
                         </td>
+
+                        {/* Description */}
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                            {task.description}
+                          </div>
+                        </td>
+
+                        {/* Type of Work */}
+                        <td>{getTaskTypeBadge(task.taskType)}</td>
 
                         {/* Assigned Member with Avatar */}
                         <td>
@@ -355,16 +451,6 @@ export const ManagerTasksDrilldownModal = ({
                           </div>
                         </td>
 
-                        {/* Type of Work */}
-                        <td>{getTaskTypeBadge(task.taskType)}</td>
-
-                        {/* Description */}
-                        <td>
-                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
-                            {task.description}
-                          </span>
-                        </td>
-
                         {/* Due Date */}
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -374,6 +460,7 @@ export const ManagerTasksDrilldownModal = ({
                                 ? new Date(task.expectedDate).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
+                                    year: 'numeric',
                                   })
                                 : '—'}
                             </span>
@@ -385,8 +472,14 @@ export const ManagerTasksDrilldownModal = ({
 
                         {/* Remark */}
                         <td>
-                          <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {task.remark || '—'}
+                          <span style={{ color: task.completionRemark || task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            {task.completionRemark ? (
+                              <span>
+                                <strong style={{ color: '#047857' }}>Note:</strong> {task.completionRemark}
+                              </span>
+                            ) : (
+                              task.remark || '—'
+                            )}
                           </span>
                         </td>
                       </tr>

@@ -32,16 +32,13 @@ export const UserProvider = ({ children }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // Fetch users
+  // Fetch users (Complete directory for system consistency)
   const fetchUsers = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
     setError('');
     try {
-      const res = await api.getUsers({
-        search,
-        role: roleFilter,
-      });
+      const res = await api.getUsers({});
       if (res.success) {
         setUsers(res.users);
         localStorage.setItem('taskflow_cached_users', JSON.stringify(res.users));
@@ -52,7 +49,7 @@ export const UserProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, search, roleFilter]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -149,11 +146,25 @@ export const UserProvider = ({ children }) => {
     setUserToDelete(null);
   };
 
-  // Pagination calculation
-  const totalUsers = users.length;
+  // Pagination and filtering calculation for UserSection view
+  const filteredUsers = users.filter((u) => {
+    if (!u) return false;
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const matchName = (u.name || '').toLowerCase().includes(q);
+      const matchUsername = (u.username || '').toLowerCase().includes(q);
+      const matchEmail = (u.email || '').toLowerCase().includes(q);
+      const matchDept = (u.department || '').toLowerCase().includes(q);
+      if (!matchName && !matchUsername && !matchEmail && !matchDept) return false;
+    }
+    return true;
+  });
+
+  const totalUsers = filteredUsers.length;
   const totalPages = Math.ceil(totalUsers / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = users.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <UserContext.Provider

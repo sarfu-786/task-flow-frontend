@@ -68,7 +68,7 @@ export const TaskProvider = ({ children }) => {
     setLiveToast(null);
   }, []);
 
-  // Fetch tasks
+  // Fetch tasks (Always fetch complete list for authenticated user/manager to maintain accurate dashboard counts)
   const fetchTasks = useCallback(async (silent = false) => {
     if (!isAuthenticated) return;
     if (!silent) setLoading(true);
@@ -76,9 +76,6 @@ export const TaskProvider = ({ children }) => {
     try {
       const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
       const res = await api.getTasks({
-        search,
-        taskType: taskTypeFilter,
-        status: statusFilter,
         myTasksOnly: !isManager,
       });
       if (res.success) {
@@ -91,7 +88,7 @@ export const TaskProvider = ({ children }) => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isAuthenticated, user, search, taskTypeFilter, statusFilter]);
+  }, [isAuthenticated, user]);
 
   // Fetch Manager / User Stats
   const fetchStats = useCallback(async () => {
@@ -399,10 +396,31 @@ export const TaskProvider = ({ children }) => {
     setTaskToDelete(null);
   };
 
-  // Total and paginated calculations
-  const totalTasks = tasks.length;
+  // Total and paginated calculations for TaskList view
+  const filteredTasks = tasks.filter((t) => {
+    if (!t) return false;
+    if (taskTypeFilter !== 'all' && (t.taskType || '').toLowerCase() !== taskTypeFilter.toLowerCase()) {
+      return false;
+    }
+    if (statusFilter !== 'all' && t.status !== statusFilter) {
+      return false;
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const matchDesc = (t.description || '').toLowerCase().includes(q);
+      const matchRemark =
+        (t.remark || '').toLowerCase().includes(q) ||
+        (t.completionRemark || '').toLowerCase().includes(q);
+      const matchAssigned = (t.assignedTo || '').toLowerCase().includes(q);
+      const matchType = (t.taskType || '').toLowerCase().includes(q);
+      if (!matchDesc && !matchRemark && !matchAssigned && !matchType) return false;
+    }
+    return true;
+  });
+
+  const totalTasks = filteredTasks.length;
   const totalPages = Math.ceil(totalTasks / itemsPerPage) || 1;
-  const paginatedTasks = tasks.slice(
+  const paginatedTasks = filteredTasks.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );

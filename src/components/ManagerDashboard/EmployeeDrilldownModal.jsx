@@ -23,10 +23,12 @@ export const EmployeeDrilldownModal = ({
   const { tasks } = useTasks();
 
   const [departmentFilter, setDepartmentFilter] = useState(initialDepartmentFilter);
+  const [employeeSearch, setEmployeeSearch] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setDepartmentFilter(initialDepartmentFilter);
+      setEmployeeSearch('');
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
     } else {
@@ -58,10 +60,20 @@ export const EmployeeDrilldownModal = ({
     new Set(employeeUsers.map((u) => u.department || 'Operations').filter(Boolean))
   );
 
-  // Filtered employees list by department
+  // Filtered employees list by department and search
   let filtered = [...employeeUsers];
   if (departmentFilter !== 'all') {
     filtered = filtered.filter((u) => (u.department || 'Operations') === departmentFilter);
+  }
+  if (employeeSearch.trim()) {
+    const q = employeeSearch.trim().toLowerCase();
+    filtered = filtered.filter(
+      (u) =>
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.username || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.department || '').toLowerCase().includes(q)
+    );
   }
 
   return (
@@ -101,40 +113,51 @@ export const EmployeeDrilldownModal = ({
 
         {/* Body */}
         <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
-          {/* Department Filter Bar (if departments exist) */}
-          {allDepartments.length > 1 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                flexWrap: 'wrap',
-                gap: '12px',
-                paddingBottom: '12px',
-                borderBottom: '1px solid var(--border-color)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Building2 size={15} color="#64748b" />
-                <select
-                  className="select-filter"
-                  value={departmentFilter}
-                  onChange={(e) => setDepartmentFilter(e.target.value)}
-                  style={{ padding: '6px 12px', fontSize: '0.825rem' }}
-                >
-                  <option value="all">All Departments ({employeeUsers.length})</option>
-                  {allDepartments.map((dept) => {
-                    const count = employeeUsers.filter((u) => (u.department || 'Operations') === dept).length;
-                    return (
-                      <option key={dept} value={dept}>
-                        {dept} ({count})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
+          {/* Controls Bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid var(--border-color)',
+            }}
+          >
+            {/* Search input */}
+            <div style={{ position: 'relative', flex: 1, minWidth: '220px', maxWidth: '400px' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search employees by name, email, username..."
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+                style={{ padding: '7px 12px', fontSize: '0.85rem' }}
+              />
             </div>
-          )}
+
+            {/* Department Filter Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Building2 size={15} color="#64748b" />
+              <select
+                className="select-filter"
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                style={{ padding: '6px 12px', fontSize: '0.825rem' }}
+              >
+                <option value="all">All Departments ({employeeUsers.length})</option>
+                {allDepartments.map((dept) => {
+                  const count = employeeUsers.filter((u) => (u.department || 'Operations') === dept).length;
+                  return (
+                    <option key={dept} value={dept}>
+                      {dept} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
 
           {/* Employee Table - Only Employees and their details */}
           <div className="table-responsive" style={{ maxHeight: '480px', overflowY: 'auto' }}>

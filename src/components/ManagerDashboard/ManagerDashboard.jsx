@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../context/TaskContext';
 import { useAuth } from '../../context/AuthContext';
 import { useUserManagement } from '../../context/UserContext';
 import { MetricCard } from './MetricCard';
 import { UserWorkModal } from './UserWorkModal';
 import { EmployeeDrilldownModal } from './EmployeeDrilldownModal';
+import { ManagerTasksDrilldownModal } from './ManagerTasksDrilldownModal';
 import {
   Users,
   CheckCircle2,
@@ -25,15 +26,26 @@ export const ManagerDashboard = ({ setActiveSection }) => {
   const [userWorkFilter, setUserWorkFilter] = useState('all');
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
 
-  // Employee Drilldown Modal State
+  // Employee Directory Drilldown Modal State
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeDeptFilter, setEmployeeDeptFilter] = useState('all');
   const [employeeModalTitle, setEmployeeModalTitle] = useState('Employee Directory');
+
+  // Tasks Drilldown Modal State (Completed, In Progress, Pending To-Do)
+  const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
+  const [tasksFilter, setTasksFilter] = useState('all');
+  const [tasksModalTitle, setTasksModalTitle] = useState('Tasks Overview');
 
   const openEmployeeDrilldown = (dept = 'all', title = 'Employee Directory') => {
     setEmployeeDeptFilter(dept);
     setEmployeeModalTitle(title);
     setIsEmployeeModalOpen(true);
+  };
+
+  const openTasksDrilldown = (status = 'all', title = 'Tasks Overview') => {
+    setTasksFilter(status);
+    setTasksModalTitle(title);
+    setIsTasksModalOpen(true);
   };
 
   const openUserWork = (targetUser, filter = 'all') => {
@@ -49,7 +61,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    if (isEmployeeModalOpen || isWorkModalOpen) {
+    if (isEmployeeModalOpen || isWorkModalOpen || isTasksModalOpen) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
     } else {
@@ -60,7 +72,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
     };
-  }, [isEmployeeModalOpen, isWorkModalOpen]);
+  }, [isEmployeeModalOpen, isWorkModalOpen, isTasksModalOpen]);
 
   // Filter ONLY active approved regular employees (exclude Rejected/Pending users and Managers)
   const employeeUsers = users.filter(
@@ -138,7 +150,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#d97706"
           bgLight="#fffbeb"
           isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Employee Directory')}
+          onClick={() => openTasksDrilldown('In Progress', 'In Progress Active Tasks')}
         />
 
         {/* Completed Tasks */}
@@ -149,7 +161,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#059669"
           bgLight="#ecfdf5"
           isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Employee Directory')}
+          onClick={() => openTasksDrilldown('Completed', 'Completed Tasks & Workflows')}
         />
 
         {/* Pending To-Do */}
@@ -160,7 +172,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#6366f1"
           bgLight="#eef2ff"
           isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Employee Directory')}
+          onClick={() => openTasksDrilldown('To Do', 'Pending To-Do Tasks')}
         />
       </div>
 
@@ -218,10 +230,9 @@ export const ManagerDashboard = ({ setActiveSection }) => {
                 employeeUsers.map((member, index) => {
                   const memberName = (member.name || '').trim().toLowerCase();
                   const memberUsername = (member.username || '').trim().toLowerCase();
-                  const memberId = (member._id || '').toString();
+                  const memberId = member._id ? member._id.toString() : '';
 
                   const memberTasks = tasks.filter((t) => {
-                    if (!t) return false;
                     const taskAssigned = (t.assignedTo || '').trim().toLowerCase();
                     const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
 
@@ -238,8 +249,8 @@ export const ManagerDashboard = ({ setActiveSection }) => {
                   const userPending = memberTasks.filter((t) => t.status === 'To Do').length;
 
                   return (
-                    <tr key={member._id}>
-                      <td>
+                    <tr key={member._id || index}>
+                      <td style={{ textAlign: 'center' }}>
                         <span className="sr-no-badge">{index + 1}</span>
                       </td>
 
@@ -421,6 +432,14 @@ export const ManagerDashboard = ({ setActiveSection }) => {
         modalTitle={employeeModalTitle}
         onClose={() => setIsEmployeeModalOpen(false)}
         onOpenUserWork={openUserWork}
+      />
+
+      {/* 1-Click Tasks Status Drilldown Modal (Completed, In Progress, Pending To-Do) */}
+      <ManagerTasksDrilldownModal
+        isOpen={isTasksModalOpen}
+        initialFilter={tasksFilter}
+        modalTitle={tasksModalTitle}
+        onClose={() => setIsTasksModalOpen(false)}
       />
 
       {/* 1-Click Individual User Work Inspection Modal */}
