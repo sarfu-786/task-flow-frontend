@@ -397,7 +397,7 @@ export const UserWorkspace = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Work Breakdown & Task Categories (Click to open Pop-up Modal):
+            Work Breakdown & Task Categories:
           </span>
 
           {/* Completion Progress Metric */}
@@ -441,7 +441,7 @@ export const UserWorkspace = () => {
               e.currentTarget.style.borderColor = '#e2e8f0';
               e.currentTarget.style.boxShadow = 'none';
             }}
-            title="Click to open All Assigned Work Pop-up"
+            title="Click to view all assigned work"
           >
             <div>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
@@ -482,7 +482,7 @@ export const UserWorkspace = () => {
               e.currentTarget.style.borderColor = '#e2e8f0';
               e.currentTarget.style.boxShadow = 'none';
             }}
-            title="Click to open What Done Pop-up"
+            title="Click to view completed tasks"
           >
             <div>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
@@ -523,7 +523,7 @@ export const UserWorkspace = () => {
               e.currentTarget.style.borderColor = '#e2e8f0';
               e.currentTarget.style.boxShadow = 'none';
             }}
-            title="Click to open In-Progress Work Pop-up"
+            title="Click to view in-progress work"
           >
             <div>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
@@ -564,7 +564,7 @@ export const UserWorkspace = () => {
               e.currentTarget.style.borderColor = '#e2e8f0';
               e.currentTarget.style.boxShadow = 'none';
             }}
-            title="Click to open To Do Tasks Pop-up"
+            title="Click to view to-do tasks"
           >
             <div>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block' }}>
@@ -653,7 +653,7 @@ export const UserWorkspace = () => {
                 </div>
               </div>
 
-              <button type="button" className="btn-icon" onClick={closeSectionModal} title="Close Pop-up">
+              <button type="button" className="btn-icon" onClick={closeSectionModal} title="Close">
                 <X size={20} />
               </button>
             </div>
@@ -948,13 +948,6 @@ export const UserWorkspace = () => {
                   );
                 })
               )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={closeSectionModal}>
-                Close Pop-up
-              </button>
             </div>
           </div>
         </div>

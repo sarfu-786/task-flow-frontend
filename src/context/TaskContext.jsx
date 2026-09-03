@@ -106,12 +106,18 @@ export const TaskProvider = ({ children }) => {
       fetchStats();
       fetchNotifications();
 
-      // Poll notifications every 5 seconds for real-time inbox alerts
-      const interval = setInterval(() => {
-        fetchNotifications();
-      }, 5000);
+      // Refresh data when user switches back to tab/app (traffic-free when idle/hidden)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          fetchNotifications();
+          fetchStats();
+        }
+      };
 
-      return () => clearInterval(interval);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, [isAuthenticated, fetchTasks, fetchStats, fetchNotifications]);
 

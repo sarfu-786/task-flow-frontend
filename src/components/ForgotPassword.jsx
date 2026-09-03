@@ -61,7 +61,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
         setPopupOtp(res.otp);
         setShowOtpPopup(true);
         setStep('otp');
-        setSuccessMsg('Reset OTP generated! See the verification popup below.');
+        setSuccessMsg('Reset OTP generated! See your verification code below.');
       } else {
         setErrorMsg(res.message || 'Failed to generate OTP');
       }
@@ -212,7 +212,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sparkles size={18} color="#2563eb" />
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e40af' }}>
-                  Verification OTP Pop-up
+                  Verification OTP Code
                 </span>
               </div>
               <span

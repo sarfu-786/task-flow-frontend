@@ -473,7 +473,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
             color: '#475569',
           }}
         >
-          <span>Need to create a new user account? </span>
+          <span>Don't have an account? </span>
           <button
             type="button"
             onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
@@ -484,11 +484,11 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
               fontWeight: 700,
               cursor: 'pointer',
               textDecoration: 'underline',
-              padding: 0,
+              padding: '0 2px',
               fontSize: '0.875rem',
             }}
           >
-            Go to Registration Page
+            Register
           </button>
         </div>
       </div>

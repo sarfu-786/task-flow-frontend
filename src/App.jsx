@@ -17,16 +17,16 @@ const MainApplication = () => {
   const { isAuthenticated, loading, user } = useAuth();
   const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
 
-  // Unauthenticated view toggle: default to 'register' so any link visit lands on Register page first
-  const [authView, setAuthView] = useState('register');
+  // Unauthenticated view toggle: default to 'login' so visiting the website lands on direct login page
+  const [authView, setAuthView] = useState('login');
   const [loginInitialEmail, setLoginInitialEmail] = useState('');
   const [loginInitialRole, setLoginInitialRole] = useState('manager');
   const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
 
-  // Reset to register view if user logs out
+  // Reset to login view if user logs out
   useEffect(() => {
     if (!isAuthenticated) {
-      setAuthView('register');
+      setAuthView('login');
     }
   }, [isAuthenticated]);
 

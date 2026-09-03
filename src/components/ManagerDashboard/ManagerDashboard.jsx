@@ -179,9 +179,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
               <Users size={20} color="#2563eb" />
               <span>Team Workload & Member Status</span>
             </h3>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-              Real-time employee status and workload monitoring. Click any status pill to inspect assigned tasks.
-            </p>
           </div>
 
           <button

@@ -337,13 +337,6 @@ export const EmployeeDrilldownModal = ({
             </table>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
-          </button>
-        </div>
       </div>
     </div>
   );
