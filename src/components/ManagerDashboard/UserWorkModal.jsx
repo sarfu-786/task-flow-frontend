@@ -184,7 +184,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
                   {user.role}
                 </span>
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {user.email} • {user.department || 'Operations'}
               </p>
             </div>

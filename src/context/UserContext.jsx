@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
+import { socketService } from '../services/socket';
 
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   const [users, setUsers] = useState(() => {
     try {
@@ -17,6 +18,7 @@ export const UserProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   
   // Filtering & Pagination State
   const [search, setSearch] = useState('');
@@ -31,6 +33,28 @@ export const UserProvider = ({ children }) => {
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Fetch pending registration approvals count (for Manager sidebar badge indicator)
+  const fetchPendingApprovalsCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+      if (!isManager) {
+        setPendingApprovalsCount(0);
+        return;
+      }
+      const res = await api.getUserApprovals({ status: 'Pending' });
+      if (res.success) {
+        if (res.counts && typeof res.counts.pending === 'number') {
+          setPendingApprovalsCount(res.counts.pending);
+        } else if (Array.isArray(res.users)) {
+          setPendingApprovalsCount(res.users.filter((u) => u.status === 'Pending').length);
+        }
+      }
+    } catch (err) {
+      console.error('Fetch pending approvals count error:', err);
+    }
+  }, [isAuthenticated, user]);
 
   // Fetch users (Complete directory for system consistency)
   const fetchUsers = useCallback(async () => {
@@ -54,8 +78,39 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUsers();
+      fetchPendingApprovalsCount();
     }
-  }, [isAuthenticated, fetchUsers]);
+  }, [isAuthenticated, fetchUsers, fetchPendingApprovalsCount]);
+
+  // Real-time socket events for approvals and user updates
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const isManager = ['Manager', 'Executive', 'Administrator'].includes(user.role);
+    if (!isManager) return;
+
+    const handleApprovalsUpdated = () => {
+      fetchPendingApprovalsCount();
+      fetchUsers();
+    };
+
+    const handleNewNotification = (data) => {
+      const notif = data?.notification || data;
+      if (notif?.type === 'user_registered') {
+        fetchPendingApprovalsCount();
+        fetchUsers();
+      }
+    };
+
+    const cleanupApprovals = socketService.on('approvals:updated', handleApprovalsUpdated);
+    const cleanupUsers = socketService.on('users:updated', handleApprovalsUpdated);
+    const cleanupNotif = socketService.on('notification:new', handleNewNotification);
+
+    return () => {
+      cleanupApprovals();
+      cleanupUsers();
+      cleanupNotif();
+    };
+  }, [isAuthenticated, user, fetchPendingApprovalsCount, fetchUsers]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -196,6 +251,8 @@ export const UserProvider = ({ children }) => {
         userToDelete,
         openDeleteModal,
         closeDeleteModal,
+        pendingApprovalsCount,
+        fetchPendingApprovalsCount,
       }}
     >
       {children}

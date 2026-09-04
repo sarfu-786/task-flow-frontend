@@ -87,6 +87,10 @@ export const TaskModal = () => {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    const selectedUserObj = users.find(
+      (u) => u.name === assignedTo.trim() || u._id === assignedTo.trim() || u.username === assignedTo.trim()
+    );
+
     const taskPayload = {
       taskType,
       description: description.trim(),
@@ -94,6 +98,7 @@ export const TaskModal = () => {
       remark: remark.trim(),
       status,
       assignedTo: assignedTo.trim(),
+      userId: selectedUserObj?._id || undefined,
       assignedBy: currentUser ? `${currentUser.name} (${currentUser.role || 'Manager'})` : 'Manager',
     };
 

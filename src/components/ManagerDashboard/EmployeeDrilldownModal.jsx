@@ -257,7 +257,7 @@ export const EmployeeDrilldownModal = ({
                               <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
                                 {member.name}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                 @{member.username} • {member.email}
                               </div>
                             </div>

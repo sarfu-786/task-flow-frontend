@@ -151,6 +151,24 @@ export const api = {
     return data;
   },
 
+  async updateProfile(profileData) {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Failed to update profile details');
+      err.status = res.status;
+      throw err;
+    }
+    if (data.token) {
+      sessionStorage.setItem('taskflow_token', data.token);
+    }
+    return data;
+  },
+
   // Task API
   async getTasks(params = {}) {
     const query = new URLSearchParams();

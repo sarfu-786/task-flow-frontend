@@ -26,7 +26,7 @@ const DEPARTMENT_OPTIONS = [
 ];
 
 export const ApprovalSection = () => {
-  const { fetchUsers } = useUserManagement();
+  const { fetchUsers, fetchPendingApprovalsCount } = useUserManagement();
   const [users, setUsers] = useState([]);
   const [counts, setCounts] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [statusFilter, setStatusFilter] = useState('Pending');
@@ -109,6 +109,7 @@ export const ApprovalSection = () => {
         });
         await fetchApprovals();
         if (fetchUsers) await fetchUsers();
+        if (fetchPendingApprovalsCount) await fetchPendingApprovalsCount();
       }
     } catch (err) {
       setFeedback({
@@ -134,6 +135,7 @@ export const ApprovalSection = () => {
         });
         await fetchApprovals();
         if (fetchUsers) await fetchUsers();
+        if (fetchPendingApprovalsCount) await fetchPendingApprovalsCount();
       }
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to update department' });
@@ -434,10 +436,10 @@ export const ApprovalSection = () => {
                               </td>
 
                               {/* Email */}
-                              <td style={{ padding: '12px 16px', fontSize: '0.85rem', color: '#334155' }}>
+                              <td style={{ padding: '12px 16px', fontSize: '0.85rem', color: '#334155', maxWidth: '220px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <Mail size={13} color="#94a3b8" />
-                                  <span>{item.email}</span>
+                                  <Mail size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
+                                  <span style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{item.email}</span>
                                 </div>
                               </td>
 

@@ -108,6 +108,26 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const updateProfile = async (profileData) => {
+    setError('');
+    try {
+      const res = await api.updateProfile(profileData);
+      if (res.success && res.user) {
+        setUser(res.user);
+        sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        if (res.token) {
+          setToken(res.token);
+          sessionStorage.setItem('taskflow_token', res.token);
+        }
+        return { success: true, message: res.message || 'Profile updated successfully!', user: res.user };
+      }
+      return { success: true, message: 'Profile updated successfully!' };
+    } catch (err) {
+      setError(err.message || 'Failed to update profile details');
+      return { success: false, message: err.message || 'Failed to update profile details' };
+    }
+  };
+
   const logout = () => {
     try {
       sessionStorage.removeItem('taskflow_token');
@@ -137,6 +157,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUserProfile,
+        updateProfile,
       }}
     >
       {children}

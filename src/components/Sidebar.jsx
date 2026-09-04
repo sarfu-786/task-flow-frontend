@@ -9,9 +9,11 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useUserManagement } from '../context/UserContext';
 
 export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user } = useAuth();
+  const { pendingApprovalsCount } = useUserManagement();
   const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
 
   const handleNavClick = (section) => {
@@ -87,9 +89,50 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 type="button"
                 className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
                 onClick={() => handleNavClick('approvals')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                }}
+                id="sidebar-nav-approvals"
               >
-                <UserCheck className="nav-icon" />
-                <span>Registration Approvals</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <UserCheck className="nav-icon" />
+                  <span>Registration Approvals</span>
+                </div>
+                {pendingApprovalsCount > 0 && (
+                  <span
+                    style={{
+                      background: '#ef4444',
+                      color: '#ffffff',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      minWidth: '20px',
+                      height: '20px',
+                      borderRadius: '999px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 6px',
+                      boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)',
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
+                    title={`${pendingApprovalsCount} pending registration approval${pendingApprovalsCount === 1 ? '' : 's'}`}
+                  >
+                    {pendingApprovalsCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'user-profile' ? 'active' : ''}`}
+                onClick={() => handleNavClick('user-profile')}
+              >
+                <User className="nav-icon" />
+                <span>My Profile Details</span>
               </button>
             </>
           ) : (

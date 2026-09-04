@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 export const UserSection = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUserProfile } = useAuth();
   const { tasks } = useTasks();
   const {
     users,
@@ -141,6 +141,9 @@ export const UserSection = () => {
     let res;
     if (modalMode === 'edit' && selectedUser) {
       res = await updateUser(selectedUser._id, formData);
+      if (res.success && res.user && currentUser && (currentUser._id === selectedUser._id || currentUser.id === selectedUser._id)) {
+        updateUserProfile(res.user);
+      }
     } else {
       res = await createUser(formData);
     }
@@ -284,26 +287,26 @@ export const UserSection = () => {
             </div>
           )}
 
-          <div className="user-details-main">
+          <div className="user-details-main" style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <h3 className="user-name-large">{currentUser.name}</h3>
               {getRoleBadge(currentUser.role)}
             </div>
 
             <div className="user-info-grid">
-              <div className="info-item">
+              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
                 <span className="info-item-label">Username</span>
-                <span className="info-item-value">@{currentUser.username}</span>
+                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>@{currentUser.username}</span>
               </div>
-              <div className="info-item">
+              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
                 <span className="info-item-label">Email Address</span>
-                <span className="info-item-value">{currentUser.email}</span>
+                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{currentUser.email}</span>
               </div>
-              <div className="info-item">
+              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
                 <span className="info-item-label">Department</span>
-                <span className="info-item-value">{currentUser.department || 'Operations'}</span>
+                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{currentUser.department || 'Operations'}</span>
               </div>
-              <div className="info-item">
+              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
                 <span className="info-item-label">Total Users in System</span>
                 <span className="info-item-value" style={{ color: '#38bdf8' }}>
                   {totalUsers} Members
@@ -474,7 +477,7 @@ export const UserSection = () => {
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                               {userItem.name}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                               {userItem.email}
                             </div>
                           </div>
