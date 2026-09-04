@@ -1,10 +1,34 @@
 import React from 'react';
-import { Bell, CheckCircle2, Shield, X, ArrowRight } from 'lucide-react';
+import { Bell, CheckCircle2, Shield, X, ArrowRight, UserCheck } from 'lucide-react';
 
 export const RealtimeToast = ({ toast, onClose, onAction }) => {
   if (!toast) return null;
 
-  const isAssignment = toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager');
+  const isRegistration = toast.type === 'user_registered';
+  const isAssignment = !isRegistration && (toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager'));
+
+  let primaryColor = '#059669';
+  let badgeBg = '#ecfdf5';
+  let borderColor = '#10b981';
+  let badgeTitle = '⚡ Task Completed Alert';
+  let defaultTitle = 'Task Completed';
+  let icon = <CheckCircle2 size={20} />;
+
+  if (isRegistration) {
+    primaryColor = '#d97706';
+    badgeBg = '#fffbeb';
+    borderColor = '#f59e0b';
+    badgeTitle = '⚡ Registration Request Alert';
+    defaultTitle = 'New Registration Awaiting Approval';
+    icon = <UserCheck size={20} />;
+  } else if (isAssignment) {
+    primaryColor = '#2563eb';
+    badgeBg = '#eff6ff';
+    borderColor = '#3b82f6';
+    badgeTitle = '⚡ Instant Assignment Alert';
+    defaultTitle = 'New Task Assigned';
+    icon = <Shield size={20} />;
+  }
 
   return (
     <div
@@ -18,7 +42,7 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
         background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        border: `1.5px solid ${isAssignment ? '#3b82f6' : '#10b981'}`,
+        border: `1.5px solid ${borderColor}`,
         borderRadius: '14px',
         boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
         padding: '16px 18px',
@@ -36,24 +60,32 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              background: isAssignment ? '#eff6ff' : '#ecfdf5',
-              color: isAssignment ? '#2563eb' : '#059669',
+              background: badgeBg,
+              color: primaryColor,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            {isAssignment ? <Shield size={20} /> : <CheckCircle2 size={20} />}
+            {icon}
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: isAssignment ? '#2563eb' : '#059669', letterSpacing: '0.04em' }}>
-                {isAssignment ? '⚡ Instant Assignment Alert' : '⚡ Task Completed Alert'}
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  color: primaryColor,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {badgeTitle}
               </span>
             </div>
             <h4 style={{ margin: '2px 0 0', fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
-              {toast.title || (isAssignment ? 'New Task Assigned' : 'Task Completed')}
+              {toast.title || defaultTitle}
             </h4>
           </div>
         </div>
@@ -87,7 +119,7 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
           style={{
             background: '#f8fafc',
             border: '1px solid #e2e8f0',
-            borderLeft: `3px solid ${isAssignment ? '#2563eb' : '#059669'}`,
+            borderLeft: `3px solid ${primaryColor}`,
             padding: '6px 10px',
             borderRadius: '6px',
             fontSize: '0.78rem',
@@ -109,7 +141,7 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
               padding: '6px 12px',
               fontSize: '0.78rem',
               fontWeight: 600,
-              background: isAssignment ? '#2563eb' : '#059669',
+              background: primaryColor,
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
@@ -117,10 +149,10 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: isAssignment ? '0 4px 10px rgba(37, 99, 235, 0.25)' : '0 4px 10px rgba(5, 150, 105, 0.25)',
+              boxShadow: `0 4px 10px ${isRegistration ? 'rgba(217, 119, 6, 0.25)' : isAssignment ? 'rgba(37, 99, 235, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`,
             }}
           >
-            <span>View Details</span>
+            <span>{isRegistration ? 'Review & Approve' : 'View Details'}</span>
             <ArrowRight size={13} />
           </button>
         </div>

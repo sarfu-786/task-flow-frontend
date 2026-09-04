@@ -31,8 +31,11 @@ const AuthenticatedLayout = ({
         toast={liveToast}
         onClose={dismissLiveToast}
         onAction={() => {
+          const toastType = liveToast?.type;
           dismissLiveToast();
-          if (isManager) {
+          if (toastType === 'user_registered' && isManager) {
+            handleSectionChange('approvals');
+          } else if (isManager) {
             handleSectionChange('manager');
           } else {
             handleSectionChange('user-workspace');

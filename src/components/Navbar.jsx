@@ -249,6 +249,12 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
       <ManagerInboxModal
         isOpen={isInboxModalOpen}
         onClose={() => setIsInboxModalOpen(false)}
+        onNavigateSection={(section) => {
+          setIsInboxModalOpen(false);
+          if (setActiveSection) {
+            setActiveSection(section);
+          }
+        }}
       />
     </>
   );

@@ -14,9 +14,11 @@ import {
   Shield,
   Briefcase,
   Calendar,
+  UserCheck,
+  ArrowRight,
 } from 'lucide-react';
 
-export const ManagerInboxModal = ({ isOpen, onClose }) => {
+export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
   const { user } = useAuth();
   const {
     notifications,
@@ -169,7 +171,7 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
               </h4>
               <p style={{ fontSize: '0.82rem', margin: 0 }}>
                 {isManager
-                  ? 'When users complete assigned tasks and submit remarks, you will receive real-time messages here.'
+                  ? 'When users register or complete assigned tasks with remarks, you will receive real-time notifications here.'
                   : 'When managers assign you a new task with instructions, you will receive notifications here.'}
               </p>
             </div>
@@ -184,22 +186,55 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                   })
                 : 'Just now';
 
-              const isAssignment = notif.type === 'task_assigned' || !isManager;
+              const isRegistration = notif.type === 'user_registered';
+              const isAssignment = notif.type === 'task_assigned' || (!isManager && !isRegistration);
+              const isCompletion = notif.type === 'task_completed';
+
+              // Visual styling theme based on notification type
+              let badgeText = 'Notification';
+              let badgeBg = '#f1f5f9';
+              let badgeColor = '#475569';
+              let badgeBorder = '#cbd5e1';
+              let cardBg = notif.isRead ? '#ffffff' : '#f8fafc';
+              let cardBorder = notif.isRead ? '#e2e8f0' : '#cbd5e1';
+              let iconBg = '#64748b';
+              let iconComponent = <User size={16} />;
+
+              if (isRegistration) {
+                badgeText = 'Registration Approval Needed';
+                badgeBg = '#fef3c7';
+                badgeColor = '#92400e';
+                badgeBorder = '#fde68a';
+                cardBg = notif.isRead ? '#ffffff' : '#fffdf5';
+                cardBorder = notif.isRead ? '#e2e8f0' : '#fde68a';
+                iconBg = '#d97706';
+                iconComponent = <UserCheck size={16} />;
+              } else if (isAssignment) {
+                badgeText = 'Task Assigned';
+                badgeBg = '#eff6ff';
+                badgeColor = '#1d4ed8';
+                badgeBorder = '#bfdbfe';
+                cardBg = notif.isRead ? '#ffffff' : '#f0fdf4';
+                cardBorder = notif.isRead ? '#e2e8f0' : '#bbf7d0';
+                iconBg = '#059669';
+                iconComponent = <Shield size={16} />;
+              } else if (isCompletion) {
+                badgeText = 'Task Completed';
+                badgeBg = '#ecfdf5';
+                badgeColor = '#047857';
+                badgeBorder = '#a7f3d0';
+                cardBg = notif.isRead ? '#ffffff' : '#eff6ff';
+                cardBorder = notif.isRead ? '#e2e8f0' : '#bfdbfe';
+                iconBg = '#2563eb';
+                iconComponent = <CheckCircle2 size={16} />;
+              }
 
               return (
                 <div
                   key={notif._id}
                   style={{
-                    background: notif.isRead
-                      ? '#ffffff'
-                      : isAssignment
-                      ? '#f0fdf4'
-                      : '#eff6ff',
-                    border: notif.isRead
-                      ? '1px solid #e2e8f0'
-                      : isAssignment
-                      ? '1px solid #bbf7d0'
-                      : '1px solid #bfdbfe',
+                    background: cardBg,
+                    border: `1px solid ${cardBorder}`,
                     borderRadius: '10px',
                     padding: '16px',
                     display: 'flex',
@@ -226,16 +261,17 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                           width: '34px',
                           height: '34px',
                           borderRadius: '50%',
-                          background: isAssignment ? '#059669' : '#2563eb',
+                          background: iconBg,
                           color: '#fff',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '0.85rem',
                           fontWeight: 700,
+                          flexShrink: 0,
                         }}
                       >
-                        {isAssignment ? <Shield size={16} /> : <User size={16} />}
+                        {iconComponent}
                       </div>
 
                       <div>
@@ -249,7 +285,7 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: isAssignment ? '#059669' : '#2563eb',
+                                background: iconBg,
                                 display: 'inline-block',
                               }}
                             />
@@ -269,12 +305,12 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                           fontWeight: 700,
                           padding: '2px 8px',
                           borderRadius: '4px',
-                          background: isAssignment ? '#eff6ff' : '#ecfdf5',
-                          color: isAssignment ? '#1d4ed8' : '#047857',
-                          border: `1px solid ${isAssignment ? '#bfdbfe' : '#a7f3d0'}`,
+                          background: badgeBg,
+                          color: badgeColor,
+                          border: `1px solid ${badgeBorder}`,
                         }}
                       >
-                        {isAssignment ? 'Task Assigned to You' : 'Task Completed'}
+                        {badgeText}
                       </span>
 
                       <button
@@ -289,11 +325,63 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Task Description & Message */}
+                  {/* Task Description / Message */}
                   <div style={{ paddingLeft: '44px' }}>
                     <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                       {notif.taskDescription || notif.message}
                     </div>
+
+                    {/* Registration Request Action Banner */}
+                    {isRegistration && isManager && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          background: '#fffbeb',
+                          border: '1px solid #fef3c7',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <UserCheck size={16} color="#d97706" />
+                          <span style={{ fontSize: '0.82rem', color: '#92400e', fontWeight: 600 }}>
+                            Applicant awaiting approval
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onNavigateSection) {
+                              onNavigateSection('approvals');
+                            }
+                            if (onClose) onClose();
+                          }}
+                          style={{
+                            background: '#d97706',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(217, 119, 6, 0.25)',
+                          }}
+                        >
+                          <span>Review & Approve</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Instructions / User Remark */}
                     {notif.remark && (
@@ -302,14 +390,14 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                           marginTop: '8px',
                           background: notif.isRead ? '#f8fafc' : '#ffffff',
                           border: '1px solid #e2e8f0',
-                          borderLeft: `3px solid ${isAssignment ? '#2563eb' : '#059669'}`,
+                          borderLeft: `3px solid ${iconBg}`,
                           padding: '8px 12px',
                           borderRadius: '6px',
                           fontSize: '0.82rem',
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        <span style={{ fontWeight: 600, color: isAssignment ? '#1d4ed8' : '#047857', display: 'block', fontSize: '0.75rem' }}>
+                        <span style={{ fontWeight: 600, color: badgeColor, display: 'block', fontSize: '0.75rem' }}>
                           {isAssignment ? 'Manager Instructions / What To Do:' : 'User Remark:'}
                         </span>
                         "{notif.remark}"
@@ -326,7 +414,7 @@ export const ManagerInboxModal = ({ isOpen, onClose }) => {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: isAssignment ? '#059669' : '#2563eb',
+                          color: iconBg,
                           fontSize: '0.75rem',
                           fontWeight: 600,
                           cursor: 'pointer',

@@ -136,22 +136,27 @@ export const TaskProvider = ({ children }) => {
     const handleNewNotification = (data) => {
       console.log('[Real-Time] Received new notification:', data);
       const notif = data.notification || data;
+      const notifType = data.type || notif.type;
 
       // Filter relevance for this client
       let isRelevant = false;
-      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All')) {
+      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All' || notifType === 'user_registered')) {
         isRelevant = true;
       } else if (!isManager) {
-        const rName = (notif.recipientName || '').toLowerCase().trim();
-        const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
-        if (
-          rUser === myId ||
-          rName === myName ||
-          rName === myUsername ||
-          notif.forRole === 'User' ||
-          notif.forRole === 'All'
-        ) {
-          isRelevant = true;
+        if (notif.forRole === 'Manager' || notifType === 'user_registered') {
+          isRelevant = false;
+        } else {
+          const rName = (notif.recipientName || '').toLowerCase().trim();
+          const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
+          if (
+            rUser === myId ||
+            rName === myName ||
+            rName === myUsername ||
+            notif.forRole === 'User' ||
+            notif.forRole === 'All'
+          ) {
+            isRelevant = true;
+          }
         }
       }
 
@@ -163,14 +168,22 @@ export const TaskProvider = ({ children }) => {
         });
         setUnreadCount((prev) => prev + 1);
 
+        let defaultToastTitle = isManager ? 'Task Completed Alert' : 'New Task Assigned';
+        if (notifType === 'user_registered') {
+          defaultToastTitle = 'New Registration Request';
+        }
+
         // Trigger Instant Live Toast Banner
         showLiveToast({
-          title: data.title || notif.title || (isManager ? 'Task Completed Alert' : 'New Task Assigned'),
+          title: data.title || notif.title || defaultToastTitle,
           message: data.message || notif.message || notif.taskDescription,
           remark: data.remark || notif.remark || notif.completionRemark,
-          type: data.type || notif.type,
+          type: notifType,
           forRole: notif.forRole,
           assignedBy: notif.assignedBy,
+          userName: notif.userName,
+          userEmail: notif.userEmail,
+          department: notif.department,
         });
 
         // Instant silent background data update
