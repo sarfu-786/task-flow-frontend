@@ -23,10 +23,10 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
-  ListTodo,
   Eye,
   Upload,
   Camera,
+  Crown,
 } from 'lucide-react';
 
 export const UserSection = () => {
@@ -77,13 +77,15 @@ export const UserSection = () => {
     setSelectedUserForWork(null);
   };
 
-  // Form state for Add/Edit user
+  // Form state for Add/Edit employee
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     username: '',
     role: 'User',
-    department: 'Internet Work',
+    department: 'Operations',
+    reportsTo: '',
+    reportsToName: '',
     password: '',
     avatar: '',
   });
@@ -92,6 +94,9 @@ export const UserSection = () => {
   const [modalServerError, setModalServerError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
+  const isManager = currentUser && ['Manager', 'Executive', 'Administrator'].includes(currentUser.role);
+
   useEffect(() => {
     if (modalMode === 'edit' && selectedUser) {
       setFormData({
@@ -99,24 +104,35 @@ export const UserSection = () => {
         email: selectedUser.email || '',
         username: selectedUser.username || '',
         role: selectedUser.role || 'User',
-        department: selectedUser.department || 'Internet Work',
+        department: selectedUser.department || 'Operations',
+        reportsTo: selectedUser.reportsTo || '',
+        reportsToName: selectedUser.reportsToName || '',
         password: '',
         avatar: selectedUser.avatar || '',
       });
     } else {
+      const defaultReportsTo = isManager
+        ? (currentUser?._id ? currentUser._id.toString() : (currentUser?.id || ''))
+        : (!isSuperAdmin ? (currentUser?.reportsTo ? currentUser.reportsTo.toString() : (currentUser?._id || '')) : '');
+      const defaultReportsToName = isManager
+        ? (currentUser?.name ? `${currentUser.name} (${currentUser.role || 'Manager'})` : '')
+        : (!isSuperAdmin ? (currentUser?.reportsToName || (currentUser?.name ? `${currentUser.name} (User)` : '')) : '');
+
       setFormData({
         name: '',
         email: '',
         username: '',
         role: 'User',
-        department: 'Internet Work',
+        department: currentUser?.department || 'Operations',
+        reportsTo: defaultReportsTo,
+        reportsToName: defaultReportsToName,
         password: '',
         avatar: '',
       });
     }
     setFormErrors({});
     setModalServerError('');
-  }, [modalMode, selectedUser, isUserModalOpen]);
+  }, [modalMode, selectedUser, isUserModalOpen, currentUser, isManager, isSuperAdmin]);
 
   const validateForm = () => {
     const errs = {};
@@ -127,6 +143,9 @@ export const UserSection = () => {
       errs.email = 'Please provide a valid email';
     }
     if (!formData.username.trim()) errs.username = 'Username is required';
+    if (modalMode === 'create' && !formData.password.trim()) {
+      errs.password = 'Initial password is required';
+    }
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -178,36 +197,45 @@ export const UserSection = () => {
 
   const getRoleBadge = (role) => {
     switch (role) {
-      case 'Manager':
+      case 'Super Admin':
         return (
           <span
             style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              background: '#eff6ff',
-              color: '#1d4ed8',
-              border: '1px solid #bfdbfe',
+              padding: '3px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              background: '#fef3c7',
+              color: '#b45309',
+              border: '1px solid #fde68a',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
-            Manager
+            <Crown size={11} color="#d97706" />
+            Super Admin
           </span>
         );
+      case 'Manager':
       case 'Executive':
       case 'Administrator':
         return (
           <span
             style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
+              padding: '3px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
               fontWeight: 600,
-              background: '#f5f3ff',
-              color: '#6d28d9',
-              border: '1px solid #ddd6fe',
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              border: '1px solid #bfdbfe',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
+            <Shield size={11} color="#2563eb" />
             {role}
           </span>
         );
@@ -215,9 +243,9 @@ export const UserSection = () => {
         return (
           <span
             style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.75rem',
+              padding: '3px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
               fontWeight: 600,
               background: '#ecfdf5',
               color: '#047857',
@@ -230,12 +258,26 @@ export const UserSection = () => {
     }
   };
 
-  const startEntry = (currentPage - 1) * itemsPerPage + 1;
+  const startEntry = totalUsers > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const endEntry = Math.min(currentPage * itemsPerPage, totalUsers);
 
+  // Available managers/seniors to report to
+  let rawManagerOptions = users.filter(
+    (u) =>
+      u.status !== 'Rejected' &&
+      u.status !== 'Pending' &&
+      (u.role === 'Super Admin' || u.role === 'Manager' || u.role === 'Executive' || u.role === 'Administrator') &&
+      (!selectedUser || (selectedUser._id !== u._id && selectedUser.id !== u._id))
+  );
+
+  if (isManager && currentUser && !rawManagerOptions.some((u) => (u._id && u._id === currentUser._id) || (u.id && u.id === currentUser.id) || u.name === currentUser.name)) {
+    rawManagerOptions = [currentUser, ...rawManagerOptions];
+  }
+  const managerOptions = rawManagerOptions;
+
   return (
-    <div>
-      {/* Top Section Header with Add User Button */}
+    <div className="employee-management-page">
+      {/* Top Header */}
       <div
         className="section-header"
         style={{
@@ -243,198 +285,134 @@ export const UserSection = () => {
           justifyContent: 'space-between',
           alignItems: 'flex-start',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '14px',
+          marginBottom: '18px',
         }}
       >
         <div>
-          <h2 className="section-title">User Management</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users className="text-primary" size={24} />
+            <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
+              Employee Management
+            </h2>
+          </div>
         </div>
 
         <button
           className="btn btn-primary"
           onClick={openCreateModal}
-          id="btn-add-new-user"
+          id="btn-add-new-employee"
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <UserPlus size={18} />
-          <span>Add New User</span>
+          <UserPlus size={16} />
+          <span>Add Employee</span>
         </button>
       </div>
 
       {error && (
-        <div className="alert alert-danger">
+        <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Logged in User Summary Card */}
-      {currentUser && (
-        <div className="user-profile-card" style={{ marginBottom: '24px' }}>
-          {currentUser.avatar ? (
-            <img src={currentUser.avatar} alt={currentUser.name} className="user-avatar-large" />
-          ) : (
-            <div
-              className="user-avatar-large"
-              style={{
-                background: '#3b82f6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-              }}
-            >
-              <UserCheck size={48} />
-            </div>
-          )}
-
-          <div className="user-details-main" style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <h3 className="user-name-large">{currentUser.name}</h3>
-              {getRoleBadge(currentUser.role)}
-            </div>
-
-            <div className="user-info-grid">
-              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
-                <span className="info-item-label">Username</span>
-                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>@{currentUser.username}</span>
-              </div>
-              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
-                <span className="info-item-label">Email Address</span>
-                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{currentUser.email}</span>
-              </div>
-              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
-                <span className="info-item-label">Department</span>
-                <span className="info-item-value" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{currentUser.department || 'Operations'}</span>
-              </div>
-              <div className="info-item" style={{ minWidth: 0, overflow: 'hidden' }}>
-                <span className="info-item-label">Total Users in System</span>
-                <span className="info-item-value" style={{ color: '#38bdf8' }}>
-                  {totalUsers} Members
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Users Table Container */}
+      {/* Main Table Container */}
       <div className="task-container-box">
-        {/* Search & Filter Toolbar */}
+        {/* Search & Role Filter Bar */}
         <div className="task-nav-toolbar">
           <div className="search-wrapper-top">
             <Search className="search-icon-inside" />
             <input
               type="text"
               className="search-input-top"
-              placeholder="Search users by name, username, email, or department..."
+              placeholder="Search by employee name, email, role, or department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              id="user-search-input"
+              id="employee-search-input"
             />
           </div>
 
           <div className="task-filters-row">
             <div className="filters-group-center">
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>
-                Filter by Role:
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                Role:
               </label>
               <select
                 className="select-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                id="filter-user-role"
+                id="filter-employee-role"
               >
                 <option value="all">All Roles</option>
+                <option value="Super Admin">Super Admin</option>
                 <option value="Manager">Manager</option>
-                <option value="Executive">Executive</option>
-                <option value="Administrator">Administrator</option>
-                <option value="User">User</option>
+                <option value="User">User / Employee</option>
               </select>
             </div>
 
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Total Records: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{totalUsers}</span>
+              Total: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{totalUsers}</span>
             </div>
           </div>
         </div>
 
-        {/* User Records Table with 1-Click Completed & Pending Work */}
+        {/* Employee Table */}
         <div className="table-responsive">
           <table className="task-table">
             <thead>
               <tr>
-                <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
-                <th>Member Name</th>
-                <th>Department & Role</th>
-                <th style={{ textAlign: 'center' }}>Completed Work</th>
-                <th style={{ textAlign: 'center' }}>Pending Work</th>
-                <th style={{ width: '130px' }}>Joined Date</th>
-                <th style={{ width: '150px', textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
+                <th>Employee Name & Email</th>
+                <th>Role & Department</th>
+                <th>Reports To (Manager)</th>
+                <th style={{ textAlign: 'center' }}>Completed</th>
+                <th style={{ textAlign: 'center' }}>Pending</th>
+                <th style={{ width: '140px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '48px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '10px',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      <RefreshCw size={20} className="animate-spin" />
-                      <span>Loading user records...</span>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                      <RefreshCw size={18} className="animate-spin" />
+                      <span>Loading employees...</span>
                     </div>
                   </td>
                 </tr>
               ) : paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      No user records found
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      No employees found
                     </p>
-                    <p style={{ fontSize: '0.85rem' }}>
+                    <p style={{ fontSize: '0.85rem', margin: 0 }}>
                       {search || roleFilter !== 'all'
-                        ? 'Try adjusting your search query or role filter.'
-                        : 'Click "Add New User" to register a team member.'}
+                        ? 'Try adjusting your search query or filter.'
+                        : 'Click "Add Employee" to create the first record.'}
                     </p>
                   </td>
                 </tr>
               ) : (
-                paginatedUsers.map((userItem, index) => {
+                paginatedUsers.map((emp, index) => {
                   const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                  const dateStr = userItem.createdAt
-                    ? new Date(userItem.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : '—';
-
-                  const userName = (userItem.name || '').trim().toLowerCase();
-                  const userUsername = (userItem.username || '').trim().toLowerCase();
-                  const userId = (userItem._id || '').toString();
+                  const empName = (emp.name || '').trim().toLowerCase();
+                  const empUsername = (emp.username || '').trim().toLowerCase();
+                  const empId = (emp._id || '').toString();
 
                   const memberTasks = tasks.filter((t) => {
                     if (!t) return false;
                     const taskAssigned = (t.assignedTo || '').trim().toLowerCase();
                     const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
-
-                    return (
-                      taskAssigned === userName ||
-                      taskAssigned === userUsername ||
-                      (taskUserId && taskUserId === userId) ||
-                      (userName === 'aarav sharma' && taskAssigned === 'sarah jenkins')
-                    );
+                    return taskAssigned === empName || taskAssigned === empUsername || (taskUserId && taskUserId === empId);
                   });
-                  const userCompleted = memberTasks.filter((t) => t.status === 'Completed').length;
-                  const userPending = memberTasks.filter((t) => t.status !== 'Completed').length;
+
+                  const completedCount = memberTasks.filter((t) => t.status === 'Completed').length;
+                  const pendingCount = memberTasks.filter((t) => t.status !== 'Completed').length;
+                  const isSuper = emp.role === 'Super Admin';
 
                   return (
-                    <tr key={userItem._id}>
+                    <tr key={emp._id}>
                       {/* Sr. No */}
                       <td style={{ textAlign: 'center' }}>
                         <span className="sr-no-badge">{serialNumber}</span>
@@ -442,14 +420,14 @@ export const UserSection = () => {
 
                       {/* Name & Avatar */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {userItem.avatar ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {emp.avatar ? (
                             <img
-                              src={userItem.avatar}
-                              alt={userItem.name}
+                              src={emp.avatar}
+                              alt={emp.name}
                               style={{
-                                width: '36px',
-                                height: '36px',
+                                width: '34px',
+                                height: '34px',
                                 borderRadius: '50%',
                                 objectFit: 'cover',
                                 border: '1px solid var(--border-color)',
@@ -458,86 +436,97 @@ export const UserSection = () => {
                           ) : (
                             <div
                               style={{
-                                width: '36px',
-                                height: '36px',
+                                width: '34px',
+                                height: '34px',
                                 borderRadius: '50%',
-                                background: '#3b82f6',
+                                background: isSuper ? '#f59e0b' : emp.role === 'Manager' ? '#2563eb' : '#059669',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#fff',
+                                color: '#ffffff',
                                 fontWeight: 700,
-                                fontSize: '0.85rem',
+                                fontSize: '0.82rem',
                               }}
                             >
-                              {userItem.name.charAt(0)}
+                              {emp.name ? emp.name.charAt(0).toUpperCase() : 'U'}
                             </div>
                           )}
                           <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {userItem.name}
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>{emp.name}</span>
+                              {isSuper && <Crown size={12} color="#d97706" />}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                              {userItem.email}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {emp.email}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Department & Role */}
+                      {/* Role & Department */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                            {userItem.department || 'Operations'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          {getRoleBadge(emp.role)}
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                            {emp.department || 'Operations'}
                           </span>
-                          {getRoleBadge(userItem.role)}
                         </div>
                       </td>
 
-                      {/* Completed Work (1-Click Openable) */}
+                      {/* Reports To (Superior) */}
+                      <td>
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: emp.reportsToName ? '#334155' : '#059669',
+                            background: '#f8fafc',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0',
+                            display: 'inline-block',
+                          }}
+                        >
+                          {emp.reportsToName || (isSuper ? '— (Super Admin Root)' : 'Direct to Super Admin')}
+                        </span>
+                      </td>
+
+                      {/* Completed Tasks Pill */}
                       <td style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           className="badge-status badge-status-completed"
-                          onClick={() => openUserWork(userItem, 'Completed')}
-                          title={`Click to open ${userItem.name}'s completed tasks`}
-                          style={{ cursor: 'pointer', padding: '5px 10px' }}
+                          onClick={() => openUserWork(emp, 'Completed')}
+                          title={`Click to view ${emp.name}'s completed tasks`}
+                          style={{ cursor: 'pointer', padding: '3px 8px', fontSize: '0.75rem' }}
                         >
                           <CheckCircle2 size={12} />
-                          <span>{userCompleted} Done</span>
+                          <span>{completedCount} Done</span>
                         </button>
                       </td>
 
-                      {/* Pending Work (1-Click Openable) */}
+                      {/* Pending Tasks Pill */}
                       <td style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           className="badge-status badge-status-progress"
-                          onClick={() => openUserWork(userItem, 'To Do')}
-                          title={`Click to open ${userItem.name}'s pending tasks`}
-                          style={{ cursor: 'pointer', padding: '5px 10px' }}
+                          onClick={() => openUserWork(emp, 'To Do')}
+                          title={`Click to view ${emp.name}'s pending tasks`}
+                          style={{ cursor: 'pointer', padding: '3px 8px', fontSize: '0.75rem' }}
                         >
                           <Clock size={12} />
-                          <span>{userPending} Pending</span>
+                          <span>{pendingCount} Pending</span>
                         </button>
                       </td>
 
-                      {/* Joined Date */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '0.85rem' }}>
-                          <Calendar size={13} />
-                          <span>{dateStr}</span>
-                        </div>
-                      </td>
-
-                      {/* Actions (Inspect, Edit & Remove) */}
+                      {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
                         <div className="task-actions-cell" style={{ justifyContent: 'flex-end' }}>
                           <button
                             type="button"
                             className="btn-icon"
-                            onClick={() => openUserWork(userItem, 'all')}
-                            title="Inspect User Workload"
+                            onClick={() => openUserWork(emp, 'all')}
+                            title="Inspect Workload"
                           >
                             <Eye size={14} />
                           </button>
@@ -545,21 +534,20 @@ export const UserSection = () => {
                           <button
                             type="button"
                             className="btn-action-update"
-                            onClick={() => openEditModal(userItem)}
-                            title="Edit / Update User"
-                            id={`btn-edit-user-${userItem._id}`}
+                            onClick={() => openEditModal(emp)}
+                            title="Edit Employee"
+                            id={`btn-edit-employee-${emp._id}`}
                           >
-                            <Edit2 size={13} />
-                            <span>Edit</span>
+                            <Edit2 size={14} />
                           </button>
 
                           <button
                             type="button"
                             className="btn-action-delete"
-                            onClick={() => openDeleteModal(userItem)}
-                            title="Remove User"
-                            id={`btn-delete-user-${userItem._id}`}
-                            disabled={currentUser && currentUser.id === userItem._id}
+                            onClick={() => openDeleteModal(emp)}
+                            title="Remove Employee"
+                            id={`btn-delete-employee-${emp._id}`}
+                            disabled={currentUser && (currentUser._id === emp._id || currentUser.id === emp._id)}
                           >
                             <Trash2 size={15} />
                           </button>
@@ -573,13 +561,13 @@ export const UserSection = () => {
           </table>
         </div>
 
-        {/* User Pagination */}
+        {/* Pagination */}
         {totalUsers > 0 && (
           <div className="pagination-container">
             <div className="pagination-info">
               Showing <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{startEntry}</span> to{' '}
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{endEntry}</span> of{' '}
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalUsers}</span> users
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalUsers}</span> employees
             </div>
 
             <div className="pagination-controls">
@@ -623,13 +611,13 @@ export const UserSection = () => {
         onClose={closeUserWork}
       />
 
-      {/* Add / Edit User Modal */}
+      {/* Add / Edit Employee Modal */}
       {isUserModalOpen && (
         <div className="modal-backdrop" onClick={closeUserModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <div className="modal-header">
               <h3 className="modal-title">
-                {modalMode === 'edit' ? 'Update User Details' : 'Add New User'}
+                {modalMode === 'edit' ? 'Edit Employee Details' : 'Add New Employee'}
               </h3>
               <button
                 type="button"
@@ -644,64 +632,62 @@ export const UserSection = () => {
             <form onSubmit={handleFormSubmit}>
               <div className="modal-body">
                 {modalServerError && (
-                  <div className="alert alert-danger">
-                    <AlertCircle size={18} />
+                  <div className="alert alert-danger" style={{ marginBottom: '14px' }}>
+                    <AlertCircle size={16} />
                     <span>{modalServerError}</span>
                   </div>
                 )}
 
-                {/* Profile Photo Upload from Device */}
-                <div className="form-group" style={{ marginBottom: '20px' }}>
+                {/* Profile Photo from Device */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="form-label">Profile Photo (from Device)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
                     {formData.avatar ? (
                       <img
                         src={formData.avatar}
-                        alt="Profile Preview"
+                        alt="Preview"
                         style={{
-                          width: '56px',
-                          height: '56px',
+                          width: '48px',
+                          height: '48px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: '2px solid var(--border-color)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                          border: '1px solid var(--border-color)',
                         }}
                       />
                     ) : (
                       <div
                         style={{
-                          width: '56px',
-                          height: '56px',
+                          width: '48px',
+                          height: '48px',
                           borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                          background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#ffffff',
                           fontWeight: 700,
-                          fontSize: '1.2rem',
-                          border: '2px solid var(--border-color)',
+                          fontSize: '1.1rem',
                         }}
                       >
-                        {formData.name ? formData.name.charAt(0).toUpperCase() : <Camera size={22} />}
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : <Camera size={18} />}
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label
                         className="btn btn-secondary"
                         style={{
                           cursor: 'pointer',
-                          padding: '6px 14px',
-                          fontSize: '0.8rem',
+                          padding: '5px 12px',
+                          fontSize: '0.78rem',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
                           width: 'fit-content',
                         }}
                       >
-                        <Upload size={14} />
-                        <span>Choose Image from Device</span>
+                        <Upload size={13} />
+                        <span>Choose Image</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -711,31 +697,7 @@ export const UserSection = () => {
                             if (file) {
                               const reader = new FileReader();
                               reader.onload = (event) => {
-                                const img = new Image();
-                                img.onload = () => {
-                                  const canvas = document.createElement('canvas');
-                                  const MAX_DIM = 280;
-                                  let width = img.width;
-                                  let height = img.height;
-                                  if (width > height) {
-                                    if (width > MAX_DIM) {
-                                      height = Math.round((height * MAX_DIM) / width);
-                                      width = MAX_DIM;
-                                    }
-                                  } else {
-                                    if (height > MAX_DIM) {
-                                      width = Math.round((width * MAX_DIM) / height);
-                                      height = MAX_DIM;
-                                    }
-                                  }
-                                  canvas.width = width;
-                                  canvas.height = height;
-                                  const ctx = canvas.getContext('2d');
-                                  ctx.drawImage(img, 0, 0, width, height);
-                                  const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
-                                  setFormData((prev) => ({ ...prev, avatar: compressedBase64 }));
-                                };
-                                img.src = event.target.result;
+                                setFormData((prev) => ({ ...prev, avatar: event.target.result }));
                               };
                               reader.readAsDataURL(file);
                             }
@@ -751,14 +713,13 @@ export const UserSection = () => {
                             background: 'none',
                             border: 'none',
                             color: '#ef4444',
-                            fontSize: '0.75rem',
+                            fontSize: '0.72rem',
                             cursor: 'pointer',
                             textAlign: 'left',
                             padding: '0',
-                            fontWeight: 500,
                           }}
                         >
-                          Remove Image
+                          Remove photo
                         </button>
                       )}
                     </div>
@@ -767,14 +728,14 @@ export const UserSection = () => {
 
                 {/* Full Name */}
                 <div className="form-group">
-                  <label className="form-label" htmlFor="user-fullname">
+                  <label className="form-label" htmlFor="emp-name">
                     Full Name <span className="required">*</span>
                   </label>
                   <input
-                    id="user-fullname"
+                    id="emp-name"
                     type="text"
                     className="form-control"
-                    placeholder="Enter full name"
+                    placeholder="Enter employee full name"
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -784,95 +745,138 @@ export const UserSection = () => {
                   {formErrors.name && <span className="form-error-msg">{formErrors.name}</span>}
                 </div>
 
-                {/* Email Address */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="user-email">
-                    Email Address <span className="required">*</span>
-                  </label>
-                  <input
-                    id="user-email"
-                    type="email"
-                    className="form-control"
-                    placeholder="Enter email address"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
-                    }}
-                  />
-                  {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
+                {/* Email & Username */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-email">
+                      Email Address <span className="required">*</span>
+                    </label>
+                    <input
+                      id="emp-email"
+                      type="email"
+                      className="form-control"
+                      placeholder="employee@example.com"
+                      value={formData.email}
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                      }}
+                    />
+                    {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-username">
+                      Username <span className="required">*</span>
+                    </label>
+                    <input
+                      id="emp-username"
+                      type="text"
+                      className="form-control"
+                      placeholder="username"
+                      value={formData.username}
+                      onChange={(e) => {
+                        setFormData({ ...formData, username: e.target.value });
+                        if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
+                      }}
+                    />
+                    {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
+                  </div>
                 </div>
 
-                {/* Username */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="user-username">
-                    Username <span className="required">*</span>
-                  </label>
-                  <input
-                    id="user-username"
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter username"
-                    value={formData.username}
-                    onChange={(e) => {
-                      setFormData({ ...formData, username: e.target.value });
-                      if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
-                    }}
-                  />
-                  {formErrors.username && (
-                    <span className="form-error-msg">{formErrors.username}</span>
-                  )}
+                {/* Role & Department */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-role">
+                      Role
+                    </label>
+                    <select
+                      id="emp-role"
+                      className="form-control select-filter"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      disabled={!isSuperAdmin && !isManager}
+                    >
+                      <option value="User">User / Employee</option>
+                      {isManager && <option value="Manager">Manager</option>}
+                      {isSuperAdmin && <option value="Manager">Manager</option>}
+                      {isSuperAdmin && <option value="Super Admin">Super Admin</option>}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-dept">
+                      Department
+                    </label>
+                    <select
+                      id="emp-dept"
+                      className="form-control select-filter"
+                      value={formData.department}
+                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    >
+                      <option value="Internet Work">Internet Work</option>
+                      <option value="Documentation">Documentation</option>
+                      <option value="Backend Work">Backend Work</option>
+                      <option value="Social Media">Social Media</option>
+                      <option value="Operations">Operations</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Role */}
+                {/* Reports To (Manager Selection) */}
                 <div className="form-group">
-                  <label className="form-label" htmlFor="user-role">
-                    Role
+                  <label className="form-label" htmlFor="emp-reports-to">
+                    Reports To (Manager / Superior)
                   </label>
                   <select
-                    id="user-role"
+                    id="emp-reports-to"
                     className="form-control select-filter"
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    value={formData.reportsTo || ''}
+                    onChange={(e) => {
+                      const selectedVal = e.target.value;
+                      if (!selectedVal) {
+                        setFormData({ ...formData, reportsTo: '', reportsToName: '' });
+                      } else {
+                        const targetMgr = [...managerOptions, currentUser].find(
+                          (u) =>
+                            (u && u._id && u._id.toString() === selectedVal) ||
+                            (u && u.id && u.id.toString() === selectedVal) ||
+                            (u && u.name === selectedVal)
+                        );
+                        setFormData({
+                          ...formData,
+                          reportsTo: targetMgr?._id || targetMgr?.id || selectedVal,
+                          reportsToName: targetMgr ? `${targetMgr.name} (${targetMgr.role || 'Manager'})` : selectedVal,
+                        });
+                      }
+                    }}
                   >
-                    <option value="User">User</option>
-                    <option value="Executive">Executive</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Administrator">Administrator</option>
+                    {isSuperAdmin && <option value="">Direct to Super Admin (Root)</option>}
+                    {managerOptions.map((u) => (
+                      <option key={u._id || u.id} value={u._id || u.id}>
+                        {u.name} ({u.role || 'Manager'} — {u.department || 'Operations'})
+                      </option>
+                    ))}
                   </select>
-                </div>
-
-                {/* Department */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="user-dept">
-                    Department
-                  </label>
-                  <select
-                    id="user-dept"
-                    className="form-control select-filter"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  >
-                    <option value="Internet Work">Internet Work</option>
-                    <option value="Documentation">Documentation</option>
-                    <option value="Backend">Backend</option>
-                    <option value="Social Media">Social Media</option>
-                  </select>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                    Selecting a manager attaches this employee to their branch in the organizational hierarchy.
+                  </span>
                 </div>
 
                 {/* Password (Optional for Edit) */}
                 <div className="form-group">
-                  <label className="form-label" htmlFor="user-password">
-                    Password {modalMode === 'edit' ? '(Leave blank to keep current)' : ''}
+                  <label className="form-label" htmlFor="emp-password">
+                    Password {modalMode === 'edit' ? '(Leave blank to keep unchanged)' : '<span className="required">*</span>'}
                   </label>
                   <input
-                    id="user-password"
+                    id="emp-password"
                     type="password"
                     className="form-control"
-                    placeholder={modalMode === 'edit' ? '••••••••' : 'Enter password (min 4 chars)'}
+                    placeholder={modalMode === 'edit' ? '••••••••' : 'Enter initial password (min 4 chars)'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
+                  {formErrors.password && <span className="form-error-msg">{formErrors.password}</span>}
                 </div>
               </div>
 
@@ -895,13 +899,13 @@ export const UserSection = () => {
                     <span>Saving...</span>
                   ) : modalMode === 'edit' ? (
                     <>
-                      <Save size={16} />
-                      <span>Update User</span>
+                      <Save size={15} />
+                      <span>Update Employee</span>
                     </>
                   ) : (
                     <>
-                      <UserPlus size={16} />
-                      <span>Create User</span>
+                      <UserPlus size={15} />
+                      <span>Create Employee</span>
                     </>
                   )}
                 </button>
@@ -911,21 +915,21 @@ export const UserSection = () => {
         </div>
       )}
 
-      {/* Remove User Confirmation Dialog */}
+      {/* Remove Employee Confirmation Modal */}
       {isDeleteModalOpen && userToDelete && (
         <div className="modal-backdrop" onClick={closeDeleteModal}>
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '440px' }}
+            style={{ maxWidth: '420px' }}
           >
-            <div className="modal-header" style={{ borderBottomColor: 'rgba(239, 68, 68, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="modal-header" style={{ borderBottomColor: '#fee2e2' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div
                   style={{
                     width: '32px',
                     height: '32px',
-                    borderRadius: '50%',
+                    borderRadius: '8px',
                     background: '#fef2f2',
                     display: 'flex',
                     alignItems: 'center',
@@ -936,7 +940,7 @@ export const UserSection = () => {
                   <AlertTriangle size={18} />
                 </div>
                 <h3 className="modal-title" style={{ color: '#dc2626' }}>
-                  Remove User
+                  Delete Employee
                 </h3>
               </div>
               <button
@@ -950,26 +954,12 @@ export const UserSection = () => {
             </div>
 
             <div className="modal-body">
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.6 }}>
-                Are you sure you want to remove user{' '}
-                <strong style={{ color: 'var(--text-primary)' }}>{userToDelete.name}</strong> (@{userToDelete.username})?
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
+                Are you sure you want to delete employee{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{userToDelete.name}</strong>?
               </p>
-              <div
-                style={{
-                  padding: '12px 16px',
-                  background: '#f8fafc',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                <div>Email: {userToDelete.email}</div>
-                <div>Role: {userToDelete.role}</div>
-                <div>Department: {userToDelete.department}</div>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '12px' }}>
-                This user account will be permanently removed from the system.
+              <p style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '8px', marginBottom: 0 }}>
+                This record will be permanently removed and reporting branches will update automatically.
               </p>
             </div>
 
@@ -988,14 +978,7 @@ export const UserSection = () => {
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
               >
-                {isDeleting ? (
-                  <span>Removing...</span>
-                ) : (
-                  <>
-                    <Trash2 size={16} />
-                    <span>Remove User</span>
-                  </>
-                )}
+                {isDeleting ? <span>Deleting...</span> : <span>Delete</span>}
               </button>
             </div>
           </div>

@@ -3,10 +3,7 @@ import { useTasks } from '../../context/TaskContext';
 import { Pagination } from './Pagination';
 import { TaskModal } from './TaskModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
-import { MetricCard } from '../ManagerDashboard/MetricCard';
-import { ManagerTasksDrilldownModal } from '../ManagerDashboard/ManagerTasksDrilldownModal';
 import {
-  Search,
   Plus,
   Edit2,
   Trash2,
@@ -20,9 +17,8 @@ import {
   Database,
   RefreshCw,
   ListTodo,
-  TrendingUp,
-  BarChart3,
-  Filter,
+  FolderKanban,
+  CheckSquare,
 } from 'lucide-react';
 
 export const TaskList = () => {
@@ -46,32 +42,6 @@ export const TaskList = () => {
     openDeleteModal,
     updateStatus,
   } = useTasks();
-
-  // Top Metrics Cards Drilldown Modal State (1-Click top cards)
-  const [isDrilldownModalOpen, setIsDrilldownModalOpen] = useState(false);
-  const [drilldownStatusFilter, setDrilldownStatusFilter] = useState('all');
-  const [drilldownModalTitle, setDrilldownModalTitle] = useState('Tasks Overview');
-
-  const openMetricDrilldown = (filter, title) => {
-    setDrilldownStatusFilter(filter);
-    setDrilldownModalTitle(title);
-    setIsDrilldownModalOpen(true);
-  };
-
-  // Compute Task Metric Totals
-  const total = stats?.total || tasks.length;
-  const completed = stats?.completed || tasks.filter((t) => t.status === 'Completed').length;
-  const inProgress = stats?.inProgress || tasks.filter((t) => t.status === 'In Progress').length;
-  const toDo = stats?.toDo || tasks.filter((t) => t.status === 'To Do').length;
-  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  // Task Category breakdown
-  const typeCounts = {
-    'internet work': stats?.byType?.['internet work'] || tasks.filter((t) => t.taskType === 'internet work').length,
-    'documentation': stats?.byType?.['documentation'] || tasks.filter((t) => t.taskType === 'documentation').length,
-    'social media': stats?.byType?.['social media'] || tasks.filter((t) => t.taskType === 'social media').length,
-    'backend work': stats?.byType?.['backend work'] || tasks.filter((t) => t.taskType === 'backend work').length,
-  };
 
   const getTaskTypeBadge = (type) => {
     switch (type) {
@@ -126,7 +96,7 @@ export const TaskList = () => {
         type="button"
         className={`badge-status ${statusClasses[task.status] || ''}`}
         onClick={() => updateStatus(task._id, nextStatusMap[task.status] || 'To Do')}
-        title={`Click to change status to "${nextStatusMap[task.status]}"`}
+        title={`Click to switch status to "${nextStatusMap[task.status]}"`}
       >
         <span className="status-dot" />
         <span>{task.status}</span>
@@ -141,8 +111,8 @@ export const TaskList = () => {
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Calendar size={14} color={isOverdue ? '#ef4444' : '#94a3b8'} />
-        <span style={{ color: isOverdue ? '#fca5a5' : '#cbd5e1', fontSize: '0.85rem' }}>
+        <Calendar size={13} color={isOverdue ? '#ef4444' : '#64748b'} />
+        <span style={{ color: isOverdue ? '#dc2626' : 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: isOverdue ? 600 : 400 }}>
           {date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -154,7 +124,7 @@ export const TaskList = () => {
   };
 
   return (
-    <div>
+    <div className="task-management-page">
       {/* Header section with Add Task CTA */}
       <div
         className="section-header"
@@ -163,92 +133,46 @@ export const TaskList = () => {
           justifyContent: 'space-between',
           alignItems: 'flex-start',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '14px',
+          marginBottom: '18px',
         }}
       >
         <div>
-          <h2 className="section-title">Task Management & Operations</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckSquare className="text-primary" size={24} />
+            <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
+              Task Management
+            </h2>
+          </div>
         </div>
+
         <button
           className="btn btn-primary"
           onClick={openCreateModal}
           id="btn-add-new-task"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <Plus size={18} />
-          <span>Add New Task</span>
+          <Plus size={16} />
+          <span>Add Task</span>
         </button>
       </div>
 
       {error && (
-        <div className="alert alert-danger">
+        <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Top 4 Interactive Metric Cards Shifted into Task Management */}
-      <div className="stats-grid" style={{ marginBottom: '24px' }}>
-        <MetricCard
-          title="Total Assigned Tasks"
-          value={total}
-          icon={ListTodo}
-          color="#2563eb"
-          bgLight="#eff6ff"
-          isClickable={true}
-          onClick={() => openMetricDrilldown('all', 'Total Assigned Tasks Overview')}
-        />
-        <MetricCard
-          title="Completed Workflows"
-          value={completed}
-          icon={CheckCircle2}
-          color="#059669"
-          bgLight="#ecfdf5"
-          isClickable={true}
-          onClick={() => openMetricDrilldown('Completed', 'Completed Tasks & Workflows')}
-        />
-        <MetricCard
-          title="In Progress"
-          value={inProgress}
-          icon={Clock}
-          color="#d97706"
-          bgLight="#fffbeb"
-          isClickable={true}
-          onClick={() => openMetricDrilldown('In Progress', 'In Progress Active Tasks')}
-        />
-        <MetricCard
-          title="Pending To-Do"
-          value={toDo}
-          icon={AlertCircle}
-          color="#475569"
-          bgLight="#f1f5f9"
-          isClickable={true}
-          onClick={() => openMetricDrilldown('To Do', 'Pending To-Do Tasks')}
-        />
-      </div>
-
-      {/* Main Task Container Div */}
+      {/* Main Task Container */}
       <div className="task-container-box">
-        {/* Dynamic Navigation Toolbar with Search box above description and center controls */}
+        {/* Navigation Toolbar with Filters */}
         <div className="task-nav-toolbar">
-          {/* Search Box above description */}
-          <div className="search-wrapper-top">
-            <Search className="search-icon-inside" />
-            <input
-              type="text"
-              className="search-input-top"
-              placeholder="Search tasks by description, remark, or keywords..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              id="task-search-input"
-            />
-          </div>
-
-          {/* Center Navbar Filters: Type of Work, Status Filter */}
-          <div className="task-filters-row">
+          {/* Filters: Task Type & Status */}
+          <div className="task-filters-row" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="filters-group-center">
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>
-                Type of Work:
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                Task Type:
               </label>
               <select
                 className="select-filter"
@@ -257,13 +181,13 @@ export const TaskList = () => {
                 id="filter-task-type"
               >
                 <option value="all">All Task Types</option>
-                <option value="internet work">(i) Internet Work</option>
-                <option value="documentation">(ii) Documentation</option>
-                <option value="social media">(iii) Social Media</option>
-                <option value="backend work">(iv) Backend Work</option>
+                <option value="internet work">Internet Work</option>
+                <option value="documentation">Documentation</option>
+                <option value="social media">Social Media</option>
+                <option value="backend work">Backend Work</option>
               </select>
 
-              <label style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600, marginLeft: '12px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, marginLeft: '12px' }}>
                 Status:
               </label>
               <select
@@ -280,45 +204,45 @@ export const TaskList = () => {
             </div>
 
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Total Results: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{totalTasks}</span>
+              Total: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{totalTasks}</span>
             </div>
           </div>
         </div>
 
-        {/* Task Table with Sr No 1-10 per page, Type, Expected Date, Description, Remark, Actions */}
+        {/* Task Table */}
         <div className="table-responsive">
           <table className="task-table">
             <thead>
               <tr>
-                <th style={{ width: '60px', textAlign: 'center' }}>Sr No.</th>
-                <th style={{ width: '150px' }}>Type of Work</th>
-                <th>Task Description</th>
-                <th style={{ width: '160px' }}>Expected Date</th>
+                <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
+                <th>Description</th>
+                <th style={{ width: '150px' }}>Task Type</th>
+                <th style={{ width: '150px' }}>Expected Date</th>
                 <th style={{ width: '130px' }}>Status</th>
                 <th>Remark</th>
-                <th style={{ width: '140px', textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '110px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '48px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: 'var(--text-muted)' }}>
-                      <RefreshCw size={20} className="animate-spin" />
-                      <span>Loading task records...</span>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                      <RefreshCw size={18} className="animate-spin" />
+                      <span>Loading tasks...</span>
                     </div>
                   </td>
                 </tr>
               ) : paginatedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
                       No tasks found
                     </p>
-                    <p style={{ fontSize: '0.85rem' }}>
+                    <p style={{ fontSize: '0.85rem', margin: 0 }}>
                       {search || taskTypeFilter !== 'all' || statusFilter !== 'all'
                         ? 'Try adjusting your search query or filter selection.'
-                        : 'Click "Add New Task" to create your first entry.'}
+                        : 'Click "Add Task" to create your first task.'}
                     </p>
                   </td>
                 </tr>
@@ -327,53 +251,57 @@ export const TaskList = () => {
                   const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
                   return (
                     <tr key={task._id}>
-                      {/* Sr. No (1-10 per page) */}
+                      {/* Sr. No */}
                       <td style={{ textAlign: 'center' }}>
                         <span className="sr-no-badge">{serialNumber}</span>
                       </td>
-
-                      {/* Type of Work */}
-                      <td>{getTaskTypeBadge(task.taskType)}</td>
 
                       {/* Description */}
                       <td>
                         <div style={{ fontWeight: 500, color: 'var(--text-primary)', maxWidth: '340px' }}>
                           {task.description}
                         </div>
+                        {task.assignedTo && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            Assigned to: <strong style={{ color: 'var(--text-secondary)' }}>{task.assignedTo}</strong>
+                          </div>
+                        )}
                       </td>
 
-                      {/* Expected Completion Date */}
+                      {/* Task Type */}
+                      <td>{getTaskTypeBadge(task.taskType)}</td>
+
+                      {/* Expected Date */}
                       <td>{formatDate(task.expectedDate)}</td>
 
-                      {/* Task Status */}
+                      {/* Status */}
                       <td>{getStatusBadge(task)}</td>
 
                       {/* Remark */}
                       <td>
-                        <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem', fontStyle: task.remark ? 'normal' : 'italic' }}>
-                          {task.remark || 'No remark provided'}
+                        <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.82rem', fontStyle: task.remark ? 'normal' : 'italic' }}>
+                          {task.remark || 'No remark'}
                         </span>
                       </td>
 
-                      {/* Edit, Update & Delete Actions */}
+                      {/* Actions: Edit & Delete */}
                       <td style={{ textAlign: 'right' }}>
                         <div className="task-actions-cell" style={{ justifyContent: 'flex-end' }}>
                           <button
                             type="button"
                             className="btn-action-update"
                             onClick={() => openEditModal(task)}
-                            title="Update task details"
+                            title="Edit / Update Task"
                             id={`btn-update-task-${task._id}`}
                           >
-                            <Edit2 size={13} />
-                            <span>Update</span>
+                            <Edit2 size={14} />
                           </button>
 
                           <button
                             type="button"
                             className="btn-action-delete"
                             onClick={() => openDeleteModal(task)}
-                            title="Delete task"
+                            title="Delete Task"
                             id={`btn-delete-task-${task._id}`}
                           >
                             <Trash2 size={15} />
@@ -388,19 +316,11 @@ export const TaskList = () => {
           </table>
         </div>
 
-        {/* Pagination at bottom (5-10 items per page) */}
+        {/* Pagination (5-10 entries per page) */}
         <Pagination />
       </div>
 
-      {/* 1-Click Top Metric Cards Drilldown Modal (All Tasks, Completed, In Progress, To Do) */}
-      <ManagerTasksDrilldownModal
-        isOpen={isDrilldownModalOpen}
-        initialFilter={drilldownStatusFilter}
-        modalTitle={drilldownModalTitle}
-        onClose={() => setIsDrilldownModalOpen(false)}
-      />
-
-      {/* Modals */}
+      {/* Task Modal (Add/Edit) & Delete Confirm Modal */}
       <TaskModal />
       <DeleteConfirmModal />
     </div>

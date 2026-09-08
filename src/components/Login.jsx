@@ -6,70 +6,60 @@ import {
   Lock,
   Mail,
   AlertCircle,
-  ShieldCheck,
   Eye,
   EyeOff,
-  User,
-  Shield,
   CheckCircle2,
   KeyRound,
   ShieldAlert,
+  Building2,
 } from 'lucide-react';
 
-export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'manager', initialSuccessMsg = '' }) => {
+export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg = '' }) => {
   const { login } = useAuth();
 
   // Forgot password view toggle
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Role portal tab: 'manager' | 'user'
-  const [loginRole, setLoginRole] = useState(initialRole === 'user' ? 'user' : 'manager');
-
-  // Input states separated so employee email is NEVER prefilled or shown in manager portal
-  const [managerInput, setManagerInput] = useState('');
-  const [userInput, setUserInput] = useState(initialRole === 'user' ? initialEmail : '');
+  // Form Inputs
+  const [usernameOrEmail, setUsernameOrEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Validation & Error Handling
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
   const [approvalWarning, setApprovalWarning] = useState('');
-  const [successBanner, setSuccessBanner] = useState(initialSuccessMsg);
+  const [successBanner, setSuccessBanner] = useState(initialSuccessMsg || '');
 
   useEffect(() => {
-    if (initialEmail && initialRole === 'user') {
-      setUserInput(initialEmail);
-    }
-    if (initialRole) {
-      setLoginRole(initialRole === 'user' ? 'user' : 'manager');
+    if (initialEmail) {
+      setUsernameOrEmail(initialEmail);
     }
     if (initialSuccessMsg) {
       setSuccessBanner(initialSuccessMsg);
     }
-  }, [initialEmail, initialRole, initialSuccessMsg]);
+  }, [initialEmail, initialSuccessMsg]);
 
-  // Auto-remove success banner after 4 seconds
+  // Auto-remove success banner after 5 seconds
   useEffect(() => {
     if (successBanner) {
       const timer = setTimeout(() => {
         setSuccessBanner('');
-      }, 4000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [successBanner]);
 
-  const currentIdentifier = loginRole === 'manager' ? managerInput : userInput;
-
   const validate = () => {
     const errors = {};
-    if (!currentIdentifier.trim()) {
+    if (!usernameOrEmail.trim()) {
       errors.usernameOrEmail = 'Username or email address is required';
     }
     if (!password) {
       errors.password = 'Password is required';
     } else if (password.length < 4) {
-      errors.password = 'Password must be at least 4 characters';
+      errors.password = 'Password must be at least 4 characters long';
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -80,18 +70,18 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
     setGeneralError('');
     setApprovalWarning('');
     setSuccessBanner('');
+
     if (!validate()) return;
 
     setIsLoading(true);
-    const res = await login(currentIdentifier.trim(), password);
+    const res = await login(usernameOrEmail.trim(), password);
     setIsLoading(false);
 
     if (!res.success) {
       if (res.status === 403 || res.approvalStatus) {
         setApprovalWarning(res.message);
       } else {
-        // Generic error message: don't specify whether email or password was wrong
-        setGeneralError('Invalid email/username or password. Please check your credentials.');
+        setGeneralError(res.message || 'Invalid username/email or password. Please verify your credentials.');
       }
     }
   };
@@ -102,7 +92,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
         onBackToLogin={() => setShowForgotPassword(false)}
         onSuccessReset={({ email, message }) => {
           if (email) {
-            setUserInput(email);
+            setUsernameOrEmail(email);
           }
           setShowForgotPassword(false);
           if (message) setSuccessBanner(message);
@@ -113,123 +103,25 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
 
   return (
     <div className="login-page-wrapper">
-      <div
-        className="login-card"
-        style={{
-          maxWidth: '520px',
-          width: '100%',
-          padding: '36px 36px 32px',
-          borderRadius: '24px',
-          boxShadow: '0 20px 45px -15px rgba(0, 0, 0, 0.1), 0 0 1px 1px rgba(0, 0, 0, 0.03)',
-        }}
-      >
-        {/* Header Block */}
-        <div className="login-header-block" style={{ marginBottom: '22px' }}>
-          <div
-            className="login-icon-box"
-            style={{
-              background:
-                loginRole === 'manager'
-                  ? 'linear-gradient(135deg, #2563eb, #3b82f6)'
-                  : 'linear-gradient(135deg, #059669, #10b981)',
-              boxShadow:
-                loginRole === 'manager'
-                  ? '0 6px 18px rgba(37, 99, 235, 0.28)'
-                  : '0 6px 18px rgba(5, 150, 105, 0.28)',
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-            }}
-          >
-            {loginRole === 'manager' ? (
-              <ShieldCheck size={30} color="#ffffff" />
-            ) : (
-              <User size={30} color="#ffffff" />
-            )}
+      <div className="login-card">
+        {/* Top Enterprise Logo & Header */}
+        <div className="login-header-block">
+          <div className="login-icon-box">
+            <Building2 size={28} color="#ffffff" />
           </div>
-          <h1 className="login-title" style={{ fontSize: '1.65rem', marginBottom: 0 }}>
-            {loginRole === 'manager' ? 'Manager Portal' : 'Employee Login'}
-          </h1>
+          <h1 className="login-title">Sign In</h1>
+          <p className="login-subtitle">
+            Hierarchy-Based Task & Employee Management System
+          </p>
         </div>
 
-        {/* Dual Role Toggle Switch Tabs */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '6px',
-            background: '#f1f5f9',
-            padding: '5px',
-            borderRadius: '12px',
-            marginBottom: '22px',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setLoginRole('manager');
-              setGeneralError('');
-              setSuccessBanner(''); // Ensure registration msg is only shown on user tab
-            }}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '9px',
-              border: 'none',
-              background: loginRole === 'manager' ? '#2563eb' : 'transparent',
-              color: loginRole === 'manager' ? '#ffffff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow:
-                loginRole === 'manager' ? '0 2px 6px rgba(37, 99, 235, 0.25)' : 'none',
-            }}
-          >
-            <Shield size={16} />
-            <span>Manager Portal</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setLoginRole('user');
-              setGeneralError('');
-            }}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '9px',
-              border: 'none',
-              background: loginRole === 'user' ? '#059669' : 'transparent',
-              color: loginRole === 'user' ? '#ffffff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow:
-                loginRole === 'user' ? '0 2px 6px rgba(5, 150, 105, 0.25)' : 'none',
-            }}
-          >
-            <User size={16} />
-            <span>User Portal</span>
-          </button>
-        </div>
-
-        {/* Success Banner (e.g. After Registration) - ONLY shown on Employee/User tab */}
-        {loginRole === 'user' && successBanner && (
+        {/* Success Banner */}
+        {successBanner && (
           <div
             style={{
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
-              borderRadius: '12px',
+              borderRadius: '10px',
               padding: '12px 16px',
               display: 'flex',
               alignItems: 'center',
@@ -238,7 +130,6 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
               fontSize: '0.875rem',
               fontWeight: 500,
               marginBottom: '18px',
-              animation: 'fadeIn 0.3s ease',
             }}
           >
             <CheckCircle2 size={18} color="#059669" />
@@ -246,22 +137,20 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
           </div>
         )}
 
-        {/* Manager Approval Warning Banner */}
+        {/* Account Approval Warning Banner */}
         {approvalWarning && (
           <div
             style={{
               background: '#fffbeb',
               border: '1px solid #fde68a',
-              borderRadius: '12px',
-              padding: '13px 16px',
+              borderRadius: '10px',
+              padding: '12px 16px',
               display: 'flex',
               alignItems: 'flex-start',
               gap: '10px',
               color: '#92400e',
               fontSize: '0.875rem',
-              fontWeight: 500,
               marginBottom: '18px',
-              animation: 'fadeIn 0.3s ease',
             }}
           >
             <ShieldAlert size={20} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -274,20 +163,21 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
           </div>
         )}
 
-        {/* Error Alert */}
+        {/* Error Alert Banner */}
         {generalError && (
           <div
             className="alert alert-danger"
             role="alert"
-            style={{ marginBottom: '18px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ marginBottom: '18px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <AlertCircle size={18} />
             <span>{generalError}</span>
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Official Login Form */}
         <form onSubmit={handleSubmit} noValidate>
+          {/* Username / Email Field */}
           <div className="form-group" style={{ marginBottom: '16px' }}>
             <label className="form-label" htmlFor="usernameOrEmail">
               Username or Email <span className="required">*</span>
@@ -311,22 +201,14 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
                 type="text"
                 className="form-control"
                 style={{ paddingLeft: '38px' }}
-                placeholder={
-                  loginRole === 'manager'
-                    ? 'Enter manager username or email'
-                    : 'Enter employee username or email'
-                }
-                value={loginRole === 'manager' ? managerInput : userInput}
+                placeholder="Enter username or email address"
+                value={usernameOrEmail}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  if (loginRole === 'manager') {
-                    setManagerInput(val);
-                  } else {
-                    setUserInput(val);
-                  }
+                  setUsernameOrEmail(e.target.value);
                   if (fieldErrors.usernameOrEmail) {
                     setFieldErrors((prev) => ({ ...prev, usernameOrEmail: '' }));
                   }
+                  if (generalError) setGeneralError('');
                 }}
                 disabled={isLoading}
                 autoComplete="username"
@@ -337,7 +219,8 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
             )}
           </div>
 
-          <div className="form-group" style={{ marginBottom: '24px' }}>
+          {/* Password Field */}
+          <div className="form-group" style={{ marginBottom: '22px' }}>
             <label className="form-label" htmlFor="password">
               Password <span className="required">*</span>
             </label>
@@ -360,20 +243,21 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 className="form-control"
-                style={{ paddingLeft: '38px', paddingRight: '42px' }}
-                placeholder="Enter your account password"
+                style={{ paddingLeft: '38px', paddingRight: '40px' }}
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (fieldErrors.password) {
                     setFieldErrors((prev) => ({ ...prev, password: '' }));
                   }
+                  if (generalError) setGeneralError('');
                 }}
                 disabled={isLoading}
                 autoComplete="current-password"
               />
 
-              {/* Show / Hide Eye Button */}
+              {/* Show / Hide Eye Toggle */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -384,13 +268,12 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
-                  color: showPassword ? (loginRole === 'manager' ? '#2563eb' : '#059669') : '#94a3b8',
+                  color: showPassword ? '#2563eb' : '#94a3b8',
                   cursor: 'pointer',
                   padding: '4px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '4px',
                 }}
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -400,6 +283,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
             {fieldErrors.password && (
               <span className="form-error-msg">{fieldErrors.password}</span>
             )}
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
               <button
                 type="button"
@@ -407,12 +291,11 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: loginRole === 'manager' ? '#2563eb' : '#059669',
+                  color: '#2563eb',
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   padding: 0,
-                  textDecoration: 'none',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px',
@@ -424,68 +307,58 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialRole = 'ma
             </div>
           </div>
 
+          {/* Login Submit Button */}
           <button
             type="submit"
             className="btn btn-primary"
             style={{
               width: '100%',
-              padding: '13px',
-              borderRadius: '12px',
-              background:
-                loginRole === 'manager'
-                  ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'
-                  : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-              borderColor: loginRole === 'manager' ? '#1d4ed8' : '#047857',
-              boxShadow:
-                loginRole === 'manager'
-                  ? '0 3px 12px rgba(37, 99, 235, 0.3)'
-                  : '0 3px 12px rgba(5, 150, 105, 0.3)',
+              padding: '12px',
+              borderRadius: '10px',
+              fontWeight: 600,
+              fontSize: '0.95rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              fontWeight: 600,
-              fontSize: '0.95rem',
             }}
             disabled={isLoading}
           >
             {isLoading ? (
-              <span>Authenticating...</span>
+              <span>Signing in...</span>
             ) : (
               <>
                 <LogIn size={18} />
-                <span>
-                  Sign In to {loginRole === 'manager' ? 'Manager Portal' : 'Employee Workspace'}
-                </span>
+                <span>Sign In</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Register CTA Link - Accessible from both Manager and Employee portals */}
+        {/* Register Option */}
         <div
           style={{
-            marginTop: '22px',
-            paddingTop: '18px',
-            borderTop: '1px solid #e2e8f0',
+            marginTop: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--border-color)',
             textAlign: 'center',
-            fontSize: '0.875rem',
-            color: '#475569',
+            fontSize: '0.85rem',
+            color: 'var(--text-muted)',
           }}
         >
-          <span>Don't have an account? </span>
+          <span>Need an employee account? </span>
           <button
             type="button"
             onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
             style={{
               background: 'transparent',
               border: 'none',
-              color: loginRole === 'manager' ? '#2563eb' : '#059669',
+              color: '#2563eb',
               fontWeight: 700,
               cursor: 'pointer',
               textDecoration: 'underline',
               padding: '0 2px',
-              fontSize: '0.875rem',
+              fontSize: '0.85rem',
             }}
           >
             Register

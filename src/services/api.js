@@ -28,7 +28,6 @@ export const getApiBaseUrl = () => {
 };
 
 const getBaseUrl = () => getApiBaseUrl();
-const API_BASE_URL = getApiBaseUrl();
 
 // Fast, timeout-protected fetch helper with 15s timeout
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
@@ -77,7 +76,7 @@ export const api = {
   },
 
   async login(usernameOrEmail, password) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usernameOrEmail, password }),
@@ -93,7 +92,7 @@ export const api = {
   },
 
   async forgotPassword(usernameOrEmail) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/forgot-password`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usernameOrEmail }),
@@ -108,7 +107,7 @@ export const api = {
   },
 
   async verifyOtp(usernameOrEmail, otp) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/verify-otp`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usernameOrEmail, otp }),
@@ -123,7 +122,7 @@ export const api = {
   },
 
   async resetPassword(usernameOrEmail, otp, newPassword) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/reset-password`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usernameOrEmail, otp, newPassword }),
@@ -138,7 +137,7 @@ export const api = {
   },
 
   async getProfile() {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/me`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -152,7 +151,7 @@ export const api = {
   },
 
   async updateProfile(profileData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/profile`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/auth/profile`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(profileData),
@@ -179,7 +178,7 @@ export const api = {
     if (params.myTasksOnly) query.append('myTasksOnly', 'true');
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks${queryString}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks${queryString}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -195,7 +194,7 @@ export const api = {
     if (params.myTasksOnly) query.append('myTasksOnly', 'true');
     const queryString = query.toString() ? `?${query.toString()}` : '';
 
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks/stats${queryString}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks/stats${queryString}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -207,7 +206,7 @@ export const api = {
   },
 
   async createTask(taskData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(taskData),
@@ -220,7 +219,7 @@ export const api = {
   },
 
   async updateTask(id, taskData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks/${id}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(taskData),
@@ -233,7 +232,7 @@ export const api = {
   },
 
   async updateTaskStatus(id, status, completionRemark = '') {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks/${id}/status`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks/${id}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ status, completionRemark }),
@@ -250,7 +249,7 @@ export const api = {
   },
 
   async deleteTask(id) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/tasks/${id}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/tasks/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -263,7 +262,7 @@ export const api = {
 
   // Notification / Manager Inbox API
   async getNotifications() {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/notifications`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/notifications`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -275,7 +274,7 @@ export const api = {
   },
 
   async markNotificationRead(id) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/notifications/${id}/read`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/notifications/${id}/read`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
     });
@@ -287,7 +286,7 @@ export const api = {
   },
 
   async markAllNotificationsRead() {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/notifications/mark-all-read`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/notifications/mark-all-read`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
     });
@@ -299,7 +298,7 @@ export const api = {
   },
 
   async deleteNotification(id) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/notifications/${id}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/notifications/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -311,7 +310,7 @@ export const api = {
   },
 
   async clearNotifications() {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/notifications`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/notifications`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -334,7 +333,7 @@ export const api = {
     if (params.department && params.department !== 'all') query.append('department', params.department);
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users${queryString}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users${queryString}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -346,7 +345,7 @@ export const api = {
   },
 
   async createUser(userData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(userData),
@@ -359,7 +358,7 @@ export const api = {
   },
 
   async updateUser(id, userData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users/${id}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(userData),
@@ -372,7 +371,7 @@ export const api = {
   },
 
   async deleteUser(id) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users/${id}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -390,7 +389,7 @@ export const api = {
     if (params.search) query.append('search', params.search);
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users/approvals${queryString}`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users/approvals${queryString}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -402,7 +401,7 @@ export const api = {
   },
 
   async updateUserApproval(id, approvalData) {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/users/${id}/approval`, {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users/${id}/approval`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(approvalData),
@@ -414,3 +413,45 @@ export const api = {
     return data;
   },
 };
+
+// ==========================================
+// Hierarchy API Service
+// ==========================================
+export const hierarchyApi = {
+  async getOrganizationHierarchy() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/hierarchy`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch organizational hierarchy');
+    }
+    return data;
+  },
+
+  async getReportingChain(userId) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/hierarchy/chain/${userId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch reporting chain');
+    }
+    return data;
+  },
+
+  async getSubordinates(userId) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/hierarchy/subordinates/${userId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch subordinates');
+    }
+    return data;
+  },
+};
+

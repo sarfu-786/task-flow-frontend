@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../context/TaskContext';
 import { useAuth } from '../../context/AuthContext';
 import { useUserManagement } from '../../context/UserContext';
@@ -6,20 +6,28 @@ import { MetricCard } from './MetricCard';
 import { UserWorkModal } from './UserWorkModal';
 import { EmployeeDrilldownModal } from './EmployeeDrilldownModal';
 import { ManagerTasksDrilldownModal } from './ManagerTasksDrilldownModal';
+import { SuperiorDetailModal } from './SuperiorDetailModal';
 import {
   Users,
   CheckCircle2,
   Clock,
   ListTodo,
-  ArrowRight,
-  Eye,
   UserCheck,
+  ShieldCheck,
+  PlusCircle,
+  FolderKanban,
+  ChevronRight,
+  User,
+  ExternalLink,
 } from 'lucide-react';
 
 export const ManagerDashboard = ({ setActiveSection }) => {
-  const { tasks } = useTasks();
-  const { user } = useAuth();
+  const { tasks, openCreateModal: openCreateTaskModal } = useTasks();
+  const { user: currentUser } = useAuth();
   const { users } = useUserManagement();
+
+  // Superior Detail Popup Modal State
+  const [isSuperiorModalOpen, setIsSuperiorModalOpen] = useState(false);
 
   // Individual User Work Modal State (1-Click user drilldown)
   const [selectedUserForWork, setSelectedUserForWork] = useState(null);
@@ -29,20 +37,21 @@ export const ManagerDashboard = ({ setActiveSection }) => {
   // Employee Directory Drilldown Modal State
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeDeptFilter, setEmployeeDeptFilter] = useState('all');
-  const [employeeModalTitle, setEmployeeModalTitle] = useState('Employee Directory');
+  const [employeeModalTitle, setEmployeeModalTitle] = useState('My Reporting Team');
 
   // Tasks Drilldown Modal State (Completed, In Progress, Pending To-Do)
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [tasksFilter, setTasksFilter] = useState('all');
-  const [tasksModalTitle, setTasksModalTitle] = useState('Tasks Overview');
+  const [tasksModalTitle, setTasksModalTitle] = useState('Team Tasks Overview');
 
-  const openEmployeeDrilldown = (dept = 'all', title = 'Employee Directory') => {
+
+  const openEmployeeDrilldown = (dept = 'all', title = 'My Reporting Team') => {
     setEmployeeDeptFilter(dept);
     setEmployeeModalTitle(title);
     setIsEmployeeModalOpen(true);
   };
 
-  const openTasksDrilldown = (status = 'all', title = 'Tasks Overview') => {
+  const openTasksDrilldown = (status = 'all', title = 'Team Tasks Overview') => {
     setTasksFilter(status);
     setTasksModalTitle(title);
     setIsTasksModalOpen(true);
@@ -74,72 +83,109 @@ export const ManagerDashboard = ({ setActiveSection }) => {
     };
   }, [isEmployeeModalOpen, isWorkModalOpen, isTasksModalOpen]);
 
-  // Filter ONLY active approved regular employees (exclude Rejected/Pending users and Managers)
-  const employeeUsers = users.filter(
-    (u) =>
-      u.status !== 'Rejected' &&
-      u.status !== 'Pending' &&
-      (u.role === 'User' ||
-        (!u.role &&
-          u.role !== 'Manager' &&
-          u.role !== 'Executive' &&
-          u.role !== 'Administrator'))
-  );
+  // Active Approved Users
+  const activeUsers = users.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
-  const totalEmployees = employeeUsers.length;
-  const completedTasksCount = tasks.filter((t) => t.status === 'Completed').length;
-  const inProgressTasksCount = tasks.filter((t) => t.status === 'In Progress').length;
-  const pendingTasksCount = tasks.filter((t) => t.status === 'To Do').length;
+  // Find subordinates reporting to this Manager
+  const currentUserId = currentUser?._id ? currentUser._id.toString() : '';
+  const currentUserName = (currentUser?.name || '').toLowerCase();
+
+  const directSubordinates = activeUsers.filter((u) => {
+    if (u._id === currentUserId) return false;
+    const repId = u.reportsTo ? u.reportsTo.toString() : '';
+    const repName = (u.reportsToName || '').toLowerCase();
+    return (repId && repId === currentUserId) || (repName && repName.includes(currentUserName));
+  });
+
+  // Team members list: active subordinates belonging to this manager
+  const teamMembers = activeUsers.filter((u) => u._id !== currentUserId);
+
+  const teamNames = [
+    currentUserName,
+    (currentUser?.username || '').toLowerCase(),
+    ...teamMembers.map((m) => (m.name || '').toLowerCase()),
+    ...teamMembers.map((m) => (m.username || '').toLowerCase()),
+  ];
+
+  // Team tasks
+  const teamTasks = tasks.filter((t) => {
+    const assigned = (t.assignedTo || '').toLowerCase();
+    return teamNames.includes(assigned);
+  });
+
+  const totalTeamMembers = teamMembers.length;
+  const completedTasksCount = teamTasks.filter((t) => t.status === 'Completed').length;
+  const inProgressTasksCount = teamTasks.filter((t) => t.status === 'In Progress').length;
+  const pendingTasksCount = teamTasks.filter((t) => t.status === 'To Do').length;
 
   return (
-    <div className="manager-dashboard-container">
-      {/* Header Banner */}
+    <div className="manager-dashboard-container" style={{ paddingBottom: '36px' }}>
+      {/* Header Banner - Clean, Minimal & Informative */}
       <div
         className="section-header"
         style={{
+          marginBottom: '20px',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '14px',
         }}
       >
         <div>
-          <h2 className="section-title">Manager Dashboard</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h2 className="section-title" style={{ margin: 0 }}>Manager Dashboard</h2>
+            {/* Interactive Reporting Superior Tag with Hover & Click Popup */}
+            <div
+              onClick={() => setIsSuperiorModalOpen(true)}
+              className="interactive-superior-badge"
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                padding: '4px 12px',
+                borderRadius: '999px',
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                border: '1px solid #bfdbfe',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 1px 3px rgba(37, 99, 235, 0.08)',
+              }}
+              title="Click to view superior reporting details in popup"
+            >
+              <ShieldCheck size={14} color="#2563eb" />
+              <span>Reports To: {currentUser?.reportsToName || 'Sarfaraj Ahmad (Super Admin)'}</span>
+              <ExternalLink size={11} color="#2563eb" />
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            className="btn btn-secondary"
-            onClick={() => setActiveSection('user')}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Users size={16} />
-            <span>Manage Users</span>
-          </button>
-
-          <button
-            className="btn btn-primary"
-            onClick={() => setActiveSection('tasks')}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <span>Go to Task Management</span>
-            <ArrowRight size={16} />
-          </button>
-        </div>
+        {/* Quick Assign Task */}
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={openCreateTaskModal}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <PlusCircle size={16} />
+          <span>Assign Task</span>
+        </button>
       </div>
 
       {/* Top 4 Interactive Metric Cards */}
       <div className="stats-grid">
-        {/* Total Employees */}
+        {/* Total Direct Subordinates */}
         <MetricCard
-          title="Total Employees"
-          value={totalEmployees}
+          title="Reporting Team"
+          value={totalTeamMembers}
           icon={Users}
           color="#0284c7"
           bgLight="#f0f9ff"
           isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Employee Directory')}
+          onClick={() => openEmployeeDrilldown('all', 'My Reporting Team')}
         />
 
         {/* In Progress Tasks */}
@@ -150,7 +196,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#d97706"
           bgLight="#fffbeb"
           isClickable={true}
-          onClick={() => openTasksDrilldown('In Progress', 'In Progress Active Tasks')}
+          onClick={() => openTasksDrilldown('In Progress', 'Team In Progress Active Tasks')}
         />
 
         {/* Completed Tasks */}
@@ -161,7 +207,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#059669"
           bgLight="#ecfdf5"
           isClickable={true}
-          onClick={() => openTasksDrilldown('Completed', 'Completed Tasks & Workflows')}
+          onClick={() => openTasksDrilldown('Completed', 'Team Completed Tasks & Workflows')}
         />
 
         {/* Pending To-Do */}
@@ -172,91 +218,81 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           color="#6366f1"
           bgLight="#eef2ff"
           isClickable={true}
-          onClick={() => openTasksDrilldown('To Do', 'Pending To-Do Tasks')}
+          onClick={() => openTasksDrilldown('To Do', 'Team Pending To-Do Tasks')}
         />
       </div>
 
-      {/* Team Workload & 1-Click Employee Status Section */}
-      <div
-        className="card"
-        style={{
-          marginBottom: '24px',
-          border: '1px solid var(--border-color)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div className="card-header">
-          <div>
-            <h3 className="card-title" style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>
-              <Users size={20} color="#2563eb" />
-              <span>Team Workload & Member Status</span>
-            </h3>
-          </div>
+      {/* Direct Subordinates & Reporting Members Section */}
+      <div className="task-container-box" style={{ marginTop: '24px' }}>
+        <div className="task-nav-toolbar" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Direct Reporting Team Members
+              </h4>
+            </div>
 
-          <button
-            className="btn btn-secondary"
-            onClick={() => setActiveSection('user')}
-            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-          >
-            Manage Users Directory
-          </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setActiveSection && setActiveSection('tasks')}
+              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
+            >
+              <FolderKanban size={14} />
+              <span>Team Task Management</span>
+            </button>
+          </div>
         </div>
 
         <div className="table-responsive">
-          <table className="task-table">
+          <table className="custom-table">
             <thead>
               <tr>
-                <th style={{ width: '45px' }}>#</th>
-                <th>Employee</th>
-                <th>Role</th>
+                <th style={{ width: '60px', textAlign: 'center' }}>Sr. No</th>
+                <th>Team Member</th>
                 <th>Department</th>
-                <th>Task Breakdown</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th>Reporting Branch</th>
+                <th style={{ textAlign: 'center' }}>Completed</th>
+                <th style={{ textAlign: 'center' }}>Pending</th>
+                <th style={{ textAlign: 'right' }}>Workload</th>
               </tr>
             </thead>
             <tbody>
-              {employeeUsers.length === 0 ? (
+              {teamMembers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      No employees found
-                    </p>
-                    <p style={{ fontSize: '0.85rem' }}>
-                      Add employees in Team Management to view their workloads and statuses here.
-                    </p>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px' }}>
+                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>No direct reporting members found.</p>
                   </td>
                 </tr>
               ) : (
-                employeeUsers.map((member, index) => {
-                  const memberName = (member.name || '').trim().toLowerCase();
-                  const memberUsername = (member.username || '').trim().toLowerCase();
+                teamMembers.map((member, index) => {
+                  const memberName = (member.name || '').toLowerCase();
+                  const memberUsername = (member.username || '').toLowerCase();
                   const memberId = member._id ? member._id.toString() : '';
 
                   const memberTasks = tasks.filter((t) => {
-                    const taskAssigned = (t.assignedTo || '').trim().toLowerCase();
+                    const assigned = (t.assignedTo || '').toLowerCase();
                     const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
-
-                    return (
-                      taskAssigned === memberName ||
-                      taskAssigned === memberUsername ||
-                      (taskUserId && taskUserId === memberId) ||
-                      (memberName === 'aarav sharma' && taskAssigned === 'sarah jenkins')
-                    );
+                    return assigned === memberName || assigned === memberUsername || taskUserId === memberId;
                   });
 
-                  const userCompleted = memberTasks.filter((t) => t.status === 'Completed').length;
-                  const userInProgress = memberTasks.filter((t) => t.status === 'In Progress').length;
-                  const userPending = memberTasks.filter((t) => t.status === 'To Do').length;
+                  const completedCount = memberTasks.filter((t) => t.status === 'Completed').length;
+                  const pendingCount = memberTasks.filter((t) => t.status !== 'Completed').length;
 
                   return (
-                    <tr key={member._id || index}>
+                    <tr
+                      key={member._id}
+                      className="interactive-table-row"
+                      onClick={() => openUserWork(member, 'all')}
+                      title={`Click to view ${member.name}'s details and full workload in popup`}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td style={{ textAlign: 'center' }}>
                         <span className="sr-no-badge">{index + 1}</span>
                       </td>
 
-                      {/* Employee Info */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           {member.avatar ? (
                             <img
                               src={member.avatar}
@@ -266,7 +302,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
                                 height: '34px',
                                 borderRadius: '50%',
                                 objectFit: 'cover',
-                                border: '1.5px solid var(--border-color)',
+                                border: '1px solid var(--border-color)',
                               }}
                             />
                           ) : (
@@ -275,20 +311,20 @@ export const ManagerDashboard = ({ setActiveSection }) => {
                                 width: '34px',
                                 height: '34px',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+                                background: '#0284c7',
                                 color: '#ffffff',
                                 fontWeight: 700,
                                 fontSize: '0.8rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                               }}
                             >
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                           )}
                           <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                               {member.name}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -298,122 +334,72 @@ export const ManagerDashboard = ({ setActiveSection }) => {
                         </div>
                       </td>
 
-                      {/* Role Badge */}
                       <td>
-                        <span
-                          style={{
-                            fontSize: '0.75rem',
-                            padding: '3px 8px',
-                            borderRadius: 'var(--radius-sm)',
-                            fontWeight: 600,
-                            background: '#ecfdf5',
-                            color: '#047857',
-                            border: '1px solid #a7f3d0',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <UserCheck size={12} />
-                          <span>{member.role || 'User'}</span>
-                        </span>
-                      </td>
-
-                      {/* Department */}
-                      <td>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                           {member.department || 'Operations'}
                         </span>
                       </td>
 
-                      {/* Task Breakdown Buttons */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            onClick={() => openUserWork(member, 'Completed')}
-                            style={{
-                              border: '1px solid #a7f3d0',
-                              background: '#ecfdf5',
-                              color: '#047857',
-                              padding: '3px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                            title={`Inspect ${userCompleted} completed tasks for ${member.name}`}
-                          >
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669' }} />
-                            <span>{userCompleted} Done</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openUserWork(member, 'In Progress')}
-                            style={{
-                              border: '1px solid #fde68a',
-                              background: '#fffbeb',
-                              color: '#b45309',
-                              padding: '3px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                            title={`Inspect ${userInProgress} in-progress tasks for ${member.name}`}
-                          >
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d97706' }} />
-                            <span>{userInProgress} Active</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openUserWork(member, 'To Do')}
-                            style={{
-                              border: '1px solid #cbd5e1',
-                              background: '#f1f5f9',
-                              color: '#475569',
-                              padding: '3px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                            title={`Inspect ${userPending} pending tasks for ${member.name}`}
-                          >
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#64748b' }} />
-                            <span>{userPending} Pending</span>
-                          </button>
-                        </div>
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: '#1e40af',
+                            background: '#eff6ff',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #bfdbfe',
+                            display: 'inline-block',
+                          }}
+                        >
+                          Reports to: {member.reportsToName || `${currentUser?.name} (Manager)`}
+                        </span>
                       </td>
 
-                      {/* View All Work Action */}
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="badge-status badge-status-completed"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openUserWork(member, 'Completed');
+                          }}
+                          title={`Click to view ${member.name}'s completed tasks in popup`}
+                          style={{ cursor: 'pointer', padding: '4px 8px' }}
+                        >
+                          <CheckCircle2 size={12} />
+                          <span>{completedCount} Done</span>
+                        </button>
+                      </td>
+
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="badge-status badge-status-progress"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openUserWork(member, 'To Do');
+                          }}
+                          title={`Click to view ${member.name}'s pending tasks in popup`}
+                          style={{ cursor: 'pointer', padding: '4px 8px' }}
+                        >
+                          <Clock size={12} />
+                          <span>{pendingCount} Pending</span>
+                        </button>
+                      </td>
+
                       <td style={{ textAlign: 'right' }}>
                         <button
                           type="button"
                           className="btn btn-secondary"
-                          onClick={() => openUserWork(member, 'all')}
-                          style={{
-                            padding: '5px 10px',
-                            fontSize: '0.775rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openUserWork(member, 'all');
                           }}
-                          title={`Open all work assigned to ${member.name}`}
+                          style={{ fontSize: '0.75rem', padding: '4px 10px' }}
                         >
-                          <Eye size={13} />
-                          <span>View Work</span>
+                          Inspect Work
                         </button>
                       </td>
                     </tr>
@@ -424,6 +410,14 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           </table>
         </div>
       </div>
+
+      {/* 1-Click Superior Detail Popup Modal */}
+      <SuperiorDetailModal
+        isOpen={isSuperiorModalOpen}
+        onClose={() => setIsSuperiorModalOpen(false)}
+        superiorName={currentUser?.reportsToName}
+        currentUser={currentUser}
+      />
 
       {/* 1-Click Employee Drilldown Modal */}
       <EmployeeDrilldownModal
@@ -452,3 +446,4 @@ export const ManagerDashboard = ({ setActiveSection }) => {
     </div>
   );
 };
+

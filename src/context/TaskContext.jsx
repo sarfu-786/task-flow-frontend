@@ -74,9 +74,9 @@ export const TaskProvider = ({ children }) => {
     if (!silent) setLoading(true);
     setError('');
     try {
-      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+      const isManagerOrAdmin = user && ['Super Admin', 'Manager', 'Executive', 'Administrator'].includes(user.role);
       const res = await api.getTasks({
-        myTasksOnly: !isManager,
+        myTasksOnly: !isManagerOrAdmin,
       });
       if (res.success) {
         setTasks(res.tasks);
@@ -94,8 +94,8 @@ export const TaskProvider = ({ children }) => {
   const fetchStats = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
-      const res = await api.getStats({ myTasksOnly: !isManager });
+      const isManagerOrAdmin = user && ['Super Admin', 'Manager', 'Executive', 'Administrator'].includes(user.role);
+      const res = await api.getStats({ myTasksOnly: !isManagerOrAdmin });
       if (res.success) {
         setStats(res.stats);
         localStorage.setItem('taskflow_cached_stats', JSON.stringify(res.stats));
