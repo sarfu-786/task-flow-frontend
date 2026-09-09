@@ -19,6 +19,7 @@ import {
   ListTodo,
   FolderKanban,
   CheckSquare,
+  TrendingUp,
 } from 'lucide-react';
 
 export const TaskList = () => {
@@ -73,6 +74,14 @@ export const TaskList = () => {
             <span>Backend Work</span>
           </span>
         );
+      case 'sells':
+      case 'sales':
+        return (
+          <span className="badge-type badge-type-sells" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+            <TrendingUp size={13} />
+            <span>Sells</span>
+          </span>
+        );
       default:
         return <span className="badge-type">{type}</span>;
     }
@@ -81,14 +90,12 @@ export const TaskList = () => {
   const getStatusBadge = (task) => {
     const statusClasses = {
       'To Do': 'badge-status-todo',
-      'In Progress': 'badge-status-progress',
-      'Completed': 'badge-status-completed',
+
     };
 
     const nextStatusMap = {
       'To Do': 'In Progress',
-      'In Progress': 'Completed',
-      'Completed': 'To Do',
+
     };
 
     return (
@@ -185,6 +192,7 @@ export const TaskList = () => {
                 <option value="documentation">Documentation</option>
                 <option value="social media">Social Media</option>
                 <option value="backend work">Backend Work</option>
+                <option value="sells">Sells</option>
               </select>
 
               <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, marginLeft: '12px' }}>

@@ -315,7 +315,7 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
             }}
             title="Click to view & edit My Profile"
           >
-            {user?.avatar ? (
+            {user?.avatar && user.avatar.trim() ? (
               <img
                 src={user.avatar}
                 alt={user.name}

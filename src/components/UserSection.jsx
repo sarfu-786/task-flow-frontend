@@ -833,6 +833,7 @@ export const UserSection = () => {
                       <option value="Documentation">Documentation</option>
                       <option value="Backend Work">Backend Work</option>
                       <option value="Social Media">Social Media</option>
+                      <option value="Sells">Sells</option>
                       <option value="Operations">Operations</option>
                     </select>
                   </div>

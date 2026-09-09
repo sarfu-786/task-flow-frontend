@@ -181,6 +181,9 @@ export const UserWorkspace = ({ setActiveSection }) => {
         return { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8' };
       case 'backend work':
         return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' };
+      case 'sells':
+      case 'sales':
+        return { bg: '#fef3c7', color: '#b45309', border: '#fde68a' };
       default:
         return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' };
     }
@@ -674,6 +677,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
                   <option value="documentation">Documentation</option>
                   <option value="social media">Social Media</option>
                   <option value="backend work">Backend Work</option>
+                  <option value="sells">Sells</option>
                 </select>
               </div>
             </div>

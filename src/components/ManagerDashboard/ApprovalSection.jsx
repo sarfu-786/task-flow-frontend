@@ -25,6 +25,7 @@ const DEPARTMENT_OPTIONS = [
   'Documentation',
   'Backend',
   'Social Media',
+  'Sells',
 ];
 
 export const ApprovalSection = () => {

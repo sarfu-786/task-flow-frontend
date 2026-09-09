@@ -11,6 +11,7 @@ import {
   Database,
   Search,
   Users,
+  TrendingUp,
 } from 'lucide-react';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
@@ -118,6 +119,14 @@ export const ManagerTasksDrilldownModal = ({
           <span className="badge-type badge-type-backend">
             <Database size={12} />
             <span>Backend Work</span>
+          </span>
+        );
+      case 'sells':
+      case 'sales':
+        return (
+          <span className="badge-type badge-type-sells" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <TrendingUp size={12} />
+            <span>Sells</span>
           </span>
         );
       default:

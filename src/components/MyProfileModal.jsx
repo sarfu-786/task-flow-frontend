@@ -13,6 +13,7 @@ import {
   EyeOff,
   ArrowLeft,
   Lock,
+  Camera,
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -20,6 +21,7 @@ const DEPARTMENTS = [
   'Documentation',
   'Social Media',
   'Backend Work',
+  'Sells',
   'Operations',
   'Executive Leadership',
   'Design & Media',
@@ -40,6 +42,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     username: '',
     email: '',
     department: 'Internet Work',
+    avatar: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -61,6 +64,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
         username: user.username || '',
         email: user.email || '',
         department: user.department || 'Internet Work',
+        avatar: user.avatar || '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -118,6 +122,29 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     return Object.keys(errors).length === 0;
   };
 
+  // Handle selecting / uploading profile picture
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select a valid image file (PNG, JPG, JPEG, WEBP).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Image file size must be less than 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((prev) => ({ ...prev, avatar: reader.result }));
+      setErrorMessage('');
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Submit profile details update
   const handleSaveProfile = async (e) => {
     if (e) e.preventDefault();
@@ -135,6 +162,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
         username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         department: formData.department,
+        avatar: formData.avatar !== undefined ? formData.avatar : (user.avatar || ''),
       };
 
       const res = await updateProfile(payload);
@@ -333,25 +361,81 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {/* Clean Initial Letter Avatar */}
-                  <div
-                    style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '50%',
-                      background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
-                      color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
-                      fontSize: '1.4rem',
-                      fontWeight: 800,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                  {/* Clean Avatar with Camera Option at Corner */}
+                  <div style={{ position: 'relative', width: '58px', height: '58px', flexShrink: 0 }}>
+                    {formData.avatar && formData.avatar.trim() ? (
+                      <img
+                        src={formData.avatar}
+                        alt={formData.name || user.name}
+                        style={{
+                          width: '58px',
+                          height: '58px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '58px',
+                          height: '58px',
+                          borderRadius: '50%',
+                          background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
+                          color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
+                          fontSize: '1.4rem',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        }}
+                      >
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
+
+                    {/* Camera Button at the corner of name/avatar */}
+                    <label
+                      htmlFor="profile-picture-input"
+                      style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        border: '2px solid #ffffff',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+                        transition: 'all 0.15s ease',
+                      }}
+                      title="Select Profile Picture"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.12)';
+                        e.currentTarget.style.background = '#1d4ed8';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.background = '#2563eb';
+                      }}
+                    >
+                      <Camera size={12} />
+                      <input
+                        id="profile-picture-input"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarFileChange}
+                      />
+                    </label>
                   </div>
 
                   {/* Identity & Badges */}

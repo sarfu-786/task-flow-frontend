@@ -171,7 +171,20 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
               title="Account Menu"
               aria-label="Account Options Menu"
             >
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              {user?.avatar && user.avatar.trim() ? (
+                <img
+                  src={user.avatar}
+                  alt={user?.name || 'Account'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+              )}
             </button>
 
             {/* Dropdown Menu (Strictly 2 options: Edit Profile & Log Out) */}
