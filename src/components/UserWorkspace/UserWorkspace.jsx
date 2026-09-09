@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
+import { useUserManagement } from '../../context/UserContext';
 import { ManagerInboxModal } from '../ManagerDashboard/ManagerInboxModal';
 import {
   CheckCircle2,
@@ -19,16 +20,38 @@ import {
   Bell,
   Sparkles,
   Inbox,
+  Network,
+  Users,
 } from 'lucide-react';
 
-export const UserWorkspace = () => {
+export const UserWorkspace = ({ setActiveSection }) => {
   const { user } = useAuth();
   const { tasks, loading, completeTask, updateStatus, notifications, unreadCount } = useTasks();
+  const { users } = useUserManagement();
 
   // Active section popup modal state: null | 'all' | 'To Do' | 'In Progress' | 'Completed'
   const [activeModalSection, setActiveModalSection] = useState(null);
   const [modalSearch, setModalSearch] = useState('');
   const [modalTypeFilter, setModalTypeFilter] = useState('all');
+
+  // Subordinates calculation
+  const currentUserIdStr = (user?._id || user?.id || '').toString();
+  const currentUserName = (user?.name || '').toLowerCase().trim();
+  const mySubordinates = (users || []).filter((u) => {
+    if (!u) return false;
+    const uId = (u._id || u.id || '').toString();
+    if (uId === currentUserIdStr) return false;
+    const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+    const repName = (u.reportsToName || '').toLowerCase().trim();
+    const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+    return repId === currentUserIdStr || createdBy === currentUserIdStr || (currentUserName && repName.includes(currentUserName));
+  });
+
+  const handleViewHierarchyClick = () => {
+    if (setActiveSection) {
+      setActiveSection('hierarchy');
+    }
+  };
 
   // User Inbox Modal State
   const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
@@ -241,56 +264,93 @@ export const UserWorkspace = () => {
         </div>
       )}
 
-      {/* Header with Title and Open Inbox Quick Button */}
+      {/* Header with Title and Quick Action Buttons */}
       <div
         className="section-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
           marginBottom: '4px',
         }}
       >
         <div>
-          <h2 className="section-title">My Assigned Work</h2>
+          <h2 className="section-title" style={{ margin: 0 }}>My Workspace & Team</h2>
         </div>
 
-        {/* Dedicated My Inbox Button for User */}
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => setIsInboxModalOpen(true)}
-          style={{
-            position: 'relative',
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            borderColor: unreadCount > 0 ? '#10b981' : 'var(--border-color)',
-          }}
-          title="Open My Task Assignment Inbox"
-        >
-          <Inbox size={18} color={unreadCount > 0 ? '#34d399' : '#94a3b8'} />
-          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>My Task Inbox</span>
-          {unreadCount > 0 && (
-            <span
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '999px',
-                background: '#ef4444',
-                color: '#ffffff',
-                boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
-              }}
-            >
-              {unreadCount} new
-            </span>
-          )}
-        </button>
+        {/* Quick Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleViewHierarchyClick}
+            style={{
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+            }}
+            id="btn-user-workspace-view-hierarchy"
+            title="View your dedicated team hierarchy tree"
+          >
+            <Network size={16} color="#2563eb" />
+            <span>My Team Hierarchy</span>
+            {mySubordinates.length > 0 && (
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '1px 7px',
+                  borderRadius: '999px',
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  border: '1px solid #bfdbfe',
+                }}
+              >
+                {mySubordinates.length}
+              </span>
+            )}
+          </button>
+
+          {/* Dedicated My Inbox Button for User */}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setIsInboxModalOpen(true)}
+            style={{
+              position: 'relative',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              borderColor: unreadCount > 0 ? '#10b981' : 'var(--border-color)',
+            }}
+            title="Open My Task Assignment Inbox"
+          >
+            <Inbox size={18} color={unreadCount > 0 ? '#34d399' : '#94a3b8'} />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>My Task Inbox</span>
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
+                }}
+              >
+                {unreadCount} new
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* HORIZONTAL TASK ASSIGNMENT ALERT BANNER */}
@@ -434,7 +494,7 @@ export const UserWorkspace = () => {
             </div>
           </div>
 
-          {/* Tile 2: What Done (Completed) */}
+          {/* Tile 2: Completed */}
           <div
             onClick={() => openSectionModal('Completed')}
             className="user-workspace-metric-tile tile-completed"
@@ -442,7 +502,7 @@ export const UserWorkspace = () => {
           >
             <div>
               <span className="tile-label">
-                What Done (Completed)
+                Completed
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
                 <span className="tile-value val-green">{completedTasks.length}</span>
@@ -454,7 +514,7 @@ export const UserWorkspace = () => {
             </div>
           </div>
 
-          {/* Tile 3: What Incomplete (Ongoing) */}
+          {/* Tile 3: In Progress */}
           <div
             onClick={() => openSectionModal('In Progress')}
             className="user-workspace-metric-tile tile-progress"
@@ -462,7 +522,7 @@ export const UserWorkspace = () => {
           >
             <div>
               <span className="tile-label">
-                What Incomplete (Ongoing)
+                In Progress
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
                 <span className="tile-value val-amber">{inProgressTasks.length}</span>
@@ -474,7 +534,7 @@ export const UserWorkspace = () => {
             </div>
           </div>
 
-          {/* Tile 4: What To Do (Pending) */}
+          {/* Tile 4: To Do */}
           <div
             onClick={() => openSectionModal('To Do')}
             className="user-workspace-metric-tile tile-todo"
@@ -482,7 +542,7 @@ export const UserWorkspace = () => {
           >
             <div>
               <span className="tile-label">
-                What To Do (Pending)
+                To Do
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
                 <span className="tile-value val-purple">{todoTasks.length}</span>
@@ -549,10 +609,10 @@ export const UserWorkspace = () => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <h3 className="modal-title" style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem' }}>
-                      {activeModalSection === 'Completed' && 'What Done (Completed Tasks)'}
-                      {activeModalSection === 'In Progress' && 'What Incomplete (In Progress Work)'}
-                      {activeModalSection === 'To Do' && 'What To Do (Pending Tasks)'}
-                      {activeModalSection === 'all' && 'All Assigned Tasks Workspace'}
+                      {activeModalSection === 'Completed' && 'Completed Tasks'}
+                      {activeModalSection === 'In Progress' && 'In Progress Tasks'}
+                      {activeModalSection === 'To Do' && 'To Do Tasks'}
+                      {activeModalSection === 'all' && 'All Assigned Tasks'}
                     </h3>
                     <span
                       style={{
@@ -813,7 +873,7 @@ export const UserWorkspace = () => {
                           }}
                         >
                           <span style={{ fontWeight: 600, color: '#1d4ed8', display: 'block', fontSize: '0.72rem' }}>
-                            Manager Instructions (What To Do):
+                            Manager Instructions:
                           </span>
                           {task.remark}
                         </div>

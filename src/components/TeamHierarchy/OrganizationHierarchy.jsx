@@ -101,7 +101,7 @@ const buildClientHierarchy = (userList, taskList, rootUserOverride = null) => {
 
 export const OrganizationHierarchy = ({ setActiveSection }) => {
   const { user: currentUser } = useAuth();
-  const { tasks, openCreateModal } = useTasks();
+  const { tasks, openCreateModal: openTaskCreateModal } = useTasks();
   const { users, loading: usersLoading } = useUserManagement();
 
   const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
@@ -385,7 +385,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
   return (
     <div className="hierarchy-page-container">
       {/* Page Header */}
-      <div className="section-header" style={{ marginBottom: '18px' }}>
+      <div className="section-header" style={{ marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
@@ -406,6 +406,11 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
             <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
               {isSuperAdmin ? 'Organizational Hierarchy' : 'My Team Hierarchy'}
             </h2>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {isSuperAdmin
+                ? 'Complete organization tree across all departments'
+                : 'Your dedicated reporting branch (You at the top with your direct & indirect team below)'}
+            </p>
           </div>
         </div>
       </div>
@@ -682,7 +687,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                   className="btn btn-primary"
                   onClick={() => {
                     setIsDrawerOpen(false);
-                    openCreateModal();
+                    openTaskCreateModal();
                   }}
                   style={{ flex: 1.2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >

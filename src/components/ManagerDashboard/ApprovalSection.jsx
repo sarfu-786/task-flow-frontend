@@ -148,7 +148,7 @@ export const ApprovalSection = () => {
         <div>
           <h2 className="section-title">Registration Approvals</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Review pending employee sign-ups, assign working departments, and approve system access.
+            Review pending user sign-ups, assign working departments, and approve system access.
           </p>
         </div>
 

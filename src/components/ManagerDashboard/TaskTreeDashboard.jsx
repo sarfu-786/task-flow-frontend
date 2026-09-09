@@ -117,7 +117,7 @@ export const TaskTreeDashboard = ({
         description: 'Operational pipeline controlling active tasks, deadline tracking, priorities, and workflow execution states.',
         metrics: [
           { label: 'In Progress', value: inProgressTasksCount, color: '#d97706' },
-          { label: 'Pending To-Do', value: pendingTasksCount, color: '#6366f1' },
+          { label: 'To Do', value: pendingTasksCount, color: '#6366f1' },
           { label: 'Completed', value: completedTasksCount, color: '#059669' },
         ],
         children: ['E', 'D'],

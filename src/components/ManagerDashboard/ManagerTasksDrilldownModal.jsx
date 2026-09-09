@@ -369,7 +369,7 @@ export const ManagerTasksDrilldownModal = ({
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
                   <th>Task Description</th>
                   <th style={{ width: '140px' }}>Type of Work</th>
-                  <th style={{ width: '160px' }}>Assigned Employee</th>
+                  <th style={{ width: '160px' }}>Assigned User</th>
                   <th style={{ width: '120px' }}>Due Date</th>
                   <th style={{ width: '120px' }}>Status</th>
                   <th>Remark / Notes</th>

@@ -398,7 +398,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                         }}
                       >
                         <span style={{ fontWeight: 600, color: badgeColor, display: 'block', fontSize: '0.75rem' }}>
-                          {isAssignment ? 'Manager Instructions / What To Do:' : 'User Remark:'}
+                          {isAssignment ? 'Manager Instructions:' : 'User Remark:'}
                         </span>
                         "{notif.remark}"
                       </div>

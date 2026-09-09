@@ -230,7 +230,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
               }}
             >
               <CheckCircle2 size={15} />
-              <span>Completed Work ({completedTasks.length})</span>
+              <span>Completed ({completedTasks.length})</span>
             </button>
 
             <button
@@ -260,7 +260,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
               }}
             >
               <ListTodo size={15} />
-              <span>Pending To-Do ({todoTasks.length})</span>
+              <span>To Do ({todoTasks.length})</span>
             </button>
           </div>
 

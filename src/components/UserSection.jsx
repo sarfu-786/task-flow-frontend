@@ -77,7 +77,7 @@ export const UserSection = () => {
     setSelectedUserForWork(null);
   };
 
-  // Form state for Add/Edit employee
+  // Form state for Add/Edit user
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -111,12 +111,12 @@ export const UserSection = () => {
         avatar: selectedUser.avatar || '',
       });
     } else {
-      const defaultReportsTo = isManager
-        ? (currentUser?._id ? currentUser._id.toString() : (currentUser?.id || ''))
-        : (!isSuperAdmin ? (currentUser?.reportsTo ? currentUser.reportsTo.toString() : (currentUser?._id || '')) : '');
-      const defaultReportsToName = isManager
-        ? (currentUser?.name ? `${currentUser.name} (${currentUser.role || 'Manager'})` : '')
-        : (!isSuperAdmin ? (currentUser?.reportsToName || (currentUser?.name ? `${currentUser.name} (User)` : '')) : '');
+      const defaultReportsTo = isSuperAdmin
+        ? ''
+        : (currentUser?._id ? currentUser._id.toString() : (currentUser?.id || ''));
+      const defaultReportsToName = isSuperAdmin
+        ? ''
+        : (currentUser?.name ? `${currentUser.name} (${currentUser.role || 'User'})` : '');
 
       setFormData({
         name: '',
@@ -261,17 +261,32 @@ export const UserSection = () => {
   const startEntry = totalUsers > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const endEntry = Math.min(currentPage * itemsPerPage, totalUsers);
 
-  // Available managers/seniors to report to
-  let rawManagerOptions = users.filter(
-    (u) =>
-      u.status !== 'Rejected' &&
-      u.status !== 'Pending' &&
-      (u.role === 'Super Admin' || u.role === 'Manager' || u.role === 'Executive' || u.role === 'Administrator') &&
-      (!selectedUser || (selectedUser._id !== u._id && selectedUser.id !== u._id))
-  );
+  let rawManagerOptions = [];
+  if (isSuperAdmin) {
+    // Super Admin can set the user to report to ANY active user in the organization
+    rawManagerOptions = users.filter(
+      (u) =>
+        u.status !== 'Rejected' &&
+        u.status !== 'Pending' &&
+        (!selectedUser || ((selectedUser._id || selectedUser.id) !== (u._id || u.id)))
+    );
+  } else if (isManager) {
+    // Manager can assign subordinates to report to the Manager himself OR to any user who is under that manager in their branch
+    const currentUserIdStr = currentUser ? (currentUser._id || currentUser.id || '').toString() : '';
 
-  if (isManager && currentUser && !rawManagerOptions.some((u) => (u._id && u._id === currentUser._id) || (u.id && u.id === currentUser.id) || u.name === currentUser.name)) {
-    rawManagerOptions = [currentUser, ...rawManagerOptions];
+    const subordinatesUnderManager = users.filter((u) => {
+      if (!u || u.status === 'Rejected' || u.status === 'Pending') return false;
+      if (u.role === 'Super Admin') return false; // Exclude senior Super Admin
+      const uIdStr = (u._id || u.id || '').toString();
+      if (uIdStr === currentUserIdStr) return false;
+      if (selectedUser && ((selectedUser._id || selectedUser.id || '').toString() === uIdStr)) return false;
+      return true;
+    });
+
+    rawManagerOptions = currentUser ? [currentUser, ...subordinatesUnderManager] : subordinatesUnderManager;
+  } else {
+    // Regular User: newly created users report directly to themselves
+    rawManagerOptions = currentUser ? [currentUser] : [];
   }
   const managerOptions = rawManagerOptions;
 
@@ -293,7 +308,7 @@ export const UserSection = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Users className="text-primary" size={24} />
             <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
-              Employee Management
+              User Management
             </h2>
           </div>
         </div>
@@ -305,7 +320,7 @@ export const UserSection = () => {
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
           <UserPlus size={16} />
-          <span>Add Employee</span>
+          <span>Add User</span>
         </button>
       </div>
 
@@ -325,7 +340,7 @@ export const UserSection = () => {
             <input
               type="text"
               className="search-input-top"
-              placeholder="Search by employee name, email, role, or department..."
+              placeholder="Search by user name, email, role, or department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               id="employee-search-input"
@@ -346,7 +361,7 @@ export const UserSection = () => {
                 <option value="all">All Roles</option>
                 <option value="Super Admin">Super Admin</option>
                 <option value="Manager">Manager</option>
-                <option value="User">User / Employee</option>
+                <option value="User">User</option>
               </select>
             </div>
 
@@ -356,13 +371,13 @@ export const UserSection = () => {
           </div>
         </div>
 
-        {/* Employee Table */}
+        {/* User Table */}
         <div className="table-responsive">
           <table className="task-table">
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
-                <th>Employee Name & Email</th>
+                <th>User Name & Email</th>
                 <th>Role & Department</th>
                 <th>Reports To (Manager)</th>
                 <th style={{ textAlign: 'center' }}>Completed</th>
@@ -376,7 +391,7 @@ export const UserSection = () => {
                   <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)' }}>
                       <RefreshCw size={18} className="animate-spin" />
-                      <span>Loading employees...</span>
+                      <span>Loading users...</span>
                     </div>
                   </td>
                 </tr>
@@ -384,12 +399,12 @@ export const UserSection = () => {
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      No employees found
+                      No users found
                     </p>
                     <p style={{ fontSize: '0.85rem', margin: 0 }}>
                       {search || roleFilter !== 'all'
                         ? 'Try adjusting your search query or filter.'
-                        : 'Click "Add Employee" to create the first record.'}
+                        : 'Click "Add User" to create the first record.'}
                     </p>
                   </td>
                 </tr>
@@ -535,7 +550,7 @@ export const UserSection = () => {
                             type="button"
                             className="btn-action-update"
                             onClick={() => openEditModal(emp)}
-                            title="Edit Employee"
+                            title="Edit User"
                             id={`btn-edit-employee-${emp._id}`}
                           >
                             <Edit2 size={14} />
@@ -545,7 +560,7 @@ export const UserSection = () => {
                             type="button"
                             className="btn-action-delete"
                             onClick={() => openDeleteModal(emp)}
-                            title="Remove Employee"
+                            title="Remove User"
                             id={`btn-delete-employee-${emp._id}`}
                             disabled={currentUser && (currentUser._id === emp._id || currentUser.id === emp._id)}
                           >
@@ -567,7 +582,7 @@ export const UserSection = () => {
             <div className="pagination-info">
               Showing <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{startEntry}</span> to{' '}
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{endEntry}</span> of{' '}
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalUsers}</span> employees
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalUsers}</span> users
             </div>
 
             <div className="pagination-controls">
@@ -611,13 +626,13 @@ export const UserSection = () => {
         onClose={closeUserWork}
       />
 
-      {/* Add / Edit Employee Modal */}
+      {/* Add / Edit User Modal */}
       {isUserModalOpen && (
         <div className="modal-backdrop" onClick={closeUserModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <div className="modal-header">
               <h3 className="modal-title">
-                {modalMode === 'edit' ? 'Edit Employee Details' : 'Add New Employee'}
+                {modalMode === 'edit' ? 'Edit User Details' : 'Add New User'}
               </h3>
               <button
                 type="button"
@@ -735,7 +750,7 @@ export const UserSection = () => {
                     id="emp-name"
                     type="text"
                     className="form-control"
-                    placeholder="Enter employee full name"
+                    placeholder="Enter user full name"
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -755,7 +770,7 @@ export const UserSection = () => {
                       id="emp-email"
                       type="email"
                       className="form-control"
-                      placeholder="employee@example.com"
+                      placeholder="user@example.com"
                       value={formData.email}
                       onChange={(e) => {
                         setFormData({ ...formData, email: e.target.value });
@@ -797,7 +812,7 @@ export const UserSection = () => {
                       onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                       disabled={!isSuperAdmin && !isManager}
                     >
-                      <option value="User">User / Employee</option>
+                      <option value="User">User</option>
                       {isManager && <option value="Manager">Manager</option>}
                       {isSuperAdmin && <option value="Manager">Manager</option>}
                       {isSuperAdmin && <option value="Super Admin">Super Admin</option>}
@@ -832,6 +847,7 @@ export const UserSection = () => {
                     id="emp-reports-to"
                     className="form-control select-filter"
                     value={formData.reportsTo || ''}
+                    disabled={!isSuperAdmin && !isManager}
                     onChange={(e) => {
                       const selectedVal = e.target.value;
                       if (!selectedVal) {
@@ -846,27 +862,34 @@ export const UserSection = () => {
                         setFormData({
                           ...formData,
                           reportsTo: targetMgr?._id || targetMgr?.id || selectedVal,
-                          reportsToName: targetMgr ? `${targetMgr.name} (${targetMgr.role || 'Manager'})` : selectedVal,
+                          reportsToName: targetMgr ? `${targetMgr.name} (${targetMgr.role || 'User'})` : selectedVal,
                         });
                       }
                     }}
                   >
                     {isSuperAdmin && <option value="">Direct to Super Admin (Root)</option>}
-                    {managerOptions.map((u) => (
-                      <option key={u._id || u.id} value={u._id || u.id}>
-                        {u.name} ({u.role || 'Manager'} — {u.department || 'Operations'})
-                      </option>
-                    ))}
+                    {managerOptions.map((u) => {
+                      const isCurrentSelf = currentUser && ((currentUser._id && (u._id === currentUser._id || u.id === currentUser._id)) || (currentUser.name === u.name));
+                      return (
+                        <option key={u._id || u.id || u.name} value={u._id || u.id || u.name}>
+                          {u.name} ({u.role || 'User'} — {u.department || 'Operations'}){isCurrentSelf ? ' [You]' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                    Selecting a manager attaches this employee to their branch in the organizational hierarchy.
+                    {isSuperAdmin
+                      ? 'Selecting a manager attaches this user to their branch in the organizational hierarchy.'
+                      : isManager
+                      ? 'Select yourself or any team member under your branch that this user will report to.'
+                      : 'New users created by you will report directly to you in your personal hierarchy branch.'}
                   </span>
                 </div>
 
                 {/* Password (Optional for Edit) */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="emp-password">
-                    Password {modalMode === 'edit' ? '(Leave blank to keep unchanged)' : '<span className="required">*</span>'}
+                    Password
                   </label>
                   <input
                     id="emp-password"
@@ -900,12 +923,12 @@ export const UserSection = () => {
                   ) : modalMode === 'edit' ? (
                     <>
                       <Save size={15} />
-                      <span>Update Employee</span>
+                      <span>Update User</span>
                     </>
                   ) : (
                     <>
                       <UserPlus size={15} />
-                      <span>Create Employee</span>
+                      <span>Create User</span>
                     </>
                   )}
                 </button>
@@ -915,7 +938,7 @@ export const UserSection = () => {
         </div>
       )}
 
-      {/* Remove Employee Confirmation Modal */}
+      {/* Remove User Confirmation Modal */}
       {isDeleteModalOpen && userToDelete && (
         <div className="modal-backdrop" onClick={closeDeleteModal}>
           <div
@@ -940,7 +963,7 @@ export const UserSection = () => {
                   <AlertTriangle size={18} />
                 </div>
                 <h3 className="modal-title" style={{ color: '#dc2626' }}>
-                  Delete Employee
+                  Delete User
                 </h3>
               </div>
               <button
@@ -955,7 +978,7 @@ export const UserSection = () => {
 
             <div className="modal-body">
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
-                Are you sure you want to delete employee{' '}
+                Are you sure you want to delete user{' '}
                 <strong style={{ color: 'var(--text-primary)' }}>{userToDelete.name}</strong>?
               </p>
               <p style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '8px', marginBottom: 0 }}>

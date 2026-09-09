@@ -16,7 +16,7 @@ export const EmployeeDrilldownModal = ({
   isOpen,
   onClose,
   initialDepartmentFilter = 'all',
-  modalTitle = 'Employee Details & Team Directory',
+  modalTitle = 'User Details & Team Directory',
   onOpenUserWork,
 }) => {
   const { users } = useUserManagement();
@@ -101,7 +101,7 @@ export const EmployeeDrilldownModal = ({
                   border: '1px solid #bfdbfe',
                 }}
               >
-                {filtered.length} Employee{filtered.length === 1 ? '' : 's'}
+                {filtered.length} User{filtered.length === 1 ? '' : 's'}
               </span>
             </div>
           </div>
@@ -130,7 +130,7 @@ export const EmployeeDrilldownModal = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search employees by name, email, username..."
+                placeholder="Search users by name, email, username..."
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 style={{ padding: '7px 12px', fontSize: '0.85rem' }}
@@ -165,7 +165,7 @@ export const EmployeeDrilldownModal = ({
               <thead>
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
-                  <th>Employee Info</th>
+                  <th>User Info</th>
                   <th>Department</th>
                   <th style={{ textAlign: 'center' }}>Workload Status</th>
                   <th style={{ width: '130px' }}>Joined Date</th>
@@ -177,10 +177,10 @@ export const EmployeeDrilldownModal = ({
                   <tr>
                     <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        No employees found
+                        No users found
                       </p>
                       <p style={{ fontSize: '0.85rem' }}>
-                        No active employee team members registered in this category.
+                        No active user team members registered in this category.
                       </p>
                     </td>
                   </tr>
@@ -315,7 +315,7 @@ export const EmployeeDrilldownModal = ({
                               }}
                               title={`${userPending} Pending Tasks`}
                             >
-                              {userPending} To-Do
+                              {userPending} To Do
                             </span>
                           </div>
                         </td>

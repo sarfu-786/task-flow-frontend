@@ -94,7 +94,7 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 </div>
               )}
               <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {isSuperAdmin ? 'Super Admin' : isManager ? 'Manager Console' : 'Employee Workspace'}
+                {isSuperAdmin ? 'Super Admin' : isManager ? 'Manager Console' : 'User Workspace'}
               </span>
             </div>
 
@@ -137,12 +137,12 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
 
               <button
                 type="button"
-                className={`nav-item-btn ${activeSection === 'employees' ? 'active' : ''}`}
+                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
                 onClick={() => handleNavClick('employees')}
                 id="nav-employees-mgmt"
               >
                 <Users className="nav-icon" />
-                <span>Employees</span>
+                <span>Users</span>
               </button>
 
               <button
@@ -206,12 +206,12 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
 
               <button
                 type="button"
-                className={`nav-item-btn ${activeSection === 'employees' ? 'active' : ''}`}
+                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
                 onClick={() => handleNavClick('employees')}
                 id="nav-manager-employees"
               >
                 <Users className="nav-icon" />
-                <span>Employees</span>
+                <span>Users</span>
               </button>
 
               <button
@@ -251,7 +251,7 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
               )}
             </>
           ) : (
-            /* Employee / User Navigation Options */
+            /* User Navigation Options */
             <>
               <button
                 type="button"
@@ -261,6 +261,26 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
               >
                 <Briefcase className="nav-icon" />
                 <span>Dashboard / My Tasks</span>
+              </button>
+
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'hierarchy' ? 'active' : ''}`}
+                onClick={() => handleNavClick('hierarchy')}
+                id="nav-user-hierarchy"
+              >
+                <Network className="nav-icon" />
+                <span>My Team Hierarchy</span>
+              </button>
+
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
+                onClick={() => handleNavClick('employees')}
+                id="nav-user-team"
+              >
+                <Users className="nav-icon" />
+                <span>Users</span>
               </button>
             </>
           )}

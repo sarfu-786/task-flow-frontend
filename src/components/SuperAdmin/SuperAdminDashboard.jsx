@@ -37,13 +37,13 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
 
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeDeptFilter, setEmployeeDeptFilter] = useState('all');
-  const [employeeModalTitle, setEmployeeModalTitle] = useState('All Employees');
+  const [employeeModalTitle, setEmployeeModalTitle] = useState('All Users');
 
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [tasksFilter, setTasksFilter] = useState('all');
   const [tasksModalTitle, setTasksModalTitle] = useState('Tasks Overview');
 
-  const openEmployeeDrilldown = (dept = 'all', title = 'Organization Employees') => {
+  const openEmployeeDrilldown = (dept = 'all', title = 'Organization Users') => {
     setEmployeeDeptFilter(dept);
     setEmployeeModalTitle(title);
     setIsEmployeeModalOpen(true);
@@ -170,7 +170,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
           >
             <Users size={16} />
-            <span>Manage Employees</span>
+            <span>Manage Users</span>
           </button>
 
           <button
@@ -194,7 +194,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
             gap: '18px',
           }}
         >
-          {/* 1. Total Employees */}
+          {/* 1. Total Users */}
           <div
             className="superadmin-kpi-card"
             style={{
@@ -210,7 +210,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
               boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
               transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
-            onClick={() => openEmployeeDrilldown('all', 'All Employees')}
+            onClick={() => openEmployeeDrilldown('all', 'All Users')}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
               e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(2, 132, 199, 0.15)';
@@ -223,7 +223,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0284c7' }}>Total Employees</span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0284c7' }}>Total Users</span>
               <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
                 <Users size={20} />
               </div>
