@@ -27,11 +27,12 @@ import {
   Upload,
   Camera,
   Crown,
+  PlusCircle,
 } from 'lucide-react';
 
 export const UserSection = () => {
   const { user: currentUser, updateUserProfile } = useAuth();
-  const { tasks } = useTasks();
+  const { tasks, openCreateModal: openTaskCreateModal } = useTasks();
   const {
     users,
     paginatedUsers,
@@ -96,6 +97,7 @@ export const UserSection = () => {
 
   const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
   const isManager = currentUser && ['Manager', 'Executive', 'Administrator'].includes(currentUser.role);
+  const isRegularUser = !isSuperAdmin && !isManager;
 
   useEffect(() => {
     if (modalMode === 'edit' && selectedUser) {
@@ -313,15 +315,29 @@ export const UserSection = () => {
           </div>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={openCreateModal}
-          id="btn-add-new-employee"
-          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <UserPlus size={16} />
-          <span>Add User</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {isRegularUser && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => openTaskCreateModal()}
+              id="btn-user-section-assign-task"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <PlusCircle size={16} />
+              <span>Assign Task</span>
+            </button>
+          )}
+
+          <button
+            className="btn btn-primary"
+            onClick={openCreateModal}
+            id="btn-add-new-employee"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <UserPlus size={16} />
+            <span>Add User</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -414,6 +430,7 @@ export const UserSection = () => {
                   const empName = (emp.name || '').trim().toLowerCase();
                   const empUsername = (emp.username || '').trim().toLowerCase();
                   const empId = (emp._id || '').toString();
+                  const isCurrentSelf = currentUser && ((currentUser._id && (emp._id === currentUser._id || emp.id === currentUser._id)) || (currentUser.name === emp.name));
 
                   const memberTasks = tasks.filter((t) => {
                     if (!t) return false;
@@ -536,7 +553,44 @@ export const UserSection = () => {
 
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
-                        <div className="task-actions-cell" style={{ justifyContent: 'flex-end' }}>
+                        <div className="task-actions-cell" style={{ justifyContent: 'flex-end', gap: '6px' }}>
+                          {isRegularUser && !isCurrentSelf && (
+                            <button
+                              type="button"
+                              className="btn-action-assign"
+                              onClick={() => openTaskCreateModal({ assignedTo: emp.name, userId: emp._id })}
+                              title={`Assign Task to ${emp.name}`}
+                              id={`btn-assign-task-${emp._id}`}
+                              style={{
+                                background: '#ecfdf5',
+                                color: '#059669',
+                                border: '1px solid #a7f3d0',
+                                borderRadius: '7px',
+                                padding: '4px 9px',
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#059669';
+                                e.currentTarget.style.color = '#ffffff';
+                                e.currentTarget.style.borderColor = '#059669';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#ecfdf5';
+                                e.currentTarget.style.color = '#059669';
+                                e.currentTarget.style.borderColor = '#a7f3d0';
+                              }}
+                            >
+                              <PlusCircle size={13} />
+                              <span>Assign Task</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             className="btn-icon"
@@ -562,7 +616,7 @@ export const UserSection = () => {
                             onClick={() => openDeleteModal(emp)}
                             title="Remove User"
                             id={`btn-delete-employee-${emp._id}`}
-                            disabled={currentUser && (currentUser._id === emp._id || currentUser.id === emp._id)}
+                            disabled={isCurrentSelf}
                           >
                             <Trash2 size={15} />
                           </button>
@@ -839,10 +893,10 @@ export const UserSection = () => {
                   </div>
                 </div>
 
-                {/* Reports To (Manager Selection) */}
+                {/* Reports To (Manager / Direct Senior Selection) */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="emp-reports-to">
-                    Reports To (Manager / Superior)
+                    Reports To (Direct Senior / Manager)
                   </label>
                   <select
                     id="emp-reports-to"
@@ -869,11 +923,16 @@ export const UserSection = () => {
                     }}
                   >
                     {isSuperAdmin && <option value="">Direct to Super Admin (Root)</option>}
-                    {managerOptions.map((u) => {
+                    {!isSuperAdmin && !isManager && currentUser && (
+                      <option value={currentUser._id || currentUser.id || currentUser.name}>
+                        {currentUser.name} ({currentUser.role || 'User'}) [You — Direct Senior]
+                      </option>
+                    )}
+                    {(isSuperAdmin || isManager) && managerOptions.map((u) => {
                       const isCurrentSelf = currentUser && ((currentUser._id && (u._id === currentUser._id || u.id === currentUser._id)) || (currentUser.name === u.name));
                       return (
                         <option key={u._id || u.id || u.name} value={u._id || u.id || u.name}>
-                          {u.name} ({u.role || 'User'} — {u.department || 'Operations'}){isCurrentSelf ? ' [You]' : ''}
+                          {u.name} ({u.role || 'User'} — {u.department || 'Operations'}){isCurrentSelf ? ' [You — Direct Senior]' : ''}
                         </option>
                       );
                     })}
@@ -882,8 +941,8 @@ export const UserSection = () => {
                     {isSuperAdmin
                       ? 'Selecting a manager attaches this user to their branch in the organizational hierarchy.'
                       : isManager
-                      ? 'Select yourself or any team member under your branch that this user will report to.'
-                      : 'New users created by you will report directly to you in your personal hierarchy branch.'}
+                      ? 'Select yourself or any team member under your branch that this user will report directly to.'
+                      : '✓ Hierarchy Rule: New assigned user will report directly to you as their direct senior.'}
                   </span>
                 </div>
 

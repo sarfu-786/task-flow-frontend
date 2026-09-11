@@ -260,7 +260,7 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 id="nav-my-tasks"
               >
                 <Briefcase className="nav-icon" />
-                <span>Dashboard / My Tasks</span>
+                <span>Dashboard</span>
               </button>
 
               <button
@@ -337,8 +337,8 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                   background: isSuperAdmin
                     ? 'linear-gradient(135deg, #f59e0b, #d97706)'
                     : isManager
-                    ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
-                    : 'linear-gradient(135deg, #059669, #10b981)',
+                      ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                      : 'linear-gradient(135deg, #059669, #10b981)',
                   color: '#ffffff',
                   fontWeight: 700,
                   display: 'flex',

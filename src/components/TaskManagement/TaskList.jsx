@@ -327,10 +327,6 @@ export const TaskList = () => {
         {/* Pagination (5-10 entries per page) */}
         <Pagination />
       </div>
-
-      {/* Task Modal (Add/Edit) & Delete Confirm Modal */}
-      <TaskModal />
-      <DeleteConfirmModal />
     </div>
   );
 };

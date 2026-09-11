@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
-import { ManagerInboxModal } from '../ManagerDashboard/ManagerInboxModal';
 import {
   CheckCircle2,
   Clock,
@@ -19,8 +18,6 @@ import {
   TrendingUp,
   Bell,
   Sparkles,
-  Inbox,
-  Network,
   Users,
 } from 'lucide-react';
 
@@ -46,15 +43,6 @@ export const UserWorkspace = ({ setActiveSection }) => {
     const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
     return repId === currentUserIdStr || createdBy === currentUserIdStr || (currentUserName && repName.includes(currentUserName));
   });
-
-  const handleViewHierarchyClick = () => {
-    if (setActiveSection) {
-      setActiveSection('hierarchy');
-    }
-  };
-
-  // User Inbox Modal State
-  const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
 
   // Task Completion Modal State
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
@@ -267,7 +255,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
         </div>
       )}
 
-      {/* Header with Title and Quick Action Buttons */}
+      {/* Header with Title */}
       <div
         className="section-header"
         style={{
@@ -281,78 +269,6 @@ export const UserWorkspace = ({ setActiveSection }) => {
       >
         <div>
           <h2 className="section-title" style={{ margin: 0 }}>My Workspace & Team</h2>
-        </div>
-
-        {/* Quick Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={handleViewHierarchyClick}
-            style={{
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-            }}
-            id="btn-user-workspace-view-hierarchy"
-            title="View your dedicated team hierarchy tree"
-          >
-            <Network size={16} color="#2563eb" />
-            <span>My Team Hierarchy</span>
-            {mySubordinates.length > 0 && (
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  padding: '1px 7px',
-                  borderRadius: '999px',
-                  background: '#eff6ff',
-                  color: '#1d4ed8',
-                  border: '1px solid #bfdbfe',
-                }}
-              >
-                {mySubordinates.length}
-              </span>
-            )}
-          </button>
-
-          {/* Dedicated My Inbox Button for User */}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setIsInboxModalOpen(true)}
-            style={{
-              position: 'relative',
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: unreadCount > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-              borderColor: unreadCount > 0 ? '#10b981' : 'var(--border-color)',
-            }}
-            title="Open My Task Assignment Inbox"
-          >
-            <Inbox size={18} color={unreadCount > 0 ? '#34d399' : '#94a3b8'} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>My Task Inbox</span>
-            {unreadCount > 0 && (
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  background: '#ef4444',
-                  color: '#ffffff',
-                  boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
-                }}
-              >
-                {unreadCount} new
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -413,22 +329,6 @@ export const UserWorkspace = ({ setActiveSection }) => {
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setIsInboxModalOpen(true)}
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <Inbox size={14} />
-              <span>View in Inbox</span>
-            </button>
-
             <button
               type="button"
               className="btn btn-primary"
@@ -1090,12 +990,6 @@ export const UserWorkspace = ({ setActiveSection }) => {
           </div>
         </div>
       )}
-
-      {/* User Task Inbox Modal */}
-      <ManagerInboxModal
-        isOpen={isInboxModalOpen}
-        onClose={() => setIsInboxModalOpen(false)}
-      />
     </div>
   );
 };

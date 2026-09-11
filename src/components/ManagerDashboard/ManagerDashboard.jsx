@@ -14,7 +14,6 @@ import {
   ListTodo,
   UserCheck,
   ShieldCheck,
-  PlusCircle,
   FolderKanban,
   ChevronRight,
   User,
@@ -22,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const ManagerDashboard = ({ setActiveSection }) => {
-  const { tasks, openCreateModal: openCreateTaskModal } = useTasks();
+  const { tasks } = useTasks();
   const { user: currentUser } = useAuth();
   const { users } = useUserManagement();
 
@@ -163,16 +162,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           </div>
         </div>
 
-        {/* Quick Assign Task */}
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={openCreateTaskModal}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-        >
-          <PlusCircle size={16} />
-          <span>Assign Task</span>
-        </button>
       </div>
 
       {/* Top 4 Interactive Metric Cards */}

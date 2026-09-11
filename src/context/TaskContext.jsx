@@ -382,9 +382,9 @@ export const TaskProvider = ({ children }) => {
   };
 
   // Modal Open / Close Handlers
-  const openCreateModal = () => {
+  const openCreateModal = (prefillData = null) => {
     setModalMode('create');
-    setSelectedTask(null);
+    setSelectedTask(prefillData ? { ...prefillData } : null);
     setIsTaskModalOpen(true);
   };
 

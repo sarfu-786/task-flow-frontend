@@ -13,9 +13,6 @@ import {
   ListTodo,
   Crown,
   ShieldCheck,
-  UserPlus,
-  PlusCircle,
-  Network,
   ChevronRight,
   FolderKanban,
   CheckSquare,
@@ -26,9 +23,9 @@ import {
 } from 'lucide-react';
 
 export const SuperAdminDashboard = ({ setActiveSection }) => {
-  const { tasks, openCreateModal: openCreateTaskModal } = useTasks();
+  const { tasks } = useTasks();
   const { user: currentUser } = useAuth();
-  const { users, openCreateModal: openCreateUserModal } = useUserManagement();
+  const { users } = useUserManagement();
 
   // Drilldown states
   const [selectedUserForWork, setSelectedUserForWork] = useState(null);
@@ -149,39 +146,6 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
             Organization Executive Overview
           </h2>
-        </div>
-
-        {/* Quick Access CTAs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => setActiveSection && setActiveSection('hierarchy')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
-          >
-            <Network size={16} />
-            <span>Organization Hierarchy</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setActiveSection && setActiveSection('employees')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
-          >
-            <Users size={16} />
-            <span>Manage Users</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={openCreateTaskModal}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
-          >
-            <PlusCircle size={16} />
-            <span>Assign Task</span>
-          </button>
         </div>
       </div>
 

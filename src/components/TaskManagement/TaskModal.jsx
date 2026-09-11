@@ -31,7 +31,7 @@ export const TaskModal = () => {
   // Hierarchy filter:
   // 1. Super Admin: can assign to everybody in the organization EXCEPT himself
   // 2. Manager: can ONLY assign to junior team members reporting to them (NOT seniors like Super Admin, NOT himself)
-  // 3. User: cannot assign tasks to others
+  // 3. User: can assign to junior team members reporting directly to them (NOT seniors, NOT himself)
   let assignableUsers = [];
   if (isSuperAdmin) {
     assignableUsers = activeUsers.filter((u) => {
@@ -43,12 +43,30 @@ export const TaskModal = () => {
       const uId = (u._id || u.id || '').toString();
       if (uId === currentUserId) return false; // not himself
       if (u.role === 'Super Admin') return false; // not senior
-      const repId = u.reportsTo ? (u.reportsTo._id || u.reportsTo).toString() : '';
+      const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
       const repName = (u.reportsToName || '').toLowerCase().trim();
-      return (repId && repId === currentUserId) || (repName && (repName.includes(currentUserName) || currentUserName.includes(repName)));
+      const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+      return (
+        (repId && repId === currentUserId) ||
+        (createdBy && createdBy === currentUserId) ||
+        (repName && (repName.includes(currentUserName) || currentUserName.includes(repName)))
+      );
     });
   } else {
-    assignableUsers = [];
+    // Regular User: assign to users who report directly to them or were created by them
+    assignableUsers = activeUsers.filter((u) => {
+      const uId = (u._id || u.id || '').toString();
+      if (uId === currentUserId) return false; // not himself
+      if (u.role === 'Super Admin' || u.role === 'Manager' || u.role === 'Executive' || u.role === 'Administrator') return false; // not senior
+      const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repName = (u.reportsToName || '').toLowerCase().trim();
+      const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+      return (
+        (repId && repId === currentUserId) ||
+        (createdBy && createdBy === currentUserId) ||
+        (repName && (repName.includes(currentUserName) || currentUserName.includes(repName)))
+      );
+    });
   }
 
   const [taskType, setTaskType] = useState('internet work');
@@ -90,8 +108,9 @@ export const TaskModal = () => {
       setRemark('');
       setStatus('To Do');
 
-      // Set initial assignee to first junior in the list
-      setAssignedTo(assignableUsers[0]?.name || '');
+      // Set initial assignee to prefilled task assignee or first junior in the list
+      const prefill = selectedTask?.assignedTo || '';
+      setAssignedTo(prefill || (assignableUsers[0]?.name || ''));
     }
     setErrors({});
     setServerError('');
@@ -120,7 +139,9 @@ export const TaskModal = () => {
     if (!description.trim()) errs.description = 'Task description is required';
     if (!expectedDate) errs.expectedDate = 'Expected completion date is required';
     if (!assignedTo.trim()) {
-      errs.assignedTo = isSuperAdmin ? 'Please select a user to assign this task' : 'Please select a junior team member to assign this task';
+      errs.assignedTo = isSuperAdmin
+        ? 'Please select a user to assign this task'
+        : 'Please select a junior team member who reports to you to assign this task';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -145,11 +166,11 @@ export const TaskModal = () => {
       status,
       assignedTo: assignedTo.trim(),
       userId: selectedUserObj?._id || undefined,
-      assignedBy: currentUser ? `${currentUser.name} (${currentUser.role || 'Manager'})` : 'Manager',
+      assignedBy: currentUser ? `${currentUser.name} (${currentUser.role || 'User'})` : 'Manager',
     };
 
     let result;
-    if (modalMode === 'edit' && selectedTask) {
+    if (modalMode === 'edit' && selectedTask && selectedTask._id) {
       result = await updateTask(selectedTask._id, taskPayload);
     } else {
       result = await createTask(taskPayload);
@@ -168,19 +189,29 @@ export const TaskModal = () => {
         <div className="modal-header">
           <div>
             <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isSuperAdmin ? <Crown size={18} color="#b45309" /> : <ShieldCheck size={18} color="#2563eb" />}
+              {isSuperAdmin ? (
+                <Crown size={18} color="#b45309" />
+              ) : isManager ? (
+                <ShieldCheck size={18} color="#2563eb" />
+              ) : (
+                <Users size={18} color="#059669" />
+              )}
               <span>
                 {modalMode === 'edit'
                   ? 'Update Task Details'
                   : isSuperAdmin
                     ? 'Assign Task to User'
-                    : 'Assign Task to Junior User'}
+                    : isManager
+                      ? 'Assign Task to Junior Member'
+                      : 'Assign Task to Subordinate User'}
               </span>
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               {isSuperAdmin
                 ? 'Super Admin can assign tasks to all users across the organization'
-                : 'Managers assign tasks to junior team members reporting directly under them'}
+                : isManager
+                  ? 'Managers assign tasks to junior team members reporting directly under them'
+                  : 'Assign tasks to users who report directly to you as their senior'}
             </p>
           </div>
           <button
@@ -205,15 +236,15 @@ export const TaskModal = () => {
             {/* Hierarchy Notice Banner */}
             <div
               style={{
-                background: isSuperAdmin ? '#fffbeb' : '#f0f9ff',
-                border: `1px solid ${isSuperAdmin ? '#fde68a' : '#bae6fd'}`,
+                background: isSuperAdmin ? '#fffbeb' : isManager ? '#f0f9ff' : '#ecfdf5',
+                border: `1px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bae6fd' : '#a7f3d0'}`,
                 borderRadius: '8px',
                 padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '0.78rem',
-                color: isSuperAdmin ? '#92400e' : '#0369a1',
+                color: isSuperAdmin ? '#92400e' : isManager ? '#0369a1' : '#065f46',
                 marginBottom: '12px',
               }}
             >
@@ -221,12 +252,14 @@ export const TaskModal = () => {
               <span>
                 {isSuperAdmin
                   ? 'Hierarchy Rule: As Super Admin, you can assign tasks to all managers and team users across the organization.'
-                  : 'Hierarchy Rule: As a Manager, you assign tasks to junior team members reporting directly under your team.'}
+                  : isManager
+                    ? 'Hierarchy Rule: As a Manager, you assign tasks to junior team members reporting directly under your team.'
+                    : 'Hierarchy Rule: You can assign tasks to junior team members who report directly to you as their direct senior.'}
               </span>
             </div>
 
-            {/* Warning if Manager has no juniors yet */}
-            {isManager && assignableUsers.length === 0 && (
+            {/* Warning if User / Manager has no juniors yet */}
+            {!isSuperAdmin && assignableUsers.length === 0 && (
               <div
                 style={{
                   background: '#fef3c7',
@@ -243,7 +276,7 @@ export const TaskModal = () => {
               >
                 <AlertTriangle size={16} style={{ flexShrink: 0 }} />
                 <span>
-                  No junior team members currently report to you. Tasks can only be assigned to your junior subordinates.
+                  No junior team members currently report to you. You can add a new user in the User Section who will report directly to you.
                 </span>
               </div>
             )}

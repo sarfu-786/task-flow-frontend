@@ -14,6 +14,8 @@ import { UserSection } from './components/UserSection';
 import { UserWorkspace } from './components/UserWorkspace/UserWorkspace';
 import { ApprovalSection } from './components/ManagerDashboard/ApprovalSection';
 import { RealtimeToast } from './components/RealtimeToast';
+import { TaskModal } from './components/TaskManagement/TaskModal';
+import { DeleteConfirmModal } from './components/TaskManagement/DeleteConfirmModal';
 
 const AuthenticatedLayout = ({
   activeSection,
@@ -45,6 +47,10 @@ const AuthenticatedLayout = ({
           }
         }}
       />
+
+      {/* Global Task Modal & Delete Confirmation Modal */}
+      <TaskModal />
+      <DeleteConfirmModal />
 
       <div className="app-container">
         {/* Dynamic Role-Based Sidebar */}
