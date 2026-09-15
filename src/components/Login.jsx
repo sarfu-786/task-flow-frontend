@@ -21,7 +21,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Form Inputs
-  const [usernameOrEmail, setUsernameOrEmail] = useState(initialEmail || '');
+  const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,7 +34,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
 
   useEffect(() => {
     if (initialEmail) {
-      setUsernameOrEmail(initialEmail);
+      setEmail(initialEmail);
     }
     if (initialSuccessMsg) {
       setSuccessBanner(initialSuccessMsg);
@@ -53,8 +53,8 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
 
   const validate = () => {
     const errors = {};
-    if (!usernameOrEmail.trim()) {
-      errors.usernameOrEmail = 'Username or email address is required';
+    if (!email.trim()) {
+      errors.email = 'Email address is required';
     }
     if (!password) {
       errors.password = 'Password is required';
@@ -74,14 +74,14 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
     if (!validate()) return;
 
     setIsLoading(true);
-    const res = await login(usernameOrEmail.trim(), password);
+    const res = await login(email.trim(), password);
     setIsLoading(false);
 
     if (!res.success) {
       if (res.status === 403 || res.approvalStatus) {
         setApprovalWarning(res.message);
       } else {
-        setGeneralError(res.message || 'Invalid username/email or password. Please verify your credentials.');
+        setGeneralError(res.message || 'Invalid email or password. Please verify your credentials.');
       }
     }
   };
@@ -177,10 +177,10 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
 
         {/* Official Login Form */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Username / Email Field */}
+          {/* Email Field */}
           <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" htmlFor="usernameOrEmail">
-              Username or Email <span className="required">*</span>
+            <label className="form-label" htmlFor="login-email">
+              Email Address <span className="required">*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <div
@@ -197,25 +197,25 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                 <Mail size={16} />
               </div>
               <input
-                id="usernameOrEmail"
-                type="text"
+                id="login-email"
+                type="email"
                 className="form-control"
                 style={{ paddingLeft: '38px' }}
-                placeholder="Enter username or email address"
-                value={usernameOrEmail}
+                placeholder="Enter your email address"
+                value={email}
                 onChange={(e) => {
-                  setUsernameOrEmail(e.target.value);
-                  if (fieldErrors.usernameOrEmail) {
-                    setFieldErrors((prev) => ({ ...prev, usernameOrEmail: '' }));
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) {
+                    setFieldErrors((prev) => ({ ...prev, email: '' }));
                   }
                   if (generalError) setGeneralError('');
                 }}
                 disabled={isLoading}
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
-            {fieldErrors.usernameOrEmail && (
-              <span className="form-error-msg">{fieldErrors.usernameOrEmail}</span>
+            {fieldErrors.email && (
+              <span className="form-error-msg">{fieldErrors.email}</span>
             )}
           </div>
 

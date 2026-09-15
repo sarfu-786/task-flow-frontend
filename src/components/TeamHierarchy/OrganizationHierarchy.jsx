@@ -25,9 +25,13 @@ import {
   Building,
   Sparkles,
   Plus,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  RotateCcw,
 } from 'lucide-react';
 
-// Fallback dynamic tree builder from client-side state
+// Dynamic tree builder from client-side state
 const buildClientHierarchy = (userList, taskList, rootUserOverride = null) => {
   if (!userList || userList.length === 0) return null;
   const activeUsers = userList.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
@@ -40,46 +44,52 @@ const buildClientHierarchy = (userList, taskList, rootUserOverride = null) => {
   }
 
   if (!root) {
-    // Find root node: Super Admin or user with null reportsTo
     root = activeUsers.find((u) => u.role === 'Super Admin' && (!u.reportsTo || u.reportsTo === 'null'));
     if (!root) root = activeUsers.find((u) => u.role === 'Super Admin');
     if (!root) root = activeUsers.find((u) => !u.reportsTo || u.reportsTo === 'null');
     if (!root) root = activeUsers[0];
   }
 
-  const buildNode = (u, ancestors = []) => {
+  const buildNode = (u, ancestors = [], visited = new Set()) => {
     const uId = u._id ? u._id.toString() : '';
     const uName = (u.name || '').toLowerCase();
+    visited.add(uId);
+
     const currentChain = [
       ...ancestors,
-      { _id: u._id, name: u.name, role: u.role, title: u.title || u.role, avatar: u.avatar, department: u.department },
+      { _id: u._id, name: u.name, role: u.role, title: u.title || u.role, avatar: u.avatar, department: u.department, email: u.email },
     ];
 
     const directChildren = activeUsers.filter((other) => {
-      if (other._id && other._id.toString() === uId) return false;
-      const rId = other.reportsTo ? other.reportsTo.toString() : '';
-      const rName = (other.reportsToName || '').toLowerCase();
-      return rId === uId || (rName && rName === uName);
+      if (!other._id) return false;
+      const otherId = other._id.toString();
+      if (otherId === uId || visited.has(otherId)) return false;
+      const rId = other.reportsTo ? (other.reportsTo._id ? other.reportsTo._id.toString() : other.reportsTo.toString()) : '';
+      const rawRName = (other.reportsToName || '').toLowerCase().trim();
+      const cleanRName = rawRName.replace(/\s*\([^)]*\)/g, '').trim();
+      return rId === uId || (cleanRName && cleanRName === uName) || (rawRName && rawRName === uName);
     });
 
     const userTasks = (taskList || []).filter((t) => {
+      if (!t) return false;
       const assigned = (t.assignedTo || '').toLowerCase();
-      return assigned === uName || assigned === (u.username || '').toLowerCase();
+      const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+      return assigned === uName || (taskUserId && taskUserId === uId);
     });
 
     const tasksBreakdown = {
+      total: userTasks.length,
       todo: userTasks.filter((t) => t.status === 'To Do' || !t.status).length,
       inProgress: userTasks.filter((t) => t.status === 'In Progress').length,
       completed: userTasks.filter((t) => t.status === 'Completed').length,
     };
 
-    const subNodes = directChildren.map((child) => buildNode(child, currentChain));
-    const totalTeamCount = subNodes.reduce((acc, curr) => acc + 1 + (curr.totalTeamCount || 0), 0);
+    const subNodes = directChildren.map((child) => buildNode(child, currentChain, visited));
+    const teamCount = subNodes.reduce((acc, curr) => acc + 1 + (curr.teamCount || 0), 0);
 
     return {
       _id: u._id,
       name: u.name,
-      username: u.username,
       email: u.email,
       role: u.role,
       title: u.title || (u.role === 'Super Admin' ? 'Chief Executive Officer' : u.role === 'Manager' ? 'Operations Manager' : 'Team Member'),
@@ -90,13 +100,105 @@ const buildClientHierarchy = (userList, taskList, rootUserOverride = null) => {
       reportingChain: currentChain,
       taskCount: userTasks.length,
       tasksBreakdown,
-      directReportsCount: directChildren.length,
-      totalTeamCount,
-      subordinates: subNodes,
+      tasks: userTasks,
+      teamCount,
+      children: subNodes,
     };
   };
 
-  return buildNode(root);
+  const visitedSet = new Set();
+  const rootTree = buildNode(root, [], visitedSet);
+
+  // If this is the full organization tree, attach unparented subtree roots so entire branches stay intact
+  if (!rootUserOverride) {
+    const allIncludedIds = new Set();
+    const collectIds = (node) => {
+      if (!node || !node._id) return;
+      allIncludedIds.add(node._id.toString());
+      if (Array.isArray(node.children)) {
+        node.children.forEach(collectIds);
+      }
+    };
+    collectIds(rootTree);
+
+    const unattachedUsers = activeUsers.filter((u) => {
+      const uId = u._id ? u._id.toString() : '';
+      return uId && !allIncludedIds.has(uId);
+    });
+
+    const unattachedIds = new Set(unattachedUsers.map((u) => (u._id ? u._id.toString() : '')));
+
+    const subtreeRoots = unattachedUsers.filter((u) => {
+      let parentId = null;
+      const rIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const rawRName = (u.reportsToName || '').toLowerCase().trim();
+      const cleanRName = rawRName.replace(/\s*\([^)]*\)/g, '').trim();
+
+      const matchedParent = activeUsers.find((other) => {
+        const oId = other._id ? other._id.toString() : '';
+        const oName = (other.name || '').toLowerCase().trim();
+        return (rIdStr && oId === rIdStr) || (cleanRName && oName === cleanRName) || (rawRName && oName === rawRName);
+      });
+
+      if (matchedParent) {
+        parentId = matchedParent._id ? matchedParent._id.toString() : '';
+      }
+
+      return !parentId || !unattachedIds.has(parentId);
+    });
+
+    subtreeRoots.forEach((subRoot) => {
+      const childNode = buildNode(subRoot, [{ _id: root._id, name: root.name, role: root.role, department: root.department, email: root.email }], visitedSet);
+      rootTree.children.push(childNode);
+    });
+
+    rootTree.teamCount = rootTree.children.reduce((acc, curr) => acc + 1 + (curr.teamCount || 0), 0);
+  }
+
+  return rootTree;
+};
+
+// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
 };
 
 export const OrganizationHierarchy = ({ setActiveSection }) => {
@@ -105,6 +207,9 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
   const { users, loading: usersLoading } = useUserManagement();
 
   const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
+  const subordinateIds = useMemo(() => {
+    return getSubordinateUserIds(currentUser, users);
+  }, [currentUser, users]);
 
   const [hierarchyData, setHierarchyData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -120,18 +225,23 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
   const [selectedNode, setSelectedNode] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Zoom / scale state for responsive auto-fitting
+  // Zoom / scale state for responsive navigation
   const [zoomLevel, setZoomLevel] = useState(1);
   const [collapsedNodes, setCollapsedNodes] = useState(new Set());
+
+  // Zoom helpers
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(1.5, Number((prev + 0.1).toFixed(1))));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(0.4, Number((prev - 0.1).toFixed(1))));
+  const handleZoomReset = () => setZoomLevel(1);
 
   // Auto-fit hierarchy tree to viewport width
   const autoFitToScreen = () => {
     if (!viewportRef.current || !treeRef.current) return;
-    const viewportWidth = viewportRef.current.clientWidth - 40;
+    const viewportWidth = viewportRef.current.clientWidth - 48;
     const treeWidth = treeRef.current.scrollWidth;
     if (treeWidth > viewportWidth && viewportWidth > 200) {
       const calculated = Number((viewportWidth / treeWidth).toFixed(2));
-      const optimalScale = Math.max(0.45, Math.min(1.0, calculated));
+      const optimalScale = Math.max(0.5, Math.min(1.0, calculated));
       setZoomLevel(optimalScale);
     } else {
       setZoomLevel(1);
@@ -150,7 +260,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
       }
       throw new Error(data?.message || 'Hierarchy API error');
     } catch (err) {
-      console.warn('Hierarchy API response fallback:', err.message);
+      console.warn('Hierarchy API fallback to client builder:', err.message);
       if (users && users.length > 0) {
         const localTree = buildClientHierarchy(users, tasks, isSuperAdmin ? null : currentUser);
         if (localTree) {
@@ -168,24 +278,6 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
   useEffect(() => {
     fetchHierarchy();
   }, [users, tasks]);
-
-  // Auto-fit on data load and resize
-  useEffect(() => {
-    if (hierarchyData) {
-      const timer = setTimeout(() => {
-        autoFitToScreen();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [hierarchyData, collapsedNodes]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      autoFitToScreen();
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Lock body scroll when drawer is open on mobile
   useEffect(() => {
@@ -245,7 +337,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
     });
   };
 
-  // Node Component Recursive Renderer
+  // Node Component Recursive Renderer for Tree View
   const TreeNode = ({ node, isRoot = false }) => {
     if (!node) return null;
 
@@ -253,19 +345,18 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
     const isCollapsed = collapsedNodes.has(node._id);
     const isSelected = selectedNode && selectedNode._id === node._id;
 
-    const isSuperAdmin = node.role === 'Super Admin';
-    const isManagerRole = node.role === 'Manager' || node.role === 'Executive' || node.role === 'Administrator';
+    const isNodeSuper = node.role === 'Super Admin';
+    const isNodeManager = ['Manager', 'Executive', 'Administrator'].includes(node.role);
 
-    // Badge styling
     let roleBadgeColor = '#047857';
     let roleBadgeBg = '#ecfdf5';
     let roleBadgeBorder = '#a7f3d0';
 
-    if (isSuperAdmin) {
+    if (isNodeSuper) {
       roleBadgeColor = '#b45309';
       roleBadgeBg = '#fef3c7';
       roleBadgeBorder = '#fde68a';
-    } else if (isManagerRole) {
+    } else if (isNodeManager) {
       roleBadgeColor = '#1d4ed8';
       roleBadgeBg = '#eff6ff';
       roleBadgeBorder = '#bfdbfe';
@@ -279,10 +370,10 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
         {/* Node Card */}
         <div
           className={`org-node-card ${isSelected ? 'selected' : ''} ${
-            isSuperAdmin ? 'node-super-admin' : isManagerRole ? 'node-manager' : 'node-employee'
+            isNodeSuper ? 'node-super-admin' : isNodeManager ? 'node-manager' : 'node-employee'
           }`}
           onClick={() => handleNodeClick(node)}
-          title={`Click to inspect ${node.name} and view reporting details`}
+          title={`Click to view reporting details for ${node.name}`}
         >
           {/* Top Row: Avatar & Badges */}
           <div className="org-node-header">
@@ -293,9 +384,9 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                 <div
                   className="org-avatar-fallback"
                   style={{
-                    background: isSuperAdmin
+                    background: isNodeSuper
                       ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                      : isManagerRole
+                      : isNodeManager
                       ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
                       : 'linear-gradient(135deg, #059669, #10b981)',
                   }}
@@ -314,8 +405,8 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                   border: `1px solid ${roleBadgeBorder}`,
                 }}
               >
-                {isSuperAdmin && <Crown size={11} color="#d97706" style={{ marginRight: '3px' }} />}
-                {isManagerRole && !isSuperAdmin && <Shield size={11} color="#2563eb" style={{ marginRight: '3px' }} />}
+                {isNodeSuper && <Crown size={11} color="#d97706" style={{ marginRight: '3px' }} />}
+                {isNodeManager && !isNodeSuper && <Shield size={11} color="#2563eb" style={{ marginRight: '3px' }} />}
                 {node.role || 'User'}
               </span>
             </div>
@@ -331,12 +422,12 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
             </div>
           </div>
 
-          {/* Bottom Summary Bar: Subordinates & Tasks */}
+          {/* Bottom Summary Bar */}
           <div className="org-node-footer">
             {hasChildren ? (
-              <span className="org-team-pill" title={`${node.teamCount} total team members in branch`}>
+              <span className="org-team-pill" title={`${node.teamCount || node.children.length} team members under this branch`}>
                 <Users size={12} />
-                <span>{node.children.length} Direct ({node.teamCount} Team)</span>
+                <span>{node.children.length} Direct ({node.teamCount || node.children.length} Total)</span>
               </span>
             ) : (
               <span className="org-team-pill individual" title="Direct Contributor">
@@ -345,13 +436,13 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
               </span>
             )}
 
-            <span className="org-tasks-pill" title={`${taskCount} assigned tasks (${completedTasks} completed)`}>
+            <span className="org-tasks-pill" title={`${taskCount} tasks assigned (${completedTasks} done)`}>
               <CheckCircle2 size={12} color="#059669" />
               <span>{completedTasks}/{taskCount} Tasks</span>
             </span>
           </div>
 
-          {/* Expand / Collapse Button if node has children */}
+          {/* Collapse/Expand button */}
           {hasChildren && (
             <button
               type="button"
@@ -365,12 +456,9 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
           )}
         </div>
 
-        {/* Children Sub-Tree Rendering with Connector Lines */}
+        {/* Children Sub-Tree Rendering */}
         {hasChildren && !isCollapsed && (
           <div className="org-tree-children">
-            {/* Horizontal Bus Line connecting children */}
-            <div className="org-tree-bus" />
-
             <div className="org-children-grid">
               {node.children.map((child) => (
                 <TreeNode key={child._id} node={child} isRoot={false} />
@@ -384,13 +472,23 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
 
   return (
     <div className="hierarchy-page-container">
-      {/* Page Header */}
-      <div className="section-header" style={{ marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Page Header with Clean Zoom & Fit Controls */}
+      <div
+        className="section-header"
+        style={{
+          marginBottom: '16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               borderRadius: '10px',
               background: '#eff6ff',
               border: '1px solid #bfdbfe',
@@ -400,7 +498,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
               color: '#2563eb',
             }}
           >
-            <Network size={20} />
+            <Network size={22} />
           </div>
           <div>
             <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
@@ -408,58 +506,104 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
             </h2>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               {isSuperAdmin
-                ? 'Complete organization tree across all departments'
+                ? 'Complete organization tree across all levels and departments'
                 : 'Your dedicated reporting branch (You at the top with your direct & indirect team below)'}
             </p>
           </div>
         </div>
-      </div>
 
+        {/* Zoom & Screen Fit Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="org-zoom-group">
+            <button
+              type="button"
+              className="org-zoom-btn"
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              disabled={zoomLevel <= 0.4}
+            >
+              <ZoomOut size={15} />
+            </button>
 
-      {/* Main Hierarchy Canvas Viewport with Auto-Fit & Drag-to-Pan */}
-      <div
-        ref={viewportRef}
-        className={`org-canvas-viewport ${isDragging ? 'is-dragging' : ''}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        {loading ? (
-          <div className="org-loading-state">
-            <div className="spinner-circle" />
-            <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginTop: '12px' }}>
-              Building organizational hierarchy...
-            </p>
-          </div>
-        ) : error ? (
-          <div className="org-error-state">
-            <p style={{ color: '#dc2626', fontWeight: 600, marginBottom: '8px' }}>{error}</p>
-            <button type="button" className="btn btn-primary" onClick={fetchHierarchy}>
-              Try Again
+            <span className="org-zoom-label">{Math.round(zoomLevel * 100)}%</span>
+
+            <button
+              type="button"
+              className="org-zoom-btn"
+              onClick={handleZoomIn}
+              title="Zoom In"
+              disabled={zoomLevel >= 1.5}
+            >
+              <ZoomIn size={15} />
             </button>
           </div>
-        ) : !hierarchyData ? (
-          <div className="org-empty-state">
-            <Users size={36} color="var(--text-muted)" />
-            <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginTop: '8px' }}>
-              No organization members found.
-            </p>
-          </div>
-        ) : (
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleZoomReset}
+            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            title="Reset Zoom to 100%"
+          >
+            <RotateCcw size={13} />
+            <span>100%</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={autoFitToScreen}
+            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            title="Fit tree automatically to screen width"
+          >
+            <Maximize2 size={13} />
+            <span>Fit Screen</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Hierarchy Tree Canvas */}
+      {loading ? (
+        <div className="org-loading-state card" style={{ minHeight: '380px' }}>
+          <div className="spinner-circle" />
+          <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginTop: '12px' }}>
+            Building organization hierarchy...
+          </p>
+        </div>
+      ) : error ? (
+        <div className="org-error-state card" style={{ minHeight: '380px' }}>
+          <p style={{ color: '#dc2626', fontWeight: 600, marginBottom: '8px' }}>{error}</p>
+          <button type="button" className="btn btn-primary" onClick={fetchHierarchy}>
+            Try Again
+          </button>
+        </div>
+      ) : !hierarchyData ? (
+        <div className="org-empty-state card" style={{ minHeight: '380px' }}>
+          <Users size={36} color="var(--text-muted)" />
+          <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginTop: '8px' }}>
+            No organization members found.
+          </p>
+        </div>
+      ) : (
+        <div
+          ref={viewportRef}
+          className={`org-canvas-viewport ${isDragging ? 'is-dragging' : ''}`}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
           <div
             ref={treeRef}
             className="org-tree-canvas"
             style={{
               transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top center',
             }}
           >
             <TreeNode node={hierarchyData} isRoot={true} />
           </div>
-        )}
-      </div>
-
+        </div>
+      )}
 
       {/* Node Details Slide-Over Drawer / Inspection Modal */}
       {isDrawerOpen && selectedNode && (
@@ -510,10 +654,10 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                       const isTopSuper = chainMember.role === 'Super Admin';
 
                       return (
-                        <div key={chainMember._id} className="org-chain-step">
+                        <div key={chainMember._id || idx} className="org-chain-step">
                           <div className={`org-chain-node ${isTarget ? 'target-node' : ''} ${isTopSuper ? 'root-node' : ''}`}>
                             <div className="org-chain-avatar">
-                              {chainMember.name.charAt(0).toUpperCase()}
+                              {chainMember.name ? chainMember.name.charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div className="org-chain-info">
                               <span className="org-chain-name">
@@ -555,7 +699,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                   </div>
 
                   <div className="org-info-card">
-                    <span className="org-info-card-label">Reporting Manager</span>
+                    <span className="org-info-card-label">Reporting Senior</span>
                     <span className="org-info-card-val">{selectedNode.reportsToName || 'Super Admin'}</span>
                   </div>
 
@@ -567,7 +711,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                   </div>
 
                   <div className="org-info-card">
-                    <span className="org-info-card-label">Total Assigned Tasks</span>
+                    <span className="org-info-card-label">Assigned Tasks</span>
                     <span className="org-info-card-val">
                       {selectedNode.taskCount || 0} Tasks ({selectedNode.tasksBreakdown?.completed || 0} Completed)
                     </span>
@@ -593,7 +737,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div className="org-subordinate-avatar">
-                            {child.name.charAt(0).toUpperCase()}
+                            {child.name ? child.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div>
                             <span className="org-subordinate-name">{child.name}</span>
@@ -674,29 +818,27 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                 Close
               </button>
 
-              {/* Hierarchy-Enforced Direct Task Assignment */}
+              {/* Hierarchy-Enforced Task Assignment */}
               {selectedNode && currentUser && (
-                (currentUser.role === 'Super Admin' && (selectedNode.role === 'Manager' || selectedNode.role === 'Executive' || selectedNode.role === 'Administrator')) ||
-                (['Manager', 'Executive', 'Administrator'].includes(currentUser.role) && (
-                  (selectedNode.reportsTo && selectedNode.reportsTo.toString() === (currentUser._id || currentUser.id || '').toString()) ||
-                  (selectedNode.reportsToName && (currentUser.name && selectedNode.reportsToName.toLowerCase().includes(currentUser.name.toLowerCase())))
-                ))
+                isSuperAdmin ||
+                (selectedNode._id && (selectedNode._id.toString() === (currentUser._id || currentUser.id || '').toString())) ||
+                (subordinateIds.has(selectedNode._id ? selectedNode._id.toString() : ''))
               ) && (
                 <button
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
                     setIsDrawerOpen(false);
-                    openTaskCreateModal();
+                    openTaskCreateModal({ assignedTo: selectedNode.name, userId: selectedNode._id });
                   }}
                   style={{ flex: 1.2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
                   <Plus size={15} />
-                  <span>{currentUser.role === 'Super Admin' ? 'Assign Task to Manager' : 'Assign Task to Junior'}</span>
+                  <span>Assign Task</span>
                 </button>
               )}
 
-              {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Manager') && (
+              {currentUser && (
                 <button
                   type="button"
                   className="btn btn-secondary"

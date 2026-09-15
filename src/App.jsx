@@ -96,6 +96,7 @@ const AuthenticatedLayout = ({
                 {activeSection === 'user-workspace' && <UserWorkspace setActiveSection={handleSectionChange} />}
                 {activeSection === 'hierarchy' && <OrganizationHierarchy setActiveSection={handleSectionChange} />}
                 {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
+                {activeSection === 'tasks' && <TaskList />}
               </>
             )}
           </main>
@@ -133,7 +134,7 @@ const MainApplication = () => {
         if (isManager && ['manager', 'hierarchy', 'employees', 'user', 'tasks', 'approvals'].includes(savedSection)) {
           return savedSection;
         }
-        if (!isSuperAdmin && !isManager && ['user-workspace', 'hierarchy', 'employees', 'user'].includes(savedSection)) {
+        if (!isSuperAdmin && !isManager && ['user-workspace', 'hierarchy', 'employees', 'user', 'tasks'].includes(savedSection)) {
           return savedSection;
         }
       }
@@ -163,7 +164,7 @@ const MainApplication = () => {
             next = 'manager';
           }
         } else {
-          if (!['user-workspace', 'hierarchy', 'employees', 'user'].includes(prev)) {
+          if (!['user-workspace', 'hierarchy', 'employees', 'user', 'tasks'].includes(prev)) {
             next = 'user-workspace';
           }
         }

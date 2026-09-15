@@ -30,6 +30,49 @@ import {
   PlusCircle,
 } from 'lucide-react';
 
+// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
+
 export const UserSection = () => {
   const { user: currentUser, updateUserProfile } = useAuth();
   const { tasks, openCreateModal: openTaskCreateModal } = useTasks();
@@ -82,7 +125,6 @@ export const UserSection = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    username: '',
     role: 'User',
     department: 'Operations',
     reportsTo: '',
@@ -98,13 +140,13 @@ export const UserSection = () => {
   const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
   const isManager = currentUser && ['Manager', 'Executive', 'Administrator'].includes(currentUser.role);
   const isRegularUser = !isSuperAdmin && !isManager;
+  const currentUserId = (currentUser?._id || currentUser?.id || '').toString();
 
   useEffect(() => {
     if (modalMode === 'edit' && selectedUser) {
       setFormData({
         name: selectedUser.name || '',
         email: selectedUser.email || '',
-        username: selectedUser.username || '',
         role: selectedUser.role || 'User',
         department: selectedUser.department || 'Operations',
         reportsTo: selectedUser.reportsTo || '',
@@ -123,7 +165,6 @@ export const UserSection = () => {
       setFormData({
         name: '',
         email: '',
-        username: '',
         role: 'User',
         department: currentUser?.department || 'Operations',
         reportsTo: defaultReportsTo,
@@ -144,7 +185,6 @@ export const UserSection = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errs.email = 'Please provide a valid email';
     }
-    if (!formData.username.trim()) errs.username = 'Username is required';
     if (modalMode === 'create' && !formData.password.trim()) {
       errs.password = 'Initial password is required';
     }
@@ -316,18 +356,6 @@ export const UserSection = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isRegularUser && (
-            <button
-              className="btn btn-secondary"
-              onClick={() => openTaskCreateModal()}
-              id="btn-user-section-assign-task"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <PlusCircle size={16} />
-              <span>Assign Task</span>
-            </button>
-          )}
-
           <button
             className="btn btn-primary"
             onClick={openCreateModal}
@@ -356,7 +384,7 @@ export const UserSection = () => {
             <input
               type="text"
               className="search-input-top"
-              placeholder="Search by user name, email, role, or department..."
+              placeholder="Search by name, email, role, or department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               id="employee-search-input"
@@ -393,7 +421,7 @@ export const UserSection = () => {
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
-                <th>User Name & Email</th>
+                <th>Name & Email</th>
                 <th>Role & Department</th>
                 <th>Reports To (Manager)</th>
                 <th style={{ textAlign: 'center' }}>Completed</th>
@@ -554,43 +582,6 @@ export const UserSection = () => {
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
                         <div className="task-actions-cell" style={{ justifyContent: 'flex-end', gap: '6px' }}>
-                          {isRegularUser && !isCurrentSelf && (
-                            <button
-                              type="button"
-                              className="btn-action-assign"
-                              onClick={() => openTaskCreateModal({ assignedTo: emp.name, userId: emp._id })}
-                              title={`Assign Task to ${emp.name}`}
-                              id={`btn-assign-task-${emp._id}`}
-                              style={{
-                                background: '#ecfdf5',
-                                color: '#059669',
-                                border: '1px solid #a7f3d0',
-                                borderRadius: '7px',
-                                padding: '4px 9px',
-                                fontSize: '0.74rem',
-                                fontWeight: 600,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#059669';
-                                e.currentTarget.style.color = '#ffffff';
-                                e.currentTarget.style.borderColor = '#059669';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#ecfdf5';
-                                e.currentTarget.style.color = '#059669';
-                                e.currentTarget.style.borderColor = '#a7f3d0';
-                              }}
-                            >
-                              <PlusCircle size={13} />
-                              <span>Assign Task</span>
-                            </button>
-                          )}
-
                           <button
                             type="button"
                             className="btn-icon"
@@ -814,43 +805,23 @@ export const UserSection = () => {
                   {formErrors.name && <span className="form-error-msg">{formErrors.name}</span>}
                 </div>
 
-                {/* Email & Username */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="emp-email">
-                      Email Address <span className="required">*</span>
-                    </label>
-                    <input
-                      id="emp-email"
-                      type="email"
-                      className="form-control"
-                      placeholder="user@example.com"
-                      value={formData.email}
-                      onChange={(e) => {
-                        setFormData({ ...formData, email: e.target.value });
-                        if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
-                      }}
-                    />
-                    {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="emp-username">
-                      Username <span className="required">*</span>
-                    </label>
-                    <input
-                      id="emp-username"
-                      type="text"
-                      className="form-control"
-                      placeholder="username"
-                      value={formData.username}
-                      onChange={(e) => {
-                        setFormData({ ...formData, username: e.target.value });
-                        if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
-                      }}
-                    />
-                    {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
-                  </div>
+                {/* Email Address */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="emp-email">
+                    Email Address <span className="required">*</span>
+                  </label>
+                  <input
+                    id="emp-email"
+                    type="email"
+                    className="form-control"
+                    placeholder="user@example.com"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                    }}
+                  />
+                  {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
                 </div>
 
                 {/* Role & Department */}

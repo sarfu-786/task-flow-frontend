@@ -15,6 +15,49 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
+
 export const TaskModal = () => {
   const { isTaskModalOpen, modalMode, selectedTask, closeTaskModal, createTask, updateTask } = useTasks();
   const { users } = useUserManagement();
@@ -29,44 +72,27 @@ export const TaskModal = () => {
   const activeUsers = (users || []).filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
   // Hierarchy filter:
-  // 1. Super Admin: can assign to everybody in the organization EXCEPT himself
-  // 2. Manager: can ONLY assign to junior team members reporting to them (NOT seniors like Super Admin, NOT himself)
-  // 3. User: can assign to junior team members reporting directly to them (NOT seniors, NOT himself)
+  // 1. Super Admin: can assign to everybody in the organization including themselves
+  // 2. Manager: can assign to ALL users who are under them in hierarchy AND themselves
+  // 3. User: can assign to ALL users who are under them in hierarchy AND themselves
+  const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
+
   let assignableUsers = [];
   if (isSuperAdmin) {
-    assignableUsers = activeUsers.filter((u) => {
-      const uId = (u._id || u.id || '').toString();
-      return uId !== currentUserId;
-    });
-  } else if (isManager) {
-    assignableUsers = activeUsers.filter((u) => {
-      const uId = (u._id || u.id || '').toString();
-      if (uId === currentUserId) return false; // not himself
-      if (u.role === 'Super Admin') return false; // not senior
-      const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
-      const repName = (u.reportsToName || '').toLowerCase().trim();
-      const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
-      return (
-        (repId && repId === currentUserId) ||
-        (createdBy && createdBy === currentUserId) ||
-        (repName && (repName.includes(currentUserName) || currentUserName.includes(repName)))
-      );
-    });
+    assignableUsers = activeUsers;
   } else {
-    // Regular User: assign to users who report directly to them or were created by them
     assignableUsers = activeUsers.filter((u) => {
       const uId = (u._id || u.id || '').toString();
-      if (uId === currentUserId) return false; // not himself
-      if (u.role === 'Super Admin' || u.role === 'Manager' || u.role === 'Executive' || u.role === 'Administrator') return false; // not senior
-      const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
-      const repName = (u.reportsToName || '').toLowerCase().trim();
-      const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
-      return (
-        (repId && repId === currentUserId) ||
-        (createdBy && createdBy === currentUserId) ||
-        (repName && (repName.includes(currentUserName) || currentUserName.includes(repName)))
-      );
+      const isSelf = (currentUserId && uId === currentUserId) || 
+                     (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                     (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName);
+      return isSelf || subordinateIds.has(uId);
     });
+  }
+
+  // Ensure current user is present in assignable list if activeUsers hasn't populated them
+  if (currentUser && !assignableUsers.some(u => (u._id || u.id || '').toString() === currentUserId || (u.email && u.email === currentUser.email))) {
+    assignableUsers = [currentUser, ...assignableUsers];
   }
 
   const [taskType, setTaskType] = useState('internet work');
@@ -199,19 +225,11 @@ export const TaskModal = () => {
               <span>
                 {modalMode === 'edit'
                   ? 'Update Task Details'
-                  : isSuperAdmin
-                    ? 'Assign Task to User'
-                    : isManager
-                      ? 'Assign Task to Junior Member'
-                      : 'Assign Task to Subordinate User'}
+                  : 'Assign Task'}
               </span>
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {isSuperAdmin
-                ? 'Super Admin can assign tasks to all users across the organization'
-                : isManager
-                  ? 'Managers assign tasks to junior team members reporting directly under them'
-                  : 'Assign tasks to users who report directly to you as their senior'}
+              Assign tasks to yourself or to any team member below you in the hierarchy
             </p>
           </div>
           <button
@@ -251,41 +269,15 @@ export const TaskModal = () => {
               <Info size={16} style={{ flexShrink: 0 }} />
               <span>
                 {isSuperAdmin
-                  ? 'Hierarchy Rule: As Super Admin, you can assign tasks to all managers and team users across the organization.'
-                  : isManager
-                    ? 'Hierarchy Rule: As a Manager, you assign tasks to junior team members reporting directly under your team.'
-                    : 'Hierarchy Rule: You can assign tasks to junior team members who report directly to you as their direct senior.'}
+                  ? 'Hierarchy Rule: As Super Admin, you can assign tasks to yourself or anyone across the organization.'
+                  : 'Hierarchy Rule: You can assign tasks to yourself or any team member reporting below you.'}
               </span>
             </div>
-
-            {/* Warning if User / Manager has no juniors yet */}
-            {!isSuperAdmin && assignableUsers.length === 0 && (
-              <div
-                style={{
-                  background: '#fef3c7',
-                  border: '1px solid #fde68a',
-                  borderRadius: '8px',
-                  padding: '10px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '0.78rem',
-                  color: '#92400e',
-                  marginBottom: '12px',
-                }}
-              >
-                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                <span>
-                  No junior team members currently report to you. You can add a new user in the User Section who will report directly to you.
-                </span>
-              </div>
-            )}
 
             {/* Assign To Member Dropdown (Role-Enforced) */}
             <div className="form-group">
               <label className="form-label" htmlFor="assignedTo">
-                {isSuperAdmin ? 'Assign To User' : isManager ? 'Assign To Junior Team Member' : 'Assignee'}{' '}
-                <span className="required">*</span>
+                Assignee <span className="required">*</span>
               </label>
               <select
                 id="assignedTo"
@@ -296,14 +288,17 @@ export const TaskModal = () => {
                   if (errors.assignedTo) setErrors((prev) => ({ ...prev, assignedTo: '' }));
                 }}
               >
-                <option value="">
-                  {isSuperAdmin ? '— Select User —' : isManager ? '— Select Junior User —' : '— Select Assignee —'}
-                </option>
+                <option value="">— Select Assignee —</option>
                 {assignableUsers.map((u) => {
-                  const reportsInfo = u.reportsToName ? ` • Reports to: ${u.reportsToName}` : '';
+                  const uId = (u._id || u.id || '').toString();
+                  const isSelf = (currentUserId && uId === currentUserId) || 
+                                 (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                                 (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName);
+                  const selfBadge = isSelf ? ' (You)' : '';
+                  const reportsInfo = !isSelf && u.reportsToName ? ` • Reports to: ${u.reportsToName}` : '';
                   return (
                     <option key={u._id || u.name} value={u.name}>
-                      {u.name} ({u.role || 'User'} • {u.department || 'Operations'}{reportsInfo})
+                      {u.name}{selfBadge} ({u.role || 'User'} • {u.department || 'Operations'}{reportsInfo})
                     </option>
                   );
                 })}
@@ -430,7 +425,7 @@ export const TaskModal = () => {
               ) : (
                 <>
                   <PlusCircle size={16} />
-                  <span>{isSuperAdmin ? 'Assign Task to User' : 'Assign Task to Junior'}</span>
+                  <span>Assign Task</span>
                 </>
               )}
             </button>

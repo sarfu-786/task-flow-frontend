@@ -19,7 +19,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
   // Steps: 'email' | 'otp' | 'reset' | 'success'
   const [step, setStep] = useState('email');
 
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [popupOtp, setPopupOtp] = useState('');
   const [showOtpPopup, setShowOtpPopup] = useState(false);
@@ -47,15 +47,15 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!usernameOrEmail.trim()) {
-      setFieldErrors({ usernameOrEmail: 'Username or email address is required' });
+    if (!email.trim()) {
+      setFieldErrors({ email: 'Email address is required' });
       return;
     }
     setFieldErrors({});
     setIsLoading(true);
 
     try {
-      const res = await api.forgotPassword(usernameOrEmail.trim());
+      const res = await api.forgotPassword(email.trim());
       setIsLoading(false);
       if (res.success && res.otp) {
         setPopupOtp(res.otp);
@@ -67,7 +67,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
       }
     } catch (err) {
       setIsLoading(false);
-      setErrorMsg(err.message || 'Failed to request OTP. Please verify your username/email.');
+      setErrorMsg(err.message || 'Failed to request OTP. Please verify your email address.');
     }
   };
 
@@ -87,7 +87,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
     setIsLoading(true);
 
     try {
-      const res = await api.verifyOtp(usernameOrEmail.trim(), otp.trim());
+      const res = await api.verifyOtp(email.trim(), otp.trim());
       setIsLoading(false);
       if (res.success) {
         setStep('reset');
@@ -128,7 +128,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
     setIsLoading(true);
 
     try {
-      const res = await api.resetPassword(usernameOrEmail.trim(), otp.trim(), newPassword);
+      const res = await api.resetPassword(email.trim(), otp.trim(), newPassword);
       setIsLoading(false);
       if (res.success) {
         setStep('success');
@@ -136,7 +136,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
         setTimeout(() => {
           if (onSuccessReset) {
             onSuccessReset({
-              email: usernameOrEmail.trim(),
+              email: email.trim(),
               message: 'Password reset successful! Please log in with your new password.',
             });
           } else if (onBackToLogin) {
@@ -328,12 +328,12 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
           </div>
         )}
 
-        {/* STEP 1: Enter Email / Username */}
+        {/* STEP 1: Enter Email Address */}
         {step === 'email' && (
           <form onSubmit={handleRequestOtp} noValidate>
             <div className="form-group" style={{ marginBottom: '22px' }}>
               <label className="form-label" htmlFor="forgot-email">
-                Username or Email Address <span className="required">*</span>
+                Email Address <span className="required">*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <div
@@ -351,21 +351,21 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
                 </div>
                 <input
                   id="forgot-email"
-                  type="text"
+                  type="email"
                   className="form-control"
                   style={{ paddingLeft: '38px' }}
-                  placeholder="Enter your registered username or email"
-                  value={usernameOrEmail}
+                  placeholder="Enter your registered email address"
+                  value={email}
                   onChange={(e) => {
-                    setUsernameOrEmail(e.target.value);
-                    if (fieldErrors.usernameOrEmail) setFieldErrors((prev) => ({ ...prev, usernameOrEmail: '' }));
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }));
                   }}
                   disabled={isLoading}
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
-              {fieldErrors.usernameOrEmail && (
-                <span className="form-error-msg">{fieldErrors.usernameOrEmail}</span>
+              {fieldErrors.email && (
+                <span className="form-error-msg">{fieldErrors.email}</span>
               )}
             </div>
 

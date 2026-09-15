@@ -140,24 +140,25 @@ export const TaskProvider = ({ children }) => {
 
       // Filter relevance for this client
       let isRelevant = false;
-      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All' || notifType === 'user_registered')) {
-        isRelevant = true;
-      } else if (!isManager) {
-        if (notif.forRole === 'Manager' || notifType === 'user_registered') {
-          isRelevant = false;
-        } else {
-          const rName = (notif.recipientName || '').toLowerCase().trim();
-          const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
-          if (
-            rUser === myId ||
-            rName === myName ||
-            rName === myUsername ||
-            notif.forRole === 'User' ||
-            notif.forRole === 'All'
-          ) {
-            isRelevant = true;
-          }
+      const rName = (notif.recipientName || '').toLowerCase().trim();
+      const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
+      const isTargetedToMe = (rUser && rUser === myId) || (rName && (rName === myName || rName === myUsername || myName.includes(rName) || rName.includes(myName)));
+
+      if (notifType === 'task_completed' || notif.type === 'task_completed') {
+        // Direct Assigner rule: Task completion notifications MUST only go to the user who assigned the task!
+        if (isTargetedToMe) {
+          isRelevant = true;
         }
+      } else if (notifType === 'user_registered') {
+        if (isManager || (user && user.role === 'Super Admin')) {
+          isRelevant = true;
+        }
+      } else if (isTargetedToMe) {
+        isRelevant = true;
+      } else if (notif.forRole === 'All') {
+        isRelevant = true;
+      } else if (isManager && notif.forRole === 'Manager' && !notif.recipientUser && !notif.recipientName) {
+        isRelevant = true;
       }
 
       if (isRelevant) {
@@ -168,10 +169,9 @@ export const TaskProvider = ({ children }) => {
         });
         setUnreadCount((prev) => prev + 1);
 
-        let defaultToastTitle = isManager ? 'Task Completed Alert' : 'New Task Assigned';
-        if (notifType === 'user_registered') {
-          defaultToastTitle = 'New Registration Request';
-        }
+        let defaultToastTitle = (notifType === 'task_completed' || notif.type === 'task_completed')
+          ? 'Task Completed Report'
+          : (notifType === 'user_registered' ? 'New Registration Request' : 'New Task Assigned');
 
         // Trigger Instant Live Toast Banner
         showLiveToast({

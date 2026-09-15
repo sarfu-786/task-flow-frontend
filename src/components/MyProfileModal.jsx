@@ -39,7 +39,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    username: '',
     email: '',
     department: 'Internet Work',
     avatar: '',
@@ -61,7 +60,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     if (isOpen && user) {
       setFormData({
         name: user.name || '',
-        username: user.username || '',
         email: user.email || '',
         department: user.department || 'Internet Work',
         avatar: user.avatar || '',
@@ -92,9 +90,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     const errors = {};
     if (!formData.name.trim()) {
       errors.name = 'Full name is required';
-    }
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
     }
     if (!formData.email.trim()) {
       errors.email = 'Email address is required';
@@ -159,7 +154,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     try {
       const payload = {
         name: formData.name.trim(),
-        username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         department: formData.department,
         avatar: formData.avatar !== undefined ? formData.avatar : (user.avatar || ''),
@@ -195,7 +189,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     try {
       const payload = {
         name: formData.name.trim() || user.name,
-        username: formData.username.trim() || user.username,
         email: (formData.email.trim() || user.email).toLowerCase(),
         department: formData.department || user.department,
         newPassword: formData.newPassword.trim(),
@@ -459,7 +452,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                      @{formData.username || user.username} • {formData.email || user.email}
+                      {formData.email || user.email} • {formData.department || user.department}
                     </div>
                   </div>
                 </div>
@@ -514,29 +507,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     {fieldErrors.name && (
                       <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px', display: 'block' }}>
                         {fieldErrors.name}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Username */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px', display: 'block' }}>
-                      Username <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className={`form-input ${fieldErrors.username ? 'is-invalid' : ''}`}
-                      value={formData.username}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, username: e.target.value }));
-                        if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: '' }));
-                      }}
-                      placeholder="e.g. sarfraj"
-                      style={{ width: '100%', padding: '9px 12px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                    />
-                    {fieldErrors.username && (
-                      <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px', display: 'block' }}>
-                        {fieldErrors.username}
                       </span>
                     )}
                   </div>

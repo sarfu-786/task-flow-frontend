@@ -20,6 +20,49 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
+
 export const ManagerDashboard = ({ setActiveSection }) => {
   const { tasks } = useTasks();
   const { user: currentUser } = useAuth();
@@ -85,19 +128,18 @@ export const ManagerDashboard = ({ setActiveSection }) => {
   // Active Approved Users
   const activeUsers = users.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
-  // Find subordinates reporting to this Manager
+  // Find all recursive subordinates under this Manager in hierarchy
   const currentUserId = currentUser?._id ? currentUser._id.toString() : '';
   const currentUserName = (currentUser?.name || '').toLowerCase();
+  const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
 
   const directSubordinates = activeUsers.filter((u) => {
     if (u._id === currentUserId) return false;
-    const repId = u.reportsTo ? u.reportsTo.toString() : '';
-    const repName = (u.reportsToName || '').toLowerCase();
-    return (repId && repId === currentUserId) || (repName && repName.includes(currentUserName));
+    return subordinateIds.has(u._id.toString());
   });
 
   // Team members list: active subordinates belonging to this manager
-  const teamMembers = activeUsers.filter((u) => u._id !== currentUserId);
+  const teamMembers = directSubordinates;
 
   const teamNames = [
     currentUserName,

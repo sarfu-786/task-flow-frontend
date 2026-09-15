@@ -282,6 +282,16 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 <Users className="nav-icon" />
                 <span>Users</span>
               </button>
+
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
+                onClick={() => handleNavClick('tasks')}
+                id="nav-user-tasks"
+              >
+                <CheckSquare className="nav-icon" />
+                <span>Task Management</span>
+              </button>
             </>
           )}
         </nav>

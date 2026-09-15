@@ -130,7 +130,7 @@ export const EmployeeDrilldownModal = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search users by name, email, username..."
+                placeholder="Search users by name, email, department..."
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 style={{ padding: '7px 12px', fontSize: '0.85rem' }}
@@ -207,62 +207,62 @@ export const EmployeeDrilldownModal = ({
                     const userPending = memberTasks.filter((t) => t.status === 'To Do').length;
 
                     const dateStr = member.createdAt
-                      ? new Date(member.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                      : '—';
+                    ? new Date(member.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : '—';
 
-                    return (
-                      <tr key={member._id}>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className="sr-no-badge">{idx + 1}</span>
-                        </td>
+                  return (
+                    <tr key={member._id}>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className="sr-no-badge">{idx + 1}</span>
+                      </td>
 
-                        {/* Employee Info */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {member.avatar ? (
-                              <img
-                                src={member.avatar}
-                                alt={member.name}
-                                style={{
-                                  width: '38px',
-                                  height: '38px',
-                                  borderRadius: '50%',
-                                  objectFit: 'cover',
-                                  border: '1.5px solid var(--border-color)',
-                                }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  width: '38px',
-                                  height: '38px',
-                                  borderRadius: '50%',
-                                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: '#fff',
-                                  fontWeight: 700,
-                                  fontSize: '0.9rem',
-                                }}
-                              >
-                                {member.name.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            <div>
-                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
-                                {member.name}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                @{member.username} • {member.email}
-                              </div>
+                      {/* Employee Info */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {member.avatar ? (
+                            <img
+                              src={member.avatar}
+                              alt={member.name}
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '1.5px solid var(--border-color)',
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
+                              }}
+                            >
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
+                              {member.name}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                              {member.email}
                             </div>
                           </div>
-                        </td>
+                        </div>
+                      </td>
 
                         {/* Department */}
                         <td>

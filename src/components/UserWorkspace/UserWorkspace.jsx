@@ -21,6 +21,49 @@ import {
   Users,
 } from 'lucide-react';
 
+// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
+
 export const UserWorkspace = ({ setActiveSection }) => {
   const { user } = useAuth();
   const { tasks, loading, completeTask, updateStatus, notifications, unreadCount } = useTasks();
@@ -31,17 +74,13 @@ export const UserWorkspace = ({ setActiveSection }) => {
   const [modalSearch, setModalSearch] = useState('');
   const [modalTypeFilter, setModalTypeFilter] = useState('all');
 
-  // Subordinates calculation
+  // Subordinates calculation (all recursive lower users in hierarchy)
   const currentUserIdStr = (user?._id || user?.id || '').toString();
-  const currentUserName = (user?.name || '').toLowerCase().trim();
+  const subordinateIds = getSubordinateUserIds(user, users);
   const mySubordinates = (users || []).filter((u) => {
     if (!u) return false;
     const uId = (u._id || u.id || '').toString();
-    if (uId === currentUserIdStr) return false;
-    const repId = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
-    const repName = (u.reportsToName || '').toLowerCase().trim();
-    const createdBy = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
-    return repId === currentUserIdStr || createdBy === currentUserIdStr || (currentUserName && repName.includes(currentUserName));
+    return subordinateIds.has(uId);
   });
 
   // Task Completion Modal State
@@ -146,7 +185,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
     if (res.success) {
       closeCompletionModal();
       setSuccessToast(
-        `Great job! Task marked as completed and notification sent to Manager's inbox.`
+        `Great job! Task marked as completed and completion report sent directly to ${taskToComplete.assignedBy || 'Assigner'}.`
       );
       setTimeout(() => setSuccessToast(''), 5000);
     }
@@ -882,7 +921,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
                   <CheckCircle2 size={22} />
                 </div>
                 <div>
-                  <h3 className="modal-title" style={{ color: 'var(--text-primary)', margin: 0 }}>Complete Task & Notify Manager</h3>
+                  <h3 className="modal-title" style={{ color: 'var(--text-primary)', margin: 0 }}>Complete Task & Report to Assigner</h3>
                 </div>
               </div>
 
@@ -936,7 +975,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
                 {/* Completion Remark Input */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="completionRemark">
-                    Completion Remark / Note for Manager <span className="required">*</span>
+                    Completion Remark / Report for {taskToComplete.assignedBy ? `Assigner (${taskToComplete.assignedBy})` : 'Assigner'} <span className="required">*</span>
                   </label>
                   <textarea
                     id="completionRemark"
@@ -949,7 +988,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
                     autoFocus
                   />
                   <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                    This message will be dispatched to the Manager's Inbox.
+                    This completion report will be dispatched directly to {taskToComplete.assignedBy || 'the assigner'}.
                   </span>
                 </div>
               </div>
@@ -981,7 +1020,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>Submit & Notify Manager</span>
+                      <span>Submit & Report to Assigner</span>
                     </>
                   )}
                 </button>
