@@ -76,6 +76,14 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
+
+    // If session expired or token rejected on protected routes, notify AuthContext
+    if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/forgot-password')) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('taskflow:unauthorized'));
+      }
+    }
+
     return response;
   } catch (err) {
     clearTimeout(timeoutId);

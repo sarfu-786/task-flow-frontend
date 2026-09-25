@@ -3,10 +3,73 @@ import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
+// Safely decode JWT and check if it has expired
+const isTokenExpired = (rawToken) => {
+  if (!rawToken || typeof rawToken !== 'string') return true;
+  try {
+    const parts = rawToken.split('.');
+    if (parts.length !== 3) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const decoded = JSON.parse(jsonPayload);
+    if (!decoded || !decoded.exp) return false;
+    // Current time in seconds vs exp in seconds (with 2-second clock skew buffer)
+    return Date.now() >= decoded.exp * 1000 - 2000;
+  } catch {
+    return true;
+  }
+};
+
+// Calculate remaining milliseconds until token expiration
+const getTokenRemainingMs = (rawToken) => {
+  if (!rawToken || typeof rawToken !== 'string') return 0;
+  try {
+    const parts = rawToken.split('.');
+    if (parts.length !== 3) return 0;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const decoded = JSON.parse(jsonPayload);
+    if (!decoded || !decoded.exp) return Infinity;
+    const remaining = decoded.exp * 1000 - Date.now();
+    return remaining > 0 ? remaining : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const clearAuthStorage = () => {
+  try {
+    localStorage.removeItem('taskflow_token');
+    localStorage.removeItem('taskflow_user');
+    localStorage.removeItem('taskflow_active_section');
+    sessionStorage.removeItem('taskflow_token');
+    sessionStorage.removeItem('taskflow_user');
+    sessionStorage.removeItem('taskflow_active_section');
+  } catch {}
+};
+
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     try {
-      return localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token') || null;
+      const storedToken =
+        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
+      if (!storedToken || isTokenExpired(storedToken)) {
+        clearAuthStorage();
+        return null;
+      }
+      return storedToken;
     } catch {
       return null;
     }
@@ -14,7 +77,14 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('taskflow_user') || sessionStorage.getItem('taskflow_user');
+      const storedToken =
+        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
+      if (!storedToken || isTokenExpired(storedToken)) {
+        clearAuthStorage();
+        return null;
+      }
+      const savedUser =
+        localStorage.getItem('taskflow_user') || sessionStorage.getItem('taskflow_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -35,6 +105,15 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      if (isTokenExpired(savedToken)) {
+        clearAuthStorage();
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+        }
+        return;
+      }
+
       try {
         const res = await api.getProfile();
         if (isMounted && res.success && res.user) {
@@ -46,17 +125,8 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn('Session background sync notice:', err.message);
-        if (
-          err.status === 401 &&
-          err.message &&
-          (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid') || err.message.includes('not found'))
-        ) {
-          try {
-            localStorage.removeItem('taskflow_token');
-            localStorage.removeItem('taskflow_user');
-            sessionStorage.removeItem('taskflow_token');
-            sessionStorage.removeItem('taskflow_user');
-          } catch {}
+        if (err.status === 401) {
+          clearAuthStorage();
           if (isMounted) {
             setToken(null);
             setUser(null);
@@ -69,6 +139,52 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // Monitor token expiration, handle auto-logout timer and visibility/focus checks
+  useEffect(() => {
+    if (!token) return;
+
+    if (isTokenExpired(token)) {
+      logout();
+      return;
+    }
+
+    const remainingMs = getTokenRemainingMs(token);
+    let timerId = null;
+
+    if (remainingMs > 0 && remainingMs < 2147483647) {
+      timerId = setTimeout(() => {
+        logout();
+      }, remainingMs);
+    }
+
+    const checkExpirationOnActive = () => {
+      if (isTokenExpired(token)) {
+        logout();
+      }
+    };
+
+    window.addEventListener('focus', checkExpirationOnActive);
+    document.addEventListener('visibilitychange', checkExpirationOnActive);
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      window.removeEventListener('focus', checkExpirationOnActive);
+      document.removeEventListener('visibilitychange', checkExpirationOnActive);
+    };
+  }, [token]);
+
+  // Global unauthorized event listener (triggered on any 401 API response)
+  useEffect(() => {
+    const handleUnauthorizedEvent = () => {
+      logout();
+    };
+
+    window.addEventListener('taskflow:unauthorized', handleUnauthorizedEvent);
+    return () => {
+      window.removeEventListener('taskflow:unauthorized', handleUnauthorizedEvent);
     };
   }, []);
 
