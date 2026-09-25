@@ -14,9 +14,6 @@ import {
   BarChart3,
   ShieldAlert,
   Sparkles,
-  UserCheck,
-  Briefcase,
-  ShieldCheck,
 } from 'lucide-react';
 
 export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg = '' }) => {
@@ -75,26 +72,6 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
     return Object.keys(errors).length === 0;
   };
 
-  const handleQuickLogin = async (demoEmail, demoPassword) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setFieldErrors({});
-    setGeneralError('');
-    setApprovalWarning('');
-    setSuccessBanner('');
-    setIsLoading(true);
-
-    const res = await login(demoEmail, demoPassword);
-    setIsLoading(false);
-
-    if (!res.success) {
-      if (res.status === 403 || res.approvalStatus) {
-        setApprovalWarning(res.message);
-      } else {
-        setGeneralError(res.message || 'Invalid credentials. Please verify and try again.');
-      }
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -423,115 +400,6 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               Sign in to your TaskFlow account
             </p>
 
-            {/* Fast Demo One-Click Fill Options */}
-            <div
-              style={{
-                marginBottom: '20px',
-                padding: '10px',
-                borderRadius: '12px',
-                background: '#f8fafc',
-                border: '1px solid #f1f5f9',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.6px',
-                  color: '#64748b',
-                  marginBottom: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Sparkles size={13} color="#2563eb" />
-                <span>Instant 1-Click Role Login</span>
-              </div>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '6px',
-                }}
-              >
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickLogin('sarfrajahamad068@gmail.com', 'password')}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '8px',
-                    border: '1px solid #bfdbfe',
-                    background: '#eff6ff',
-                    color: '#1e40af',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease',
-                  }}
-                  title="Login as Super Admin (Sarfraj)"
-                >
-                  <ShieldCheck size={13} />
-                  <span>Admin</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickLogin('asif', 'user123')}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '8px',
-                    border: '1px solid #d1fae5',
-                    background: '#ecfdf5',
-                    color: '#065f46',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease',
-                  }}
-                  title="Login as Manager (Asif)"
-                >
-                  <Briefcase size={13} />
-                  <span>Manager</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickLogin('wasil', 'user123')}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    background: '#ffffff',
-                    color: '#334155',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease',
-                  }}
-                  title="Login as Employee (Wasil)"
-                >
-                  <UserCheck size={13} />
-                  <span>User</span>
-                </button>
-              </div>
-            </div>
 
             {/* Success Banner */}
             {successBanner && (
