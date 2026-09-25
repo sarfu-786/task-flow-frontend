@@ -5,7 +5,14 @@ import { socketService } from '../services/socket';
 const ComplaintContext = createContext(null);
 
 export const ComplaintProvider = ({ children }) => {
-  const [allComplaints, setAllComplaints] = useState([]);
+  const [allComplaints, setAllComplaints] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_complaints');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [moduleDisabled, setModuleDisabled] = useState(false);
@@ -37,27 +44,30 @@ export const ComplaintProvider = ({ children }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
 
-  const fetchComplaints = useCallback(async () => {
+  const fetchComplaints = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const res = await complaintApi.getComplaints({ limit: 1000 });
       if (res && res.success) {
         setAllComplaints(res.complaints || []);
+        try {
+          localStorage.setItem('taskflow_cached_complaints', JSON.stringify(res.complaints || []));
+        } catch {}
         setModuleDisabled(false);
       }
     } catch (err) {
       if (err.moduleDisabled) {
         setModuleDisabled(true);
       }
-      setError(err.message || 'Failed to load complaints');
+      if (!silent) setError(err.message || 'Failed to load complaints');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchComplaints();
+    fetchComplaints(true);
   }, [fetchComplaints]);
 
   // Compute dynamic filtered complaints matching search and filters

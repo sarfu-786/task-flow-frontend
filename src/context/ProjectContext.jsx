@@ -5,15 +5,39 @@ import { socketService } from '../services/socket';
 const ProjectContext = createContext(null);
 
 export const ProjectProvider = ({ children }) => {
-  const [projects, setProjects] = useState([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    planning: 0,
-    inProgress: 0,
-    completed: 0,
-    onHold: 0,
-    totalBudget: 0,
-    avgProgress: 0,
+  const [projects, setProjects] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_projects');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [stats, setStats] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_project_stats');
+      return cached
+        ? JSON.parse(cached)
+        : {
+            total: 0,
+            planning: 0,
+            inProgress: 0,
+            completed: 0,
+            onHold: 0,
+            totalBudget: 0,
+            avgProgress: 0,
+          };
+    } catch {
+      return {
+        total: 0,
+        planning: 0,
+        inProgress: 0,
+        completed: 0,
+        onHold: 0,
+        totalBudget: 0,
+        avgProgress: 0,
+      };
+    }
   });
 
   const [loading, setLoading] = useState(false);
@@ -38,41 +62,52 @@ export const ProjectProvider = ({ children }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await projectApi.getProjects({
-        search,
-        status: statusFilter,
-        priority: priorityFilter,
-        category: categoryFilter,
-        manager: managerFilter,
-        page: currentPage,
-        limit: itemsPerPage,
-      });
+  const fetchProjects = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) setLoading(true);
+        setError(null);
+        const res = await projectApi.getProjects({
+          search,
+          status: statusFilter,
+          priority: priorityFilter,
+          category: categoryFilter,
+          manager: managerFilter,
+          page: currentPage,
+          limit: itemsPerPage,
+        });
 
-      if (res && res.success) {
-        setProjects(res.projects || []);
-        if (res.stats) setStats(res.stats);
-        if (res.pagination) {
-          setTotalPages(res.pagination.totalPages || 1);
-          setTotalItems(res.pagination.total || 0);
+        if (res && res.success) {
+          setProjects(res.projects || []);
+          try {
+            localStorage.setItem('taskflow_cached_projects', JSON.stringify(res.projects || []));
+          } catch {}
+          if (res.stats) {
+            setStats(res.stats);
+            try {
+              localStorage.setItem('taskflow_cached_project_stats', JSON.stringify(res.stats));
+            } catch {}
+          }
+          if (res.pagination) {
+            setTotalPages(res.pagination.totalPages || 1);
+            setTotalItems(res.pagination.total || 0);
+          }
+          setModuleDisabled(false);
         }
-        setModuleDisabled(false);
+      } catch (err) {
+        if (err.moduleDisabled) {
+          setModuleDisabled(true);
+        }
+        if (!silent) setError(err.message || 'Failed to load projects');
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } catch (err) {
-      if (err.moduleDisabled) {
-        setModuleDisabled(true);
-      }
-      setError(err.message || 'Failed to load projects');
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter, priorityFilter, categoryFilter, managerFilter, currentPage]);
+    },
+    [search, statusFilter, priorityFilter, categoryFilter, managerFilter, currentPage]
+  );
 
   useEffect(() => {
-    fetchProjects();
+    fetchProjects(true);
   }, [fetchProjects]);
 
   // Socket listener for real-time project events

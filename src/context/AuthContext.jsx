@@ -6,7 +6,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     try {
-      return sessionStorage.getItem('taskflow_token') || null;
+      return localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token') || null;
     } catch {
       return null;
     }
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = sessionStorage.getItem('taskflow_user');
+      const savedUser = localStorage.getItem('taskflow_user') || sessionStorage.getItem('taskflow_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -28,13 +28,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
-    try {
-      localStorage.removeItem('taskflow_token');
-      localStorage.removeItem('taskflow_user');
-    } catch {}
-
     const validateSession = async () => {
-      const savedToken = sessionStorage.getItem('taskflow_token');
+      const savedToken =
+        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
       if (!savedToken) {
         return;
       }
@@ -43,17 +39,24 @@ export const AuthProvider = ({ children }) => {
         const res = await api.getProfile();
         if (isMounted && res.success && res.user) {
           setUser(res.user);
-          sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          try {
+            localStorage.setItem('taskflow_user', JSON.stringify(res.user));
+            sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          } catch {}
         }
       } catch (err) {
         console.warn('Session background sync notice:', err.message);
         if (
           err.status === 401 &&
           err.message &&
-          (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid'))
+          (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid') || err.message.includes('not found'))
         ) {
-          sessionStorage.removeItem('taskflow_token');
-          sessionStorage.removeItem('taskflow_user');
+          try {
+            localStorage.removeItem('taskflow_token');
+            localStorage.removeItem('taskflow_user');
+            sessionStorage.removeItem('taskflow_token');
+            sessionStorage.removeItem('taskflow_user');
+          } catch {}
           if (isMounted) {
             setToken(null);
             setUser(null);
@@ -85,10 +88,19 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.login(usernameOrEmail, password);
       if (res.success) {
-        sessionStorage.setItem('taskflow_token', res.token);
-        sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        try {
+          localStorage.setItem('taskflow_token', res.token);
+          localStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          sessionStorage.setItem('taskflow_token', res.token);
+          sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        } catch {}
         const role = res.user?.role || 'User';
-        const defaultSection = role === 'Super Admin' ? 'superadmin' : ['Manager', 'Executive', 'Administrator'].includes(role) ? 'manager' : 'user-workspace';
+        const defaultSection =
+          role === 'Super Admin'
+            ? 'superadmin'
+            : ['Manager', 'Executive', 'Administrator'].includes(role)
+            ? 'manager'
+            : 'user-workspace';
         try {
           localStorage.setItem('taskflow_active_section', defaultSection);
           sessionStorage.setItem('taskflow_active_section', defaultSection);
@@ -111,7 +123,10 @@ export const AuthProvider = ({ children }) => {
   const updateUserProfile = (updatedUserData) => {
     setUser((prev) => {
       const next = { ...prev, ...updatedUserData };
-      sessionStorage.setItem('taskflow_user', JSON.stringify(next));
+      try {
+        localStorage.setItem('taskflow_user', JSON.stringify(next));
+        sessionStorage.setItem('taskflow_user', JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
@@ -122,11 +137,15 @@ export const AuthProvider = ({ children }) => {
       const res = await api.updateProfile(profileData);
       if (res.success && res.user) {
         setUser(res.user);
-        sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
-        if (res.token) {
-          setToken(res.token);
-          sessionStorage.setItem('taskflow_token', res.token);
-        }
+        try {
+          localStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          if (res.token) {
+            setToken(res.token);
+            localStorage.setItem('taskflow_token', res.token);
+            sessionStorage.setItem('taskflow_token', res.token);
+          }
+        } catch {}
         return { success: true, message: res.message || 'Profile updated successfully!', user: res.user };
       }
       return { success: true, message: 'Profile updated successfully!' };
@@ -138,12 +157,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     try {
-      sessionStorage.removeItem('taskflow_token');
-      sessionStorage.removeItem('taskflow_user');
-      sessionStorage.removeItem('taskflow_active_section');
       localStorage.removeItem('taskflow_token');
       localStorage.removeItem('taskflow_user');
       localStorage.removeItem('taskflow_active_section');
+      sessionStorage.removeItem('taskflow_token');
+      sessionStorage.removeItem('taskflow_user');
+      sessionStorage.removeItem('taskflow_active_section');
     } catch {
       // ignore storage errors
     }

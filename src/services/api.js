@@ -1,13 +1,19 @@
+let cachedBaseUrl = null;
+
 export const getApiBaseUrl = () => {
+  if (cachedBaseUrl) return cachedBaseUrl;
+
   // 1. If running in browser and on local machine or local LAN
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-      return 'http://localhost:5000/api';
+      cachedBaseUrl = 'http://localhost:5000/api';
+      return cachedBaseUrl;
     }
     // LAN IP support for mobile testing on local network (192.168.x.x, 10.x.x.x, 172.x.x.x)
     if (/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)) {
-      return `http://${host}:5000/api`;
+      cachedBaseUrl = `http://${host}:5000/api`;
+      return cachedBaseUrl;
     }
   }
 
@@ -20,14 +26,44 @@ export const getApiBaseUrl = () => {
     !envUrl.includes('localhost') &&
     !envUrl.includes('127.0.0.1')
   ) {
-    return envUrl.replace(/\/+$/, '');
+    cachedBaseUrl = envUrl.replace(/\/+$/, '');
+    return cachedBaseUrl;
   }
 
   // 3. Default to live deployed backend
-  return 'https://task-flow-backend-f0gp.onrender.com/api';
+  cachedBaseUrl = 'https://task-flow-backend-f0gp.onrender.com/api';
+  return cachedBaseUrl;
 };
 
 const getBaseUrl = () => getApiBaseUrl();
+
+// Immediate non-blocking background server pre-warming (wakes up cold-starting Render instances)
+let isPrewarmed = false;
+export const prewarmBackend = async () => {
+  if (isPrewarmed || typeof window === 'undefined') return;
+  try {
+    const url = `${getBaseUrl()}/health`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    fetch(url, { method: 'GET', signal: controller.signal, mode: 'cors' })
+      .then(() => {
+        isPrewarmed = true;
+        clearTimeout(timer);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+      });
+  } catch {
+    // non-blocking
+  }
+};
+
+// Trigger prewarm immediately on script evaluation
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    prewarmBackend();
+  }, 10);
+}
 
 // Fast, timeout-protected fetch helper with 15s timeout
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
@@ -51,7 +87,10 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
 };
 
 const getAuthHeaders = () => {
-  const token = (typeof window !== 'undefined' && (sessionStorage.getItem('taskflow_token') || localStorage.getItem('taskflow_token'))) || null;
+  const token =
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token'))) ||
+    null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

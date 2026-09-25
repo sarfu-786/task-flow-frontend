@@ -4,9 +4,26 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    chunkSizeWarningLimit: 1600,
+    target: 'es2020',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 600,
     sourcemap: false,
     minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
+          if (id.includes('node_modules/socket.io-client')) {
+            return 'vendor-socket';
+          }
+        },
+      },
+    },
   },
   server: {
     port: 3000,
@@ -25,4 +42,3 @@ export default defineConfig({
     },
   },
 });
-

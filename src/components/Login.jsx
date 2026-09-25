@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { prewarmBackend } from '../services/api';
 import { ForgotPassword } from './ForgotPassword';
 import {
   LogIn,
@@ -12,6 +13,10 @@ import {
   Users,
   BarChart3,
   ShieldAlert,
+  Sparkles,
+  UserCheck,
+  Briefcase,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg = '' }) => {
@@ -31,6 +36,11 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
   const [generalError, setGeneralError] = useState('');
   const [approvalWarning, setApprovalWarning] = useState('');
   const [successBanner, setSuccessBanner] = useState(initialSuccessMsg || '');
+
+  // Pre-warm backend immediately on login component mount
+  useEffect(() => {
+    prewarmBackend();
+  }, []);
 
   useEffect(() => {
     if (initialEmail) {
@@ -63,6 +73,27 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const handleQuickLogin = async (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setFieldErrors({});
+    setGeneralError('');
+    setApprovalWarning('');
+    setSuccessBanner('');
+    setIsLoading(true);
+
+    const res = await login(demoEmail, demoPassword);
+    setIsLoading(false);
+
+    if (!res.success) {
+      if (res.status === 403 || res.approvalStatus) {
+        setApprovalWarning(res.message);
+      } else {
+        setGeneralError(res.message || 'Invalid credentials. Please verify and try again.');
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -191,7 +222,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                 Task<span style={{ color: '#2563eb' }}>Flow</span>
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>
-                Unified Task Management
+                Enterprise Modular System
               </div>
             </div>
           </div>
@@ -232,7 +263,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               maxWidth: '440px',
             }}
           >
-            Plan, track and manage tasks, projects, leads, opportunities and your team — all in one place.
+            Plan, track and manage tasks, projects, leads, complaints, and team hierarchy with real-time speed.
           </p>
 
           {/* Feature List */}
@@ -257,10 +288,10 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               </div>
               <div>
                 <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
-                  Stay Organized
+                  Ultra-Fast Workflow
                 </div>
                 <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
-                  Manage your work efficiently
+                  Instant zero-lag navigation and data sync
                 </div>
               </div>
             </div>
@@ -285,10 +316,10 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               </div>
               <div>
                 <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
-                  Work as a Team
+                  Hierarchy & Team Visibility
                 </div>
                 <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
-                  Collaborate and achieve more
+                  Role-scoped management and live collaboration
                 </div>
               </div>
             </div>
@@ -313,36 +344,21 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               </div>
               <div>
                 <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
-                  Track Progress
+                  Enterprise Modules
                 </div>
                 <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
-                  Turn plans into results
+                  CRM Leads, SLA Complaints, and Project Delivery
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Doodle quote note */}
+          {/* Quote note */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginTop: 'auto', paddingTop: '10px' }}>
-            <svg
-              width="24"
-              height="30"
-              viewBox="0 0 24 30"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ color: '#94a3b8', flexShrink: 0, marginTop: '2px' }}
-            >
-              <path
-                d="M4 3C12 3 20 9 16 18C14 22 10 24 6 24M6 24L10 20M6 24L9 28"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Sparkles size={20} color="#3b82f6" style={{ flexShrink: 0, marginTop: '2px' }} />
             <div style={{ color: '#64748b', fontSize: '0.82rem', lineHeight: '1.4' }}>
-              A better way<br />
-              to manage your work.
+              Designed for high-performance teams.<br />
+              Secure, resilient, and always connected.
             </div>
           </div>
         </div>
@@ -354,8 +370,8 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               width: '100%',
               maxWidth: '470px',
               background: '#ffffff',
-              borderRadius: '36px',
-              padding: '42px 38px 36px',
+              borderRadius: '32px',
+              padding: '38px 34px 32px',
               boxShadow: '0 25px 60px -15px rgba(37, 99, 235, 0.12), 0 0 1px 1px rgba(226, 232, 240, 0.9)',
               position: 'relative',
             }}
@@ -363,19 +379,19 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
             {/* Top Logo Icon */}
             <div
               style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '18px',
+                width: '52px',
+                height: '52px',
+                borderRadius: '16px',
                 background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#ffffff',
-                margin: '0 auto 18px',
-                boxShadow: '0 10px 20px rgba(37, 99, 235, 0.28)',
+                margin: '0 auto 16px',
+                boxShadow: '0 10px 20px rgba(37, 99, 235, 0.25)',
               }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <rect width="16" height="18" x="4" y="3" rx="3" />
                 <line x1="8" x2="16" y1="8" y2="8" />
                 <line x1="8" x2="16" y1="12" y2="12" />
@@ -387,7 +403,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
             <h2
               style={{
                 textAlign: 'center',
-                fontSize: '1.7rem',
+                fontSize: '1.65rem',
                 fontWeight: 800,
                 color: '#0f172a',
                 margin: '0 0 6px 0',
@@ -399,13 +415,123 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
             <p
               style={{
                 textAlign: 'center',
-                fontSize: '0.92rem',
+                fontSize: '0.9rem',
                 color: '#64748b',
-                margin: '0 0 28px 0',
+                margin: '0 0 20px 0',
               }}
             >
               Sign in to your TaskFlow account
             </p>
+
+            {/* Fast Demo One-Click Fill Options */}
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '10px',
+                borderRadius: '12px',
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.6px',
+                  color: '#64748b',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Sparkles size={13} color="#2563eb" />
+                <span>Instant 1-Click Role Login</span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '6px',
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleQuickLogin('sarfrajahamad068@gmail.com', 'password')}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid #bfdbfe',
+                    background: '#eff6ff',
+                    color: '#1e40af',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Login as Super Admin (Sarfraj)"
+                >
+                  <ShieldCheck size={13} />
+                  <span>Admin</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleQuickLogin('asif', 'user123')}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1fae5',
+                    background: '#ecfdf5',
+                    color: '#065f46',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Login as Manager (Asif)"
+                >
+                  <Briefcase size={13} />
+                  <span>Manager</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleQuickLogin('wasil', 'user123')}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#334155',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Login as Employee (Wasil)"
+                >
+                  <UserCheck size={13} />
+                  <span>User</span>
+                </button>
+              </div>
+            </div>
 
             {/* Success Banner */}
             {successBanner && (
@@ -421,7 +547,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                   color: '#047857',
                   fontSize: '0.86rem',
                   fontWeight: 500,
-                  marginBottom: '20px',
+                  marginBottom: '18px',
                 }}
               >
                 <CheckCircle2 size={18} color="#059669" />
@@ -442,7 +568,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                   gap: '10px',
                   color: '#92400e',
                   fontSize: '0.86rem',
-                  marginBottom: '20px',
+                  marginBottom: '18px',
                 }}
               >
                 <ShieldAlert size={20} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -469,7 +595,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                   color: '#dc2626',
                   fontSize: '0.86rem',
                   fontWeight: 500,
-                  marginBottom: '20px',
+                  marginBottom: '18px',
                 }}
               >
                 <AlertCircle size={18} color="#dc2626" />
@@ -480,18 +606,18 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
             {/* Login Form */}
             <form onSubmit={handleSubmit} noValidate>
               {/* Email Address */}
-              <div style={{ marginBottom: '18px' }}>
+              <div style={{ marginBottom: '16px' }}>
                 <label
                   htmlFor="login-email"
                   style={{
                     display: 'block',
                     fontWeight: 700,
-                    fontSize: '0.88rem',
+                    fontSize: '0.86rem',
                     color: '#0f172a',
-                    marginBottom: '8px',
+                    marginBottom: '7px',
                   }}
                 >
-                  Email Address <span style={{ color: '#ef4444' }}>*</span>
+                  Email Address / Username <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <div
@@ -510,8 +636,8 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                   </div>
                   <input
                     id="login-email"
-                    type="email"
-                    placeholder="Enter your email address"
+                    type="text"
+                    placeholder="Enter email or username"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -521,10 +647,10 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                       if (generalError) setGeneralError('');
                     }}
                     disabled={isLoading}
-                    autoComplete="email"
+                    autoComplete="username"
                     style={{
                       width: '100%',
-                      height: '46px',
+                      height: '45px',
                       paddingLeft: '42px',
                       paddingRight: '14px',
                       borderRadius: '12px',
@@ -557,15 +683,15 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               </div>
 
               {/* Password */}
-              <div style={{ marginBottom: '14px' }}>
+              <div style={{ marginBottom: '12px' }}>
                 <label
                   htmlFor="password"
                   style={{
                     display: 'block',
                     fontWeight: 700,
-                    fontSize: '0.88rem',
+                    fontSize: '0.86rem',
                     color: '#0f172a',
-                    marginBottom: '8px',
+                    marginBottom: '7px',
                   }}
                 >
                   Password <span style={{ color: '#ef4444' }}>*</span>
@@ -601,7 +727,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                     autoComplete="current-password"
                     style={{
                       width: '100%',
-                      height: '46px',
+                      height: '45px',
                       paddingLeft: '42px',
                       paddingRight: '42px',
                       borderRadius: '12px',
@@ -656,7 +782,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               </div>
 
               {/* Forgot Password Link */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
@@ -680,12 +806,12 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                 disabled={isLoading}
                 style={{
                   width: '100%',
-                  height: '48px',
+                  height: '46px',
                   borderRadius: '999px',
                   background: 'linear-gradient(135deg, #1d68f7, #1d4ed8)',
                   border: 'none',
                   color: '#ffffff',
-                  fontSize: '0.98rem',
+                  fontSize: '0.96rem',
                   fontWeight: 700,
                   cursor: isLoading ? 'not-allowed' : 'pointer',
                   display: 'flex',
@@ -694,11 +820,23 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
                   gap: '8px',
                   boxShadow: '0 8px 22px rgba(29, 104, 247, 0.35)',
                   transition: 'all 0.2s ease',
-                  opacity: isLoading ? 0.75 : 1,
+                  opacity: isLoading ? 0.8 : 1,
                 }}
               >
                 {isLoading ? (
-                  <span>Signing In...</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        border: '2.5px solid rgba(255, 255, 255, 0.3)',
+                        borderTopColor: '#ffffff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                      }}
+                    />
+                    <span>Signing In...</span>
+                  </div>
                 ) : (
                   <>
                     <LogIn size={18} />
@@ -713,7 +851,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                margin: '22px 0',
+                margin: '20px 0',
               }}
             >
               <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
