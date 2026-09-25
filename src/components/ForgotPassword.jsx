@@ -19,7 +19,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
   // Steps: 'email' | 'otp' | 'reset' | 'success'
   const [step, setStep] = useState('email');
 
-  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [popupOtp, setPopupOtp] = useState('');
   const [showOtpPopup, setShowOtpPopup] = useState(false);
@@ -47,27 +47,27 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!email.trim()) {
-      setFieldErrors({ email: 'Email address is required' });
+    if (!usernameOrEmail.trim()) {
+      setFieldErrors({ usernameOrEmail: 'Username or email address is required' });
       return;
     }
     setFieldErrors({});
     setIsLoading(true);
 
     try {
-      const res = await api.forgotPassword(email.trim());
+      const res = await api.forgotPassword(usernameOrEmail.trim());
       setIsLoading(false);
       if (res.success && res.otp) {
         setPopupOtp(res.otp);
         setShowOtpPopup(true);
         setStep('otp');
-        setSuccessMsg('Reset OTP generated! See your verification code below.');
+        setSuccessMsg('Reset OTP generated! See the verification popup below.');
       } else {
         setErrorMsg(res.message || 'Failed to generate OTP');
       }
     } catch (err) {
       setIsLoading(false);
-      setErrorMsg(err.message || 'Failed to request OTP. Please verify your email address.');
+      setErrorMsg(err.message || 'Failed to request OTP. Please verify your username/email.');
     }
   };
 
@@ -87,7 +87,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
     setIsLoading(true);
 
     try {
-      const res = await api.verifyOtp(email.trim(), otp.trim());
+      const res = await api.verifyOtp(usernameOrEmail.trim(), otp.trim());
       setIsLoading(false);
       if (res.success) {
         setStep('reset');
@@ -128,7 +128,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
     setIsLoading(true);
 
     try {
-      const res = await api.resetPassword(email.trim(), otp.trim(), newPassword);
+      const res = await api.resetPassword(usernameOrEmail.trim(), otp.trim(), newPassword);
       setIsLoading(false);
       if (res.success) {
         setStep('success');
@@ -136,7 +136,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
         setTimeout(() => {
           if (onSuccessReset) {
             onSuccessReset({
-              email: email.trim(),
+              email: usernameOrEmail.trim(),
               message: 'Password reset successful! Please log in with your new password.',
             });
           } else if (onBackToLogin) {
@@ -189,7 +189,13 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
           >
             <KeyRound size={28} color="#ffffff" />
           </div>
-          <h1 className="login-title" style={{ fontSize: '1.6rem', marginBottom: 0 }}>Reset Password</h1>
+          <h1 className="login-title" style={{ fontSize: '1.6rem' }}>Reset Password</h1>
+          <p className="login-subtitle">
+            {step === 'email' && 'Enter your username or email address to receive a secure reset OTP'}
+            {step === 'otp' && 'Enter the 6-digit OTP code to verify your account identity'}
+            {step === 'reset' && 'Create and confirm your new secure account password'}
+            {step === 'success' && 'Your password has been reset successfully!'}
+          </p>
         </div>
 
         {/* Live OTP Pop-up Banner */}
@@ -212,7 +218,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sparkles size={18} color="#2563eb" />
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e40af' }}>
-                  Verification OTP Code
+                  Verification OTP Pop-up
                 </span>
               </div>
               <span
@@ -328,12 +334,12 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
           </div>
         )}
 
-        {/* STEP 1: Enter Email Address */}
+        {/* STEP 1: Enter Email / Username */}
         {step === 'email' && (
           <form onSubmit={handleRequestOtp} noValidate>
             <div className="form-group" style={{ marginBottom: '22px' }}>
               <label className="form-label" htmlFor="forgot-email">
-                Email Address <span className="required">*</span>
+                Username or Email Address <span className="required">*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <div
@@ -351,21 +357,21 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
                 </div>
                 <input
                   id="forgot-email"
-                  type="email"
+                  type="text"
                   className="form-control"
                   style={{ paddingLeft: '38px' }}
-                  placeholder="Enter your registered email address"
-                  value={email}
+                  placeholder="Enter your registered username or email"
+                  value={usernameOrEmail}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }));
+                    setUsernameOrEmail(e.target.value);
+                    if (fieldErrors.usernameOrEmail) setFieldErrors((prev) => ({ ...prev, usernameOrEmail: '' }));
                   }}
                   disabled={isLoading}
-                  autoComplete="email"
+                  autoComplete="username"
                 />
               </div>
-              {fieldErrors.email && (
-                <span className="form-error-msg">{fieldErrors.email}</span>
+              {fieldErrors.usernameOrEmail && (
+                <span className="form-error-msg">{fieldErrors.usernameOrEmail}</span>
               )}
             </div>
 

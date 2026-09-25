@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
+import { useLeads } from '../../context/LeadContext';
+import { useOpportunities } from '../../context/OpportunityContext';
+import { useComplaints } from '../../context/ComplaintContext';
+import { useProjects } from '../../context/ProjectContext';
+import { useSubscription } from '../../context/SubscriptionContext';
+import { MetricCard } from '../ManagerDashboard/MetricCard';
 import {
   CheckCircle2,
   Clock,
@@ -19,6 +25,18 @@ import {
   Bell,
   Sparkles,
   Users,
+  Target,
+  DollarSign,
+  Percent,
+  Plus,
+  LifeBuoy,
+  FolderKanban,
+  AlertTriangle,
+  Layers,
+  Award,
+  Eye,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 
 // Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
@@ -65,9 +83,24 @@ const getSubordinateUserIds = (user, allUsers) => {
 };
 
 export const UserWorkspace = ({ setActiveSection }) => {
-  const { user } = useAuth();
-  const { tasks, loading, completeTask, updateStatus, notifications, unreadCount } = useTasks();
+  const { user, userRoles, isSalesCoordinator, isServiceCoordinator, isManager } = useAuth();
+  const { isModuleActive } = useSubscription();
+  const {
+    tasks,
+    loading,
+    completeTask,
+    updateStatus,
+    notifications,
+    unreadCount,
+    openViewModal,
+    openEditModal,
+    openDeleteModal,
+  } = useTasks();
   const { users } = useUserManagement();
+  const { leads, stats: leadStats, openCreateModal: openCreateLeadModal } = useLeads();
+  const { opportunities, stats: oppStats } = useOpportunities();
+  const { complaints, stats: complaintStats, openCreateModal: openCreateComplaintModal } = useComplaints();
+  const { projects, stats: projectStats, openCreateModal: openCreateProjectModal } = useProjects();
 
   // Active section popup modal state: null | 'all' | 'To Do' | 'In Progress' | 'Completed'
   const [activeModalSection, setActiveModalSection] = useState(null);
@@ -82,6 +115,9 @@ export const UserWorkspace = ({ setActiveSection }) => {
     const uId = (u._id || u.id || '').toString();
     return subordinateIds.has(uId);
   });
+  const subordinateNames = mySubordinates.map((u) => (u.name || '').toLowerCase().trim());
+  const subordinateUsernames = mySubordinates.map((u) => (u.username || '').toLowerCase().trim());
+  const subordinateIdList = Array.from(subordinateIds);
 
   // Task Completion Modal State
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
@@ -90,7 +126,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
   const [isSubmittingCompletion, setIsSubmittingCompletion] = useState(false);
   const [successToast, setSuccessToast] = useState('');
 
-  // Strictly filter tasks assigned to this user
+  // Filter tasks: own tasks + assigned subordinate tasks
   const userIdentifier = (user?.name || '').toLowerCase().trim();
   const userUsername = (user?.username || '').toLowerCase().trim();
   const userId = (user?._id || user?.id || '').toString();
@@ -101,16 +137,25 @@ export const UserWorkspace = ({ setActiveSection }) => {
   const myTasks = safeTasks.filter((t) => {
     if (!t) return false;
     const tAssigned = (t.assignedTo || '').toLowerCase().trim();
-    const tUser = t.user ? t.user.toString() : '';
-    return (
+    const tUser = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+    const tAssignedBy = (t.assignedBy || '').toLowerCase().trim();
+    const isSelf =
       (userIdentifier && tAssigned === userIdentifier) ||
       (userUsername && tAssigned === userUsername) ||
       (userId && tUser === userId) ||
-      tAssigned === 'current user'
-    );
+      tAssigned === 'current user';
+    const isSubordinate =
+      subordinateNames.includes(tAssigned) ||
+      subordinateUsernames.includes(tAssigned) ||
+      subordinateIdList.includes(tUser);
+    const isAssignedBySelfOrSub =
+      (userIdentifier && tAssignedBy.includes(userIdentifier)) ||
+      (userUsername && tAssignedBy.includes(userUsername)) ||
+      subordinateNames.some((n) => tAssignedBy.includes(n));
+    return isSelf || isSubordinate || isAssignedBySelfOrSub;
   });
 
-  // Self Metrics
+  // Self & Subordinates Metrics
   const totalMyTasks = myTasks.length;
   const completedTasks = myTasks.filter((t) => t && t.status === 'Completed');
   const inProgressTasks = myTasks.filter((t) => t && t.status === 'In Progress');
@@ -118,6 +163,52 @@ export const UserWorkspace = ({ setActiveSection }) => {
 
   const completionPercentage =
     totalMyTasks > 0 ? Math.round((completedTasks.length / totalMyTasks) * 100) : 0;
+
+  // Filter complaints: own + subordinate complaints
+  const safeComplaints = Array.isArray(complaints) ? complaints : [];
+  const myComplaints = safeComplaints.filter((c) => {
+    if (!c) return false;
+    const cAssigned = (c.assignedTo?.name || c.assignedToName || c.assignedTo || '').toLowerCase().trim();
+    const cAssignedId = (c.assignedTo?._id || c.assignedTo?.id || c.assignedTo || '').toString();
+    const cCreatedById = (c.createdBy?._id || c.createdBy?.id || c.createdBy || '').toString();
+    const isSelf =
+      (userIdentifier && cAssigned === userIdentifier) ||
+      (userId && cAssignedId === userId) ||
+      (userId && cCreatedById === userId);
+    const isSubordinate =
+      subordinateNames.includes(cAssigned) ||
+      subordinateIdList.includes(cAssignedId) ||
+      subordinateIdList.includes(cCreatedById);
+    return isSelf || isSubordinate;
+  });
+
+  // Filter projects: own + subordinate projects
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const myProjects = safeProjects.filter((p) => {
+    if (!p) return false;
+    const pMgr = (p.manager?.name || p.managerName || p.manager || '').toLowerCase().trim();
+    const pMgrId = (p.manager?._id || p.manager?.id || p.manager || '').toString();
+    const pCreatedById = (p.createdBy?._id || p.createdBy?.id || p.createdBy || '').toString();
+    const isMember = (p.teamMembers || []).some((m) => {
+      const mName = (m.user?.name || m.name || m.userName || '').toLowerCase().trim();
+      const mId = (m.user?._id || m.user?.id || m.userId || m.user || '').toString();
+      return (
+        (userIdentifier && mName === userIdentifier) ||
+        (userId && mId === userId) ||
+        subordinateNames.includes(mName) ||
+        subordinateIdList.includes(mId)
+      );
+    });
+    const isSelf =
+      (userIdentifier && pMgr === userIdentifier) ||
+      (userId && pMgrId === userId) ||
+      (userId && pCreatedById === userId);
+    const isSubordinate =
+      subordinateNames.includes(pMgr) ||
+      subordinateIdList.includes(pMgrId) ||
+      subordinateIdList.includes(pCreatedById);
+    return isSelf || isSubordinate || isMember;
+  });
 
   // Check for latest task assignment notification for this user
   const latestAssignmentNotif = safeNotifications.find(
@@ -294,7 +385,7 @@ export const UserWorkspace = ({ setActiveSection }) => {
         </div>
       )}
 
-      {/* Header with Title */}
+      {/* Header with Title and Multi-Role Badges */}
       <div
         className="section-header"
         style={{
@@ -307,7 +398,54 @@ export const UserWorkspace = ({ setActiveSection }) => {
         }}
       >
         <div>
-          <h2 className="section-title" style={{ margin: 0 }}>My Workspace & Team</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h2 className="section-title" style={{ margin: 0 }}>MY WORKSPACE</h2>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {(userRoles || [user?.role || 'User']).map((r) => (
+                <span
+                  key={r}
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    background: r.includes('Manager')
+                      ? '#eff6ff'
+                      : r.includes('Sales')
+                      ? '#fef3c7'
+                      : r.includes('Service')
+                      ? '#ecfdf5'
+                      : '#f1f5f9',
+                    color: r.includes('Manager')
+                      ? '#1d4ed8'
+                      : r.includes('Sales')
+                      ? '#b45309'
+                      : r.includes('Service')
+                      ? '#047857'
+                      : '#475569',
+                    border: `1px solid ${
+                      r.includes('Manager')
+                        ? '#bfdbfe'
+                        : r.includes('Sales')
+                        ? '#fde68a'
+                        : r.includes('Service')
+                        ? '#a7f3d0'
+                        : '#e2e8f0'
+                    }`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Award size={11} />
+                  <span>{r}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
+            Logged in as <strong>{user?.name}</strong> • Unified dashboard tailored to your active roles & assigned modules.
+          </p>
         </div>
       </div>
 
@@ -414,87 +552,57 @@ export const UserWorkspace = ({ setActiveSection }) => {
           </div>
         </div>
 
-        {/* 4 HORIZONTAL ASSIGNMENT TILES IN ONE ROW */}
-        <div className="user-workspace-tiles-grid">
-          {/* Tile 1: Total Assigned Work */}
-          <div
+        {/* 4 Curved Interactive Metric Cards Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '16px',
+          }}
+        >
+          <MetricCard
+            title="Total Assigned Work"
+            value={totalMyTasks}
+            subtitle="All personal active tasks"
+            icon={Briefcase}
+            color="#2563eb"
+            bgLight="#eff6ff"
+            isClickable={true}
             onClick={() => openSectionModal('all')}
-            className="user-workspace-metric-tile tile-total"
-            title="Click to view all assigned work"
-          >
-            <div>
-              <span className="tile-label">
-                Total Assigned Work
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span className="tile-value">{totalMyTasks}</span>
-                <span className="tile-cta cta-blue">Click to View ↗</span>
-              </div>
-            </div>
-            <div className="tile-icon-box icon-blue">
-              <Briefcase size={20} />
-            </div>
-          </div>
+          />
 
-          {/* Tile 2: Completed */}
-          <div
+          <MetricCard
+            title="Completed"
+            value={completedTasks.length}
+            subtitle="Successfully finished"
+            icon={CheckCircle2}
+            color="#059669"
+            bgLight="#ecfdf5"
+            isClickable={true}
             onClick={() => openSectionModal('Completed')}
-            className="user-workspace-metric-tile tile-completed"
-            title="Click to view completed tasks"
-          >
-            <div>
-              <span className="tile-label">
-                Completed
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span className="tile-value val-green">{completedTasks.length}</span>
-                <span className="tile-cta cta-green">Click to View ↗</span>
-              </div>
-            </div>
-            <div className="tile-icon-box icon-green">
-              <CheckCircle2 size={20} />
-            </div>
-          </div>
+          />
 
-          {/* Tile 3: In Progress */}
-          <div
+          <MetricCard
+            title="In Progress"
+            value={inProgressTasks.length}
+            subtitle="Currently executing"
+            icon={Clock}
+            color="#d97706"
+            bgLight="#fffbeb"
+            isClickable={true}
             onClick={() => openSectionModal('In Progress')}
-            className="user-workspace-metric-tile tile-progress"
-            title="Click to view in-progress work"
-          >
-            <div>
-              <span className="tile-label">
-                In Progress
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span className="tile-value val-amber">{inProgressTasks.length}</span>
-                <span className="tile-cta cta-amber">Click to View ↗</span>
-              </div>
-            </div>
-            <div className="tile-icon-box icon-amber">
-              <Clock size={20} />
-            </div>
-          </div>
+          />
 
-          {/* Tile 4: To Do */}
-          <div
+          <MetricCard
+            title="To Do"
+            value={todoTasks.length}
+            subtitle="Awaiting action"
+            icon={ListTodo}
+            color="#7c3aed"
+            bgLight="#f5f3ff"
+            isClickable={true}
             onClick={() => openSectionModal('To Do')}
-            className="user-workspace-metric-tile tile-todo"
-            title="Click to view to-do tasks"
-          >
-            <div>
-              <span className="tile-label">
-                To Do
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                <span className="tile-value val-purple">{todoTasks.length}</span>
-                <span className="tile-cta cta-purple">Click to View ↗</span>
-              </div>
-            </div>
-            <div className="tile-icon-box icon-purple">
-              <ListTodo size={20} />
-            </div>
-          </div>
+          />
         </div>
       </div>
 
@@ -845,52 +953,150 @@ export const UserWorkspace = ({ setActiveSection }) => {
                       )}
 
                       {/* Action Buttons */}
-                      <div className="user-task-actions-row">
-                        {task.status === 'To Do' && (
+                      <div
+                        className="user-task-actions-row"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '8px',
+                          marginTop: '4px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {task.status === 'To Do' && (
+                            <button
+                              className="btn btn-secondary user-task-action-btn"
+                              onClick={() => handleStartTask(task)}
+                              style={{
+                                fontSize: '0.8rem',
+                                padding: '7px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: '#fffbeb',
+                                borderColor: '#fde68a',
+                                color: '#b45309',
+                              }}
+                            >
+                              <PlayCircle size={15} />
+                              <span>Start Task (In Progress)</span>
+                            </button>
+                          )}
+
+                          {task.status !== 'Completed' && (
+                            <button
+                              className="btn btn-primary user-task-action-btn"
+                              onClick={() => openCompletionModal(task)}
+                              style={{
+                                fontSize: '0.8rem',
+                                padding: '7px 14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                borderColor: '#059669',
+                              }}
+                            >
+                              <CheckCircle2 size={15} />
+                              <span>Complete & Add Remark</span>
+                            </button>
+                          )}
+
+                          {isTaskCompleted && (
+                            <span style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0' }}>
+                              <CheckCircle2 size={15} />
+                              <span>Completed & Notified</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* View, Edit, Delete icon signs only */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <button
-                            className="btn btn-secondary user-task-action-btn"
-                            onClick={() => handleStartTask(task)}
+                            type="button"
+                            onClick={() => openViewModal(task)}
+                            title="View Details"
                             style={{
-                              fontSize: '0.8rem',
-                              padding: '7px 12px',
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '6px',
+                              border: '1px solid #bfdbfe',
+                              backgroundColor: '#eff6ff',
+                              color: '#2563eb',
+                              cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              background: '#fffbeb',
-                              borderColor: '#fde68a',
-                              color: '#b45309',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#dbeafe';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#eff6ff';
                             }}
                           >
-                            <PlayCircle size={15} />
-                            <span>Start Task (In Progress)</span>
+                            <Eye size={15} />
                           </button>
-                        )}
 
-                        {task.status !== 'Completed' && (
                           <button
-                            className="btn btn-primary user-task-action-btn"
-                            onClick={() => openCompletionModal(task)}
+                            type="button"
+                            onClick={() => openEditModal(task)}
+                            title="Edit Task"
                             style={{
-                              fontSize: '0.8rem',
-                              padding: '7px 14px',
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '6px',
+                              border: '1px solid #e2e8f0',
+                              backgroundColor: '#f8fafc',
+                              color: '#475569',
+                              cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              background: 'linear-gradient(135deg, #10b981, #059669)',
-                              borderColor: '#059669',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f1f5f9';
+                              e.currentTarget.style.color = '#0f172a';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f8fafc';
+                              e.currentTarget.style.color = '#475569';
                             }}
                           >
-                            <CheckCircle2 size={15} />
-                            <span>Complete & Add Remark</span>
+                            <Edit2 size={15} />
                           </button>
-                        )}
 
-                        {isTaskCompleted && (
-                          <span style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0' }}>
-                            <CheckCircle2 size={15} />
-                            <span>Completed & Notified</span>
-                          </span>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => openDeleteModal(task)}
+                            title="Delete Task"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '6px',
+                              border: '1px solid #fecaca',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fee2e2';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fef2f2';
+                            }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

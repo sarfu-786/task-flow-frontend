@@ -12,11 +12,7 @@ import {
   CheckCircle2,
   Clock,
   ListTodo,
-  UserCheck,
   ShieldCheck,
-  FolderKanban,
-  ChevronRight,
-  User,
   ExternalLink,
 } from 'lucide-react';
 
@@ -63,9 +59,9 @@ const getSubordinateUserIds = (user, allUsers) => {
   return subordinateIds;
 };
 
-export const ManagerDashboard = ({ setActiveSection }) => {
+export const ManagerDashboard = () => {
   const { tasks } = useTasks();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userRoles } = useAuth();
   const { users } = useUserManagement();
 
   // Superior Detail Popup Modal State
@@ -85,7 +81,6 @@ export const ManagerDashboard = ({ setActiveSection }) => {
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [tasksFilter, setTasksFilter] = useState('all');
   const [tasksModalTitle, setTasksModalTitle] = useState('Team Tasks Overview');
-
 
   const openEmployeeDrilldown = (dept = 'all', title = 'My Reporting Team') => {
     setEmployeeDeptFilter(dept);
@@ -112,7 +107,7 @@ export const ManagerDashboard = ({ setActiveSection }) => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    if (isEmployeeModalOpen || isWorkModalOpen || isTasksModalOpen) {
+    if (isEmployeeModalOpen || isWorkModalOpen || isTasksModalOpen || isSuperiorModalOpen) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
     } else {
@@ -123,92 +118,101 @@ export const ManagerDashboard = ({ setActiveSection }) => {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
     };
-  }, [isEmployeeModalOpen, isWorkModalOpen, isTasksModalOpen]);
+  }, [isEmployeeModalOpen, isWorkModalOpen, isTasksModalOpen, isSuperiorModalOpen]);
 
   // Active Approved Users
   const activeUsers = users.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
   // Find all recursive subordinates under this Manager in hierarchy
-  const currentUserId = currentUser?._id ? currentUser._id.toString() : '';
-  const currentUserName = (currentUser?.name || '').toLowerCase();
   const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
+  const currentUserId = (currentUser?._id || currentUser?.id || '').toString();
 
-  const directSubordinates = activeUsers.filter((u) => {
-    if (u._id === currentUserId) return false;
-    return subordinateIds.has(u._id.toString());
-  });
-
-  // Team members list: active subordinates belonging to this manager
-  const teamMembers = directSubordinates;
-
-  const teamNames = [
-    currentUserName,
-    (currentUser?.username || '').toLowerCase(),
-    ...teamMembers.map((m) => (m.name || '').toLowerCase()),
-    ...teamMembers.map((m) => (m.username || '').toLowerCase()),
-  ];
-
-  // Team tasks
-  const teamTasks = tasks.filter((t) => {
-    const assigned = (t.assignedTo || '').toLowerCase();
-    return teamNames.includes(assigned);
+  // Team members who report directly or indirectly to this Manager
+  const currentUserName = (currentUser?.name || '').toLowerCase().trim();
+  const teamMembers = activeUsers.filter((u) => {
+    const uId = (u._id || u.id || '').toString();
+    const repId = (u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '').trim();
+    const repName = (u.reportsToName || '').toLowerCase().trim();
+    const isDirect = (currentUserId && repId === currentUserId) || (currentUserName && repName.includes(currentUserName));
+    return isDirect || subordinateIds.has(uId);
   });
 
   const totalTeamMembers = teamMembers.length;
-  const completedTasksCount = teamTasks.filter((t) => t.status === 'Completed').length;
+
+  // Filter Tasks belonging to this Manager + Team
+  const teamMemberNames = new Set(teamMembers.map((m) => (m.name || '').toLowerCase().trim()));
+  const teamMemberUsernames = new Set(teamMembers.map((m) => (m.username || '').toLowerCase().trim()));
+  if (currentUserName) teamMemberNames.add(currentUserName);
+
+  const teamTasks = tasks.filter((t) => {
+    const assigned = (t.assignedTo || '').toLowerCase().trim();
+    const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+    return teamMemberNames.has(assigned) || teamMemberUsernames.has(assigned) || subordinateIds.has(taskUserId) || taskUserId === currentUserId;
+  });
+
   const inProgressTasksCount = teamTasks.filter((t) => t.status === 'In Progress').length;
-  const pendingTasksCount = teamTasks.filter((t) => t.status === 'To Do').length;
+  const completedTasksCount = teamTasks.filter((t) => t.status === 'Completed').length;
+  const pendingTasksCount = teamTasks.filter((t) => t.status === 'To Do' || !t.status).length;
 
   return (
-    <div className="manager-dashboard-container" style={{ paddingBottom: '36px' }}>
-      {/* Header Banner - Clean, Minimal & Informative */}
+    <div className="manager-dashboard fade-in" style={{ paddingBottom: '32px' }}>
+      {/* Header Greeting Banner Div */}
       <div
-        className="section-header"
+        className="card-official-banner"
         style={{
+          background: '#ffffff',
+          borderRadius: '20px',
+          padding: '20px 24px',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
           marginBottom: '20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '14px',
+          gap: '16px',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h2 className="section-title" style={{ margin: 0 }}>Manager Dashboard</h2>
-            {/* Interactive Reporting Superior Tag with Hover & Click Popup */}
-            <div
-              onClick={() => setIsSuperiorModalOpen(true)}
-              className="interactive-superior-badge"
-              style={{
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                padding: '4px 12px',
-                borderRadius: '999px',
-                background: '#eff6ff',
-                color: '#1d4ed8',
-                border: '1px solid #bfdbfe',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: '0 1px 3px rgba(37, 99, 235, 0.08)',
-              }}
-              title="Click to view superior reporting details in popup"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span
+              className="badge-official badge-blue"
+              style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700 }}
             >
-              <ShieldCheck size={14} color="#2563eb" />
-              <span>Reports To: {currentUser?.reportsToName || 'Sarfaraj Ahmad (Super Admin)'}</span>
-              <ExternalLink size={11} color="#2563eb" />
-            </div>
+              <ShieldCheck size={13} />
+              <span>Manager Console</span>
+            </span>
+            {userRoles.map((r, i) => (
+              <span
+                key={i}
+                className="badge-official badge-gray"
+                style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700 }}
+              >
+                {r}
+              </span>
+            ))}
           </div>
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            Welcome back, {currentUser?.name || 'Manager'}
+          </h1>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            className="reports-to-tag"
+            onClick={() => setIsSuperiorModalOpen(true)}
+            title="Click to view supervisor hierarchy"
+            style={{ cursor: 'pointer' }}
+          >
+            <ShieldCheck size={14} color="#2563eb" />
+            <span>Reports To: {currentUser?.reportsToName || 'Sarfaraj Ahmad (Super Admin)'}</span>
+            <ExternalLink size={11} color="#2563eb" />
+          </div>
+        </div>
       </div>
 
-      {/* Top 4 Interactive Metric Cards */}
+      {/* Top 4 Workload Metrics (Clicking opens corresponding popup modal) */}
       <div className="stats-grid">
-        {/* Total Direct Subordinates */}
         <MetricCard
           title="Reporting Team"
           value={totalTeamMembers}
@@ -218,263 +222,65 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           isClickable={true}
           onClick={() => openEmployeeDrilldown('all', 'My Reporting Team')}
         />
-
-        {/* In Progress Tasks */}
         <MetricCard
-          title="In Progress"
+          title="In Progress Work"
           value={inProgressTasksCount}
           icon={Clock}
           color="#d97706"
           bgLight="#fffbeb"
           isClickable={true}
-          onClick={() => openTasksDrilldown('In Progress', 'Team In Progress Active Tasks')}
+          onClick={() => openTasksDrilldown('In Progress', 'Team In Progress Workflows')}
         />
-
-        {/* Completed Tasks */}
         <MetricCard
-          title="Completed"
+          title="Completed Work"
           value={completedTasksCount}
           icon={CheckCircle2}
           color="#059669"
           bgLight="#ecfdf5"
           isClickable={true}
-          onClick={() => openTasksDrilldown('Completed', 'Team Completed Tasks & Workflows')}
+          onClick={() => openTasksDrilldown('Completed', 'Team Completed Workflows')}
         />
-
-        {/* Pending To-Do */}
         <MetricCard
-          title="Pending Tasks"
+          title="Pending Queue"
           value={pendingTasksCount}
           icon={ListTodo}
           color="#6366f1"
           bgLight="#eef2ff"
           isClickable={true}
-          onClick={() => openTasksDrilldown('To Do', 'Team Pending To-Do Tasks')}
+          onClick={() => openTasksDrilldown('To Do', 'Team Pending Queue')}
         />
       </div>
 
-      {/* Direct Subordinates & Reporting Members Section */}
-      <div className="task-container-box" style={{ marginTop: '24px' }}>
-        <div className="task-nav-toolbar" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Direct Reporting Team Members
-              </h4>
-            </div>
+      {/* Drilldown Modals */}
+      <EmployeeDrilldownModal
+        isOpen={isEmployeeModalOpen}
+        onClose={() => setIsEmployeeModalOpen(false)}
+        initialDepartmentFilter={employeeDeptFilter}
+        modalTitle={employeeModalTitle}
+        onSelectUserForWork={(targetUser) => openUserWork(targetUser)}
+      />
 
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setActiveSection && setActiveSection('tasks')}
-              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
-            >
-              <FolderKanban size={14} />
-              <span>Team Task Management</span>
-            </button>
-          </div>
-        </div>
+      <ManagerTasksDrilldownModal
+        isOpen={isTasksModalOpen}
+        onClose={() => setIsTasksModalOpen(false)}
+        initialFilter={tasksFilter}
+        modalTitle={tasksModalTitle}
+      />
 
-        <div className="table-responsive">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th style={{ width: '60px', textAlign: 'center' }}>Sr. No</th>
-                <th>Team Member</th>
-                <th>Department</th>
-                <th>Reporting Branch</th>
-                <th style={{ textAlign: 'center' }}>Completed</th>
-                <th style={{ textAlign: 'center' }}>Pending</th>
-                <th style={{ textAlign: 'right' }}>Workload</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teamMembers.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px' }}>
-                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>No direct reporting members found.</p>
-                  </td>
-                </tr>
-              ) : (
-                teamMembers.map((member, index) => {
-                  const memberName = (member.name || '').toLowerCase();
-                  const memberUsername = (member.username || '').toLowerCase();
-                  const memberId = member._id ? member._id.toString() : '';
+      <UserWorkModal
+        isOpen={isWorkModalOpen}
+        onClose={closeUserWork}
+        user={selectedUserForWork}
+        initialFilter={userWorkFilter}
+      />
 
-                  const memberTasks = tasks.filter((t) => {
-                    const assigned = (t.assignedTo || '').toLowerCase();
-                    const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
-                    return assigned === memberName || assigned === memberUsername || taskUserId === memberId;
-                  });
-
-                  const completedCount = memberTasks.filter((t) => t.status === 'Completed').length;
-                  const pendingCount = memberTasks.filter((t) => t.status !== 'Completed').length;
-
-                  return (
-                    <tr
-                      key={member._id}
-                      className="interactive-table-row"
-                      onClick={() => openUserWork(member, 'all')}
-                      title={`Click to view ${member.name}'s details and full workload in popup`}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <td style={{ textAlign: 'center' }}>
-                        <span className="sr-no-badge">{index + 1}</span>
-                      </td>
-
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {member.avatar ? (
-                            <img
-                              src={member.avatar}
-                              alt={member.name}
-                              style={{
-                                width: '34px',
-                                height: '34px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '1px solid var(--border-color)',
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: '34px',
-                                height: '34px',
-                                borderRadius: '50%',
-                                background: '#0284c7',
-                                color: '#ffffff',
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {member.name}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {member.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                          {member.department || 'Operations'}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span
-                          style={{
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            color: '#1e40af',
-                            background: '#eff6ff',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            border: '1px solid #bfdbfe',
-                            display: 'inline-block',
-                          }}
-                        >
-                          Reports to: {member.reportsToName || `${currentUser?.name} (Manager)`}
-                        </span>
-                      </td>
-
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="badge-status badge-status-completed"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUserWork(member, 'Completed');
-                          }}
-                          title={`Click to view ${member.name}'s completed tasks in popup`}
-                          style={{ cursor: 'pointer', padding: '4px 8px' }}
-                        >
-                          <CheckCircle2 size={12} />
-                          <span>{completedCount} Done</span>
-                        </button>
-                      </td>
-
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="badge-status badge-status-progress"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUserWork(member, 'To Do');
-                          }}
-                          title={`Click to view ${member.name}'s pending tasks in popup`}
-                          style={{ cursor: 'pointer', padding: '4px 8px' }}
-                        >
-                          <Clock size={12} />
-                          <span>{pendingCount} Pending</span>
-                        </button>
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUserWork(member, 'all');
-                          }}
-                          style={{ fontSize: '0.75rem', padding: '4px 10px' }}
-                        >
-                          Inspect Work
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 1-Click Superior Detail Popup Modal */}
       <SuperiorDetailModal
         isOpen={isSuperiorModalOpen}
         onClose={() => setIsSuperiorModalOpen(false)}
         superiorName={currentUser?.reportsToName}
-        currentUser={currentUser}
-      />
-
-      {/* 1-Click Employee Drilldown Modal */}
-      <EmployeeDrilldownModal
-        isOpen={isEmployeeModalOpen}
-        initialDepartmentFilter={employeeDeptFilter}
-        modalTitle={employeeModalTitle}
-        onClose={() => setIsEmployeeModalOpen(false)}
-        onOpenUserWork={openUserWork}
-      />
-
-      {/* 1-Click Tasks Status Drilldown Modal (Completed, In Progress, Pending To-Do) */}
-      <ManagerTasksDrilldownModal
-        isOpen={isTasksModalOpen}
-        initialFilter={tasksFilter}
-        modalTitle={tasksModalTitle}
-        onClose={() => setIsTasksModalOpen(false)}
-      />
-
-      {/* 1-Click Individual User Work Inspection Modal */}
-      <UserWorkModal
-        user={selectedUserForWork}
-        initialFilter={userWorkFilter}
-        isOpen={isWorkModalOpen}
-        onClose={closeUserWork}
       />
     </div>
   );
 };
 
+export default ManagerDashboard;

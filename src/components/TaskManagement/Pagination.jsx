@@ -21,9 +21,9 @@ export const Pagination = () => {
   return (
     <div className="pagination-container">
       <div className="pagination-info">
-        Showing <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{startEntry}</span> to{' '}
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{endEntry}</span> of{' '}
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalTasks}</span> entries
+        Showing <span style={{ fontWeight: 600, color: '#f8fafc' }}>{startEntry}</span> to{' '}
+        <span style={{ fontWeight: 600, color: '#f8fafc' }}>{endEntry}</span> of{' '}
+        <span style={{ fontWeight: 600, color: '#f8fafc' }}>{totalTasks}</span> entries
       </div>
 
       <div className="pagination-controls">

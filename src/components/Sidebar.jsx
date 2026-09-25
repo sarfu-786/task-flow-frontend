@@ -4,22 +4,24 @@ import {
   Network,
   Users,
   CheckSquare,
-  User,
   Crown,
   ShieldCheck,
   Briefcase,
-  X,
   UserCheck,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  FolderKanban,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUserManagement } from '../context/UserContext';
+import { useSubscription } from '../context/SubscriptionContext';
 
 export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, setIsMobileMenuOpen }) => {
-  const { user } = useAuth();
+  const { user, userRoles, isSuperAdmin, isManager } = useAuth();
   const { pendingApprovalsCount } = useUserManagement();
-
-  const isSuperAdmin = user && user.role === 'Super Admin';
-  const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+  const { isModuleActive } = useSubscription();
 
   const handleNavClick = (section) => {
     setActiveSection(section);
@@ -27,6 +29,12 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
       setIsMobileMenuOpen(false);
     }
   };
+
+  // Module accessibility checks
+  const showTasks = isModuleActive('tasks');
+  const showLeads = isModuleActive('leads');
+  const showComplaints = isModuleActive('complaints');
+  const showProjects = isModuleActive('projects');
 
   return (
     <>
@@ -42,87 +50,50 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
       <aside className={`sidebar ${isMobileMenuOpen ? 'sidebar-open' : ''}`}>
         {/* Sidebar Brand Header */}
         <div className="sidebar-header">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="sidebar-header-inner">
+            <div className="sidebar-brand-box">
               {isSuperAdmin ? (
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)',
-                  }}
-                >
-                  <Crown size={16} />
+                <div className="sidebar-role-icon icon-super-admin" title="Super Admin Workspace">
+                  <Crown size={18} />
                 </div>
               ) : isManager ? (
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)',
-                  }}
-                >
-                  <ShieldCheck size={16} />
+                <div className="sidebar-role-icon icon-manager" title="Manager Console">
+                  <ShieldCheck size={18} />
                 </div>
               ) : (
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #059669, #10b981)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)',
-                  }}
-                >
-                  <Briefcase size={16} />
+                <div className="sidebar-role-icon icon-user" title="User Workspace">
+                  <Briefcase size={18} />
                 </div>
               )}
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {isSuperAdmin ? 'Super Admin' : isManager ? 'Manager Console' : 'User Workspace'}
-              </span>
-            </div>
 
-            {/* Mobile Close Button */}
-            <button
-              type="button"
-              className="btn-icon mobile-sidebar-close"
-              onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
-              aria-label="Close navigation menu"
-            >
-              <X size={18} />
-            </button>
+              <div className="sidebar-brand-text">
+                <span className="sidebar-role-title">
+                  {isSuperAdmin ? 'Super Admin' : isManager ? 'Manager Console' : 'User Workspace'}
+                </span>
+                <span className="sidebar-app-name">TaskFlow Pro</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Sidebar Nav Items */}
+        {/* Sidebar Navigation Items */}
         <nav className="sidebar-nav">
           {isSuperAdmin ? (
-            /* Super Admin Navigation Options */
+            /* ========================================================
+               SUPER ADMIN NAVIGATION
+               ======================================================== */
             <>
+              <div className="sidebar-group-label">CORE WORKSPACE</div>
+
               <button
                 type="button"
                 className={`nav-item-btn ${activeSection === 'superadmin' ? 'active' : ''}`}
                 onClick={() => handleNavClick('superadmin')}
                 id="nav-superadmin-dashboard"
+                title="Executive Dashboard"
               >
                 <LayoutDashboard className="nav-icon" />
-                <span>Dashboard</span>
+                <span className="nav-label">Dashboard</span>
               </button>
 
               <button
@@ -130,68 +101,132 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 className={`nav-item-btn ${activeSection === 'hierarchy' ? 'active' : ''}`}
                 onClick={() => handleNavClick('hierarchy')}
                 id="nav-org-hierarchy"
+                title="Organizational Hierarchy"
               >
                 <Network className="nav-icon" />
-                <span>Organization Hierarchy</span>
+                <span className="nav-label">Organization Hierarchy</span>
               </button>
 
               <button
                 type="button"
-                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
+                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' || activeSection === 'users' ? 'active' : ''}`}
                 onClick={() => handleNavClick('employees')}
-                id="nav-employees-mgmt"
+                id="nav-users-mgmt"
+                title="User Management"
               >
                 <Users className="nav-icon" />
-                <span>Users</span>
+                <span className="nav-label">User Management</span>
               </button>
 
-              <button
-                type="button"
-                className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
-                onClick={() => handleNavClick('tasks')}
-                id="nav-task-management"
-              >
-                <CheckSquare className="nav-icon" />
-                <span>Task Management</span>
-              </button>
+              {(showTasks || showLeads || showComplaints || showProjects) && (
+                <div className="sidebar-group-label">ENTERPRISE MODULES</div>
+              )}
 
-              {pendingApprovalsCount > 0 && (
+              {/* Module 1: Task Management */}
+              {showTasks && (
                 <button
                   type="button"
-                  className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
-                  onClick={() => handleNavClick('approvals')}
-                  id="nav-super-approvals"
+                  className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('tasks')}
+                  id="nav-task-management"
+                  title="Task Management"
                 >
-                  <UserCheck className="nav-icon" />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span>Approvals</span>
-                    <span
-                      style={{
-                        background: '#ef4444',
-                        color: '#ffffff',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: '999px',
-                      }}
-                    >
-                      {pendingApprovalsCount}
-                    </span>
-                  </div>
+                  <CheckSquare className="nav-icon" />
+                  <span className="nav-label">Task Management</span>
                 </button>
+              )}
+
+              {/* Module 2: Lead Management & Opportunities */}
+              {showLeads && (
+                <>
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('leads')}
+                    id="nav-leads"
+                    title="Leads Pipeline"
+                  >
+                    <Target className="nav-icon" />
+                    <span className="nav-label">Leads</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('opportunities')}
+                    id="nav-opportunities"
+                    title="Opportunities Pipeline"
+                  >
+                    <TrendingUp className="nav-icon" />
+                    <span className="nav-label">Opportunities</span>
+                  </button>
+                </>
+              )}
+
+              {/* Module 3: Complaint Management */}
+              {showComplaints && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'complaints' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('complaints')}
+                  id="nav-complaints"
+                  title="Customer Complaints"
+                >
+                  <AlertCircle className="nav-icon" />
+                  <span className="nav-label">Complaints</span>
+                </button>
+              )}
+
+              {/* Module 4: Project Management */}
+              {showProjects && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'projects' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('projects')}
+                  id="nav-projects"
+                  title="Projects Management"
+                >
+                  <FolderKanban className="nav-icon" />
+                  <span className="nav-label">Projects Management</span>
+                </button>
+              )}
+
+              {/* Pending Approvals */}
+              {pendingApprovalsCount > 0 && (
+                <>
+                  {!isCollapsed && <div className="sidebar-group-label">SYSTEM & ACCESS</div>}
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('approvals')}
+                    id="nav-super-approvals"
+                    title={`User Approvals (${pendingApprovalsCount} pending)`}
+                  >
+                    <UserCheck className="nav-icon" />
+                    <div className="nav-label-wrapper">
+                      <span className="nav-label">Approvals</span>
+                      <span className="nav-badge-count">{pendingApprovalsCount}</span>
+                    </div>
+                  </button>
+                </>
               )}
             </>
           ) : isManager ? (
-            /* Manager Navigation Options */
+            /* ========================================================
+               MANAGER NAVIGATION
+               ======================================================== */
             <>
+              <div className="sidebar-group-label">TEAM & OPERATIONS</div>
+
               <button
                 type="button"
                 className={`nav-item-btn ${activeSection === 'manager' ? 'active' : ''}`}
                 onClick={() => handleNavClick('manager')}
                 id="nav-manager-dashboard"
+                title="Manager Dashboard"
               >
                 <LayoutDashboard className="nav-icon" />
-                <span>Dashboard</span>
+                <span className="nav-label">Dashboard</span>
               </button>
 
               <button
@@ -199,68 +234,132 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 className={`nav-item-btn ${activeSection === 'hierarchy' ? 'active' : ''}`}
                 onClick={() => handleNavClick('hierarchy')}
                 id="nav-my-team-hierarchy"
+                title="My Team Hierarchy"
               >
                 <Network className="nav-icon" />
-                <span>My Team</span>
+                <span className="nav-label">My Team Hierarchy</span>
               </button>
 
               <button
                 type="button"
-                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
+                className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' || activeSection === 'users' ? 'active' : ''}`}
                 onClick={() => handleNavClick('employees')}
-                id="nav-manager-employees"
+                id="nav-manager-users"
+                title="User Management"
               >
                 <Users className="nav-icon" />
-                <span>Users</span>
+                <span className="nav-label">User Management</span>
               </button>
 
-              <button
-                type="button"
-                className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
-                onClick={() => handleNavClick('tasks')}
-                id="nav-manager-tasks"
-              >
-                <CheckSquare className="nav-icon" />
-                <span>Task Management</span>
-              </button>
+              {(showTasks || showLeads || showComplaints || showProjects) && (
+                <div className="sidebar-group-label">MODULES</div>
+              )}
 
-              {pendingApprovalsCount > 0 && (
+              {/* Module 1: Task Management */}
+              {showTasks && (
                 <button
                   type="button"
-                  className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
-                  onClick={() => handleNavClick('approvals')}
-                  id="nav-manager-approvals"
+                  className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('tasks')}
+                  id="nav-manager-tasks"
+                  title="Task Management"
                 >
-                  <UserCheck className="nav-icon" />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span>Approvals</span>
-                    <span
-                      style={{
-                        background: '#ef4444',
-                        color: '#ffffff',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: '999px',
-                      }}
-                    >
-                      {pendingApprovalsCount}
-                    </span>
-                  </div>
+                  <CheckSquare className="nav-icon" />
+                  <span className="nav-label">Task Management</span>
                 </button>
+              )}
+
+              {/* Module 2: Lead Management & Opportunities */}
+              {showLeads && (
+                <>
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('leads')}
+                    id="nav-manager-leads"
+                    title="Leads"
+                  >
+                    <Target className="nav-icon" />
+                    <span className="nav-label">Leads</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('opportunities')}
+                    id="nav-manager-opportunities"
+                    title="Opportunities"
+                  >
+                    <TrendingUp className="nav-icon" />
+                    <span className="nav-label">Opportunities</span>
+                  </button>
+                </>
+              )}
+
+              {/* Module 3: Complaint Management */}
+              {showComplaints && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'complaints' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('complaints')}
+                  id="nav-manager-complaints"
+                  title="Complaints"
+                >
+                  <AlertCircle className="nav-icon" />
+                  <span className="nav-label">Complaints</span>
+                </button>
+              )}
+
+              {/* Module 4: Project Management */}
+              {showProjects && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'projects' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('projects')}
+                  id="nav-manager-projects"
+                  title="Projects Management"
+                >
+                  <FolderKanban className="nav-icon" />
+                  <span className="nav-label">Projects Management</span>
+                </button>
+              )}
+
+              {/* Pending Approvals */}
+              {pendingApprovalsCount > 0 && (
+                <>
+                  <div className="sidebar-group-label">APPROVALS</div>
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('approvals')}
+                    id="nav-manager-approvals"
+                    title={`Pending Registrations (${pendingApprovalsCount})`}
+                  >
+                    <UserCheck className="nav-icon" />
+                    <div className="nav-label-wrapper">
+                      <span className="nav-label">Approvals</span>
+                      <span className="nav-badge-count">{pendingApprovalsCount}</span>
+                    </div>
+                  </button>
+                </>
               )}
             </>
           ) : (
-            /* User Navigation Options */
+            /* ========================================================
+               USER / EMPLOYEE / COORDINATOR NAVIGATION
+               ======================================================== */
             <>
+              <div className="sidebar-group-label">MY WORKSPACE</div>
+
               <button
                 type="button"
                 className={`nav-item-btn ${activeSection === 'user-workspace' ? 'active' : ''}`}
                 onClick={() => handleNavClick('user-workspace')}
                 id="nav-my-tasks"
+                title="My Dashboard"
               >
                 <Briefcase className="nav-icon" />
-                <span>Dashboard</span>
+                <span className="nav-label">Dashboard</span>
               </button>
 
               <button
@@ -268,9 +367,10 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 className={`nav-item-btn ${activeSection === 'hierarchy' ? 'active' : ''}`}
                 onClick={() => handleNavClick('hierarchy')}
                 id="nav-user-hierarchy"
+                title="My Team Hierarchy"
               >
                 <Network className="nav-icon" />
-                <span>My Team Hierarchy</span>
+                <span className="nav-label">My Team Hierarchy</span>
               </button>
 
               <button
@@ -278,117 +378,126 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 className={`nav-item-btn ${activeSection === 'employees' || activeSection === 'user' ? 'active' : ''}`}
                 onClick={() => handleNavClick('employees')}
                 id="nav-user-team"
+                title="Directory & Colleagues"
               >
                 <Users className="nav-icon" />
-                <span>Users</span>
+                <span className="nav-label">Users</span>
               </button>
 
-              <button
-                type="button"
-                className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
-                onClick={() => handleNavClick('tasks')}
-                id="nav-user-tasks"
-              >
-                <CheckSquare className="nav-icon" />
-                <span>Task Management</span>
-              </button>
+              {(showTasks || showLeads || showComplaints || showProjects) && (
+                <div className="sidebar-group-label">MODULES</div>
+              )}
+
+              {/* Module 1: Task Management */}
+              {showTasks && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'tasks' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('tasks')}
+                  id="nav-user-tasks"
+                  title="Task Management"
+                >
+                  <CheckSquare className="nav-icon" />
+                  <span className="nav-label">Task Management</span>
+                </button>
+              )}
+
+              {/* Module 2: Lead Management & Opportunities */}
+              {showLeads && (
+                <>
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('leads')}
+                    id="nav-user-leads"
+                    title="Leads"
+                  >
+                    <Target className="nav-icon" />
+                    <span className="nav-label">Leads</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
+                    onClick={() => handleNavClick('opportunities')}
+                    id="nav-user-opportunities"
+                    title="Opportunities"
+                  >
+                    <TrendingUp className="nav-icon" />
+                    <span className="nav-label">Opportunities</span>
+                  </button>
+                </>
+              )}
+
+              {/* Module 3: Complaint Management */}
+              {showComplaints && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'complaints' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('complaints')}
+                  id="nav-user-complaints"
+                  title="Complaints"
+                >
+                  <AlertCircle className="nav-icon" />
+                  <span className="nav-label">Complaints</span>
+                </button>
+              )}
+
+              {/* Module 4: Project Management */}
+              {showProjects && (
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'projects' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('projects')}
+                  id="nav-user-projects"
+                  title="Projects Management"
+                >
+                  <FolderKanban className="nav-icon" />
+                  <span className="nav-label">Projects Management</span>
+                </button>
+              )}
             </>
           )}
         </nav>
 
-        {/* Sidebar Footer: Current Logged In Profile Card */}
+        {/* Sidebar Footer: Current User Profile Card */}
         <div className="sidebar-footer">
           <div
+            className="sidebar-profile-card"
             onClick={() => window.dispatchEvent(new CustomEvent('open-my-profile'))}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              background: '#ffffff',
-              borderRadius: '10px',
-              border: '1px solid var(--border-color)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              textAlign: 'left',
-              cursor: 'pointer',
-              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f8fafc';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#ffffff';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
             title="Click to view & edit My Profile"
           >
             {user?.avatar && user.avatar.trim() ? (
               <img
                 src={user.avatar}
                 alt={user.name}
+                className="sidebar-avatar-img"
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: `1.5px solid ${isSuperAdmin ? '#f59e0b' : isManager ? '#2563eb' : '#059669'}`,
-                  flexShrink: 0,
+                  borderColor: isSuperAdmin ? '#f59e0b' : isManager ? '#2563eb' : '#059669',
                 }}
               />
             ) : (
               <div
+                className="sidebar-avatar-fallback"
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
                   background: isSuperAdmin
                     ? 'linear-gradient(135deg, #f59e0b, #d97706)'
                     : isManager
-                      ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
-                      : 'linear-gradient(135deg, #059669, #10b981)',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.85rem',
-                  flexShrink: 0,
+                    ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                    : 'linear-gradient(135deg, #059669, #10b981)',
                 }}
               >
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
             )}
 
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
+            <div className="sidebar-profile-info">
+              <div className="sidebar-profile-name">
                 <span>{user?.name || 'User'}</span>
                 {isSuperAdmin && <Crown size={12} color="#d97706" />}
               </div>
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  color: 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {user?.role || 'Team Member'}
+              <div className="sidebar-profile-role">
+                {userRoles && userRoles.length > 0 ? userRoles.join(' • ') : (user?.role || 'Team Member')}
               </div>
             </div>
           </div>
@@ -397,3 +506,5 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
     </>
   );
 };
+
+export default Sidebar;

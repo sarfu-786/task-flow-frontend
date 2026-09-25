@@ -10,12 +10,14 @@ import {
   Share2,
   Database,
   ExternalLink,
-  TrendingUp,
+  Eye,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { useTasks } from '../../context/TaskContext';
 
 export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) => {
-  const { tasks, updateStatus } = useTasks();
+  const { tasks, updateStatus, openViewModal, openEditModal, openDeleteModal } = useTasks();
   const [activeFilter, setActiveFilter] = useState(initialFilter);
 
   useEffect(() => {
@@ -94,14 +96,6 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
           <span className="badge-type badge-type-backend">
             <Database size={12} />
             <span>Backend Work</span>
-          </span>
-        );
-      case 'sells':
-      case 'sales':
-        return (
-          <span className="badge-type badge-type-sells" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <TrendingUp size={12} />
-            <span>Sells</span>
           </span>
         );
       default:
@@ -193,7 +187,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
                   {user.role}
                 </span>
               </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                 {user.email} • {user.department || 'Operations'}
               </p>
             </div>
@@ -239,7 +233,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
               }}
             >
               <CheckCircle2 size={15} />
-              <span>Completed ({completedTasks.length})</span>
+              <span>Completed Work ({completedTasks.length})</span>
             </button>
 
             <button
@@ -269,7 +263,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
               }}
             >
               <ListTodo size={15} />
-              <span>To Do ({todoTasks.length})</span>
+              <span>Pending To-Do ({todoTasks.length})</span>
             </button>
           </div>
 
@@ -284,12 +278,13 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
                   <th style={{ width: '120px' }}>Due Date</th>
                   <th style={{ width: '120px' }}>Status</th>
                   <th>Remark</th>
+                  <th style={{ width: '110px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {displayedTasks.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
                       <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
                         No {activeFilter !== 'all' ? activeFilter.toLowerCase() : ''} tasks found
                       </p>
@@ -328,6 +323,93 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
                         <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
                           {task.remark || '—'}
                         </span>
+                      </td>
+                      {/* Action Signs (View, Edit, Delete only) */}
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                          <button
+                            type="button"
+                            onClick={() => openViewModal(task)}
+                            title="View Details"
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              border: '1px solid #bfdbfe',
+                              backgroundColor: '#eff6ff',
+                              color: '#2563eb',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#dbeafe';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#eff6ff';
+                            }}
+                          >
+                            <Eye size={14} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(task)}
+                            title="Edit Task"
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              border: '1px solid #e2e8f0',
+                              backgroundColor: '#f8fafc',
+                              color: '#475569',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f1f5f9';
+                              e.currentTarget.style.color = '#0f172a';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f8fafc';
+                              e.currentTarget.style.color = '#475569';
+                            }}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openDeleteModal(task)}
+                            title="Delete Task"
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              border: '1px solid #fecaca',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fee2e2';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fef2f2';
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

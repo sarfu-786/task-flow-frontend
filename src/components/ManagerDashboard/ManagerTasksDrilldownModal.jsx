@@ -11,7 +11,9 @@ import {
   Database,
   Search,
   Users,
-  TrendingUp,
+  Eye,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
@@ -22,7 +24,7 @@ export const ManagerTasksDrilldownModal = ({
   initialFilter = 'Completed', // 'Completed' | 'In Progress' | 'To Do'
   modalTitle = 'Tasks Overview',
 }) => {
-  const { tasks, updateStatus } = useTasks();
+  const { tasks, updateStatus, openEditModal, openDeleteModal, openViewModal } = useTasks();
   const { users } = useUserManagement();
 
   const [statusFilter, setStatusFilter] = useState(initialFilter || 'Completed');
@@ -58,19 +60,11 @@ export const ManagerTasksDrilldownModal = ({
 
   // Member Filter
   if (memberFilter !== 'all') {
-    const mLower = memberFilter.toLowerCase();
-    filtered = filtered.filter((t) => {
-      const assigned = (t.assignedTo || '').toLowerCase();
-      const userName = t.user ? (t.user.name || '').toLowerCase() : '';
-      const userUsername = t.user ? (t.user.username || '').toLowerCase() : '';
-      const userId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
-      return (
-        assigned === mLower ||
-        userName === mLower ||
-        userUsername === mLower ||
-        userId === memberFilter
-      );
-    });
+    filtered = filtered.filter(
+      (t) =>
+        t.assignedTo === memberFilter ||
+        (t.user && (t.user.name === memberFilter || t.user === memberFilter))
+    );
   }
 
   // Search Filter
@@ -80,13 +74,11 @@ export const ManagerTasksDrilldownModal = ({
       (t) =>
         (t.description && t.description.toLowerCase().includes(q)) ||
         (t.remark && t.remark.toLowerCase().includes(q)) ||
-        (t.completionRemark && t.completionRemark.toLowerCase().includes(q)) ||
         (t.taskType && t.taskType.toLowerCase().includes(q)) ||
         (t.assignedTo && t.assignedTo.toLowerCase().includes(q))
     );
   }
 
-  const totalTasksCount = tasks.length;
   const totalCompleted = tasks.filter((t) => t.status === 'Completed').length;
   const totalInProgress = tasks.filter((t) => t.status === 'In Progress').length;
   const totalToDo = tasks.filter((t) => t.status === 'To Do').length;
@@ -121,14 +113,6 @@ export const ManagerTasksDrilldownModal = ({
             <span>Backend Work</span>
           </span>
         );
-      case 'sells':
-      case 'sales':
-        return (
-          <span className="badge-type badge-type-sells" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <TrendingUp size={12} />
-            <span>Sells</span>
-          </span>
-        );
       default:
         return <span className="badge-type">{type}</span>;
     }
@@ -160,93 +144,12 @@ export const ManagerTasksDrilldownModal = ({
     );
   };
 
-  const getHeaderBadge = () => {
-    if (statusFilter === 'Completed') {
-      return (
-        <span
-          style={{
-            fontSize: '0.75rem',
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: '#ecfdf5',
-            color: '#047857',
-            fontWeight: 700,
-            border: '1px solid #a7f3d0',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-          }}
-        >
-          <CheckCircle2 size={13} />
-          <span>{filtered.length} Completed</span>
-        </span>
-      );
-    }
-    if (statusFilter === 'In Progress') {
-      return (
-        <span
-          style={{
-            fontSize: '0.75rem',
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: '#fffbeb',
-            color: '#b45309',
-            fontWeight: 700,
-            border: '1px solid #fde68a',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-          }}
-        >
-          <Clock size={13} />
-          <span>{filtered.length} In Progress</span>
-        </span>
-      );
-    }
-    if (statusFilter === 'To Do') {
-      return (
-        <span
-          style={{
-            fontSize: '0.75rem',
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: '#f1f5f9',
-            color: '#475569',
-            fontWeight: 700,
-            border: '1px solid #cbd5e1',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-          }}
-        >
-          <AlertCircle size={13} />
-          <span>{filtered.length} Pending</span>
-        </span>
-      );
-    }
-    return (
-      <span
-        style={{
-          fontSize: '0.75rem',
-          padding: '3px 10px',
-          borderRadius: 'var(--radius-full)',
-          background: '#eff6ff',
-          color: '#1d4ed8',
-          fontWeight: 700,
-          border: '1px solid #bfdbfe',
-        }}
-      >
-        {filtered.length} Tasks
-      </span>
-    );
-  };
-
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '980px', width: '95%' }}
+        style={{ maxWidth: '960px', width: '95%' }}
       >
         {/* Header */}
         <div className="modal-header" style={{ padding: '18px 24px' }}>
@@ -255,7 +158,19 @@ export const ManagerTasksDrilldownModal = ({
               <h3 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>
                 {modalTitle}
               </h3>
-              {getHeaderBadge()}
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '3px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  fontWeight: 700,
+                  border: '1px solid #bfdbfe',
+                }}
+              >
+                {filtered.length} Record{filtered.length === 1 ? '' : 's'}
+              </span>
             </div>
           </div>
 
@@ -266,7 +181,7 @@ export const ManagerTasksDrilldownModal = ({
 
         {/* Body */}
         <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
-          {/* Quick 1-Click Status Filter Tabs & Member Filter */}
+          {/* Quick 1-Click Status Filter Tabs & Member Filter (All Tasks removed) */}
           <div
             style={{
               display: 'flex',
@@ -278,20 +193,8 @@ export const ManagerTasksDrilldownModal = ({
               borderBottom: '1px solid var(--border-color)',
             }}
           >
-            {/* Status Tabs */}
+            {/* Status Tabs without "All Tasks" */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className={`btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setStatusFilter('all')}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '0.825rem',
-                }}
-              >
-                <span>All Tasks ({totalTasksCount})</span>
-              </button>
-
               <button
                 type="button"
                 className={`btn ${statusFilter === 'Completed' ? 'btn-primary' : 'btn-secondary'}`}
@@ -376,20 +279,21 @@ export const ManagerTasksDrilldownModal = ({
               <thead>
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
+                  <th style={{ width: '160px' }}>Assigned Member</th>
+                  <th style={{ width: '130px' }}>Type of Work</th>
                   <th>Task Description</th>
-                  <th style={{ width: '140px' }}>Type of Work</th>
-                  <th style={{ width: '160px' }}>Assigned User</th>
                   <th style={{ width: '120px' }}>Due Date</th>
                   <th style={{ width: '120px' }}>Status</th>
-                  <th>Remark / Notes</th>
+                  <th>Remark</th>
+                  <th style={{ width: '110px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        No {statusFilter !== 'all' ? statusFilter.toLowerCase() : ''} tasks found
+                        No matching tasks found
                       </p>
                       <p style={{ fontSize: '0.85rem' }}>
                         Try switching the status filter or clearing your search input.
@@ -399,10 +303,7 @@ export const ManagerTasksDrilldownModal = ({
                 ) : (
                   filtered.map((task, idx) => {
                     const assignedUserObj = users.find(
-                      (u) =>
-                        (u.name && u.name.toLowerCase() === (task.assignedTo || '').toLowerCase()) ||
-                        (u.username && u.username.toLowerCase() === (task.assignedTo || '').toLowerCase()) ||
-                        (task.user && (task.user._id ? task.user._id.toString() : task.user.toString()) === u._id?.toString())
+                      (u) => u.name === task.assignedTo || u.username === task.assignedTo
                     );
 
                     return (
@@ -410,16 +311,6 @@ export const ManagerTasksDrilldownModal = ({
                         <td style={{ textAlign: 'center' }}>
                           <span className="sr-no-badge">{idx + 1}</span>
                         </td>
-
-                        {/* Description */}
-                        <td>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>
-                            {task.description}
-                          </div>
-                        </td>
-
-                        {/* Type of Work */}
-                        <td>{getTaskTypeBadge(task.taskType)}</td>
 
                         {/* Assigned Member with Avatar */}
                         <td>
@@ -460,6 +351,16 @@ export const ManagerTasksDrilldownModal = ({
                           </div>
                         </td>
 
+                        {/* Type of Work */}
+                        <td>{getTaskTypeBadge(task.taskType)}</td>
+
+                        {/* Description */}
+                        <td>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {task.description}
+                          </span>
+                        </td>
+
                         {/* Due Date */}
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -469,7 +370,6 @@ export const ManagerTasksDrilldownModal = ({
                                 ? new Date(task.expectedDate).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
-                                    year: 'numeric',
                                   })
                                 : '—'}
                             </span>
@@ -481,15 +381,97 @@ export const ManagerTasksDrilldownModal = ({
 
                         {/* Remark */}
                         <td>
-                          <span style={{ color: task.completionRemark || task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {task.completionRemark ? (
-                              <span>
-                                <strong style={{ color: '#047857' }}>Note:</strong> {task.completionRemark}
-                              </span>
-                            ) : (
-                              task.remark || '—'
-                            )}
+                          <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            {task.remark || '—'}
                           </span>
+                        </td>
+
+                        {/* Actions (View, Edit, Delete signs only) */}
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                            <button
+                              type="button"
+                              onClick={() => openViewModal(task)}
+                              title="View Details"
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: '1px solid #bfdbfe',
+                                backgroundColor: '#eff6ff',
+                                color: '#2563eb',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#dbeafe';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#eff6ff';
+                              }}
+                            >
+                              <Eye size={14} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(task)}
+                              title="Edit Task"
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: '1px solid #e2e8f0',
+                                backgroundColor: '#f8fafc',
+                                color: '#475569',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                e.currentTarget.style.color = '#0f172a';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                                e.currentTarget.style.color = '#475569';
+                              }}
+                            >
+                              <Edit2 size={14} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => openDeleteModal(task)}
+                              title="Delete Task"
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: '1px solid #fecaca',
+                                backgroundColor: '#fef2f2',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#fee2e2';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#fef2f2';
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

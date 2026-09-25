@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../context/TaskContext';
-import { useAuth } from '../../context/AuthContext';
 import { useUserManagement } from '../../context/UserContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
 import { UserWorkModal } from '../ManagerDashboard/UserWorkModal';
@@ -13,18 +12,15 @@ import {
   ListTodo,
   Crown,
   ShieldCheck,
-  ChevronRight,
   FolderKanban,
-  CheckSquare,
-  ArrowRight,
-  Shield,
   Briefcase,
-  Layers,
+  Target,
+  AlertCircle,
+  CheckSquare,
 } from 'lucide-react';
 
-export const SuperAdminDashboard = ({ setActiveSection }) => {
+export const SuperAdminDashboard = () => {
   const { tasks } = useTasks();
-  const { user: currentUser } = useAuth();
   const { users } = useUserManagement();
 
   // Drilldown states
@@ -34,14 +30,16 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
 
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [employeeDeptFilter, setEmployeeDeptFilter] = useState('all');
+  const [employeeRoleFilter, setEmployeeRoleFilter] = useState('all');
   const [employeeModalTitle, setEmployeeModalTitle] = useState('All Users');
 
   const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
   const [tasksFilter, setTasksFilter] = useState('all');
   const [tasksModalTitle, setTasksModalTitle] = useState('Tasks Overview');
 
-  const openEmployeeDrilldown = (dept = 'all', title = 'Organization Users') => {
+  const openEmployeeDrilldown = (dept = 'all', title = 'Organization Users', role = 'all') => {
     setEmployeeDeptFilter(dept);
+    setEmployeeRoleFilter(role);
     setEmployeeModalTitle(title);
     setIsEmployeeModalOpen(true);
   };
@@ -81,21 +79,29 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
   // Active Approved Users
   const activeUsers = users.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
-  // Managers & Seniors
-  const managers = activeUsers.filter(
-    (u) =>
-      u.role === 'Manager' ||
-      u.role === 'Executive' ||
-      u.role === 'Administrator' ||
-      u.role === 'Super Admin'
-  );
+  // Managers & Leadership
+  const managers = activeUsers.filter((u) => {
+    const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+    return roles.some((r) => ['Manager', 'Executive', 'Administrator', 'Super Admin'].includes(r));
+  });
 
-  // Standard Employees / Users
-  const regularUsers = activeUsers.filter(
-    (u) =>
-      u.role === 'User' ||
-      (!u.role && u.role !== 'Manager' && u.role !== 'Executive' && u.role !== 'Administrator' && u.role !== 'Super Admin')
-  );
+  // Sales Coordinators
+  const salesCoordinators = activeUsers.filter((u) => {
+    const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+    return roles.includes('Sales Coordinator') || u.role === 'Sales Coordinator';
+  });
+
+  // Service Coordinators
+  const serviceCoordinators = activeUsers.filter((u) => {
+    const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+    return roles.includes('Service Coordinator') || u.role === 'Service Coordinator';
+  });
+
+  // Regular Staff
+  const regularUsers = activeUsers.filter((u) => {
+    const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+    return roles.includes('User') || roles.length === 0 || u.role === 'User';
+  });
 
   // Overall Task Statistics
   const totalTasksCount = tasks.length;
@@ -104,253 +110,212 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
   const todoTasksCount = tasks.filter((t) => t.status === 'To Do' || !t.status).length;
 
   return (
-    <div className="super-admin-dashboard" style={{ paddingBottom: '32px' }}>
-      {/* Official White Header Banner */}
+    <div className="super-admin-dashboard fade-in" style={{ padding: '6px 0 32px 0' }}>
+      {/* Curved Header Banner */}
       <div
-        className="card"
         style={{
-          padding: '24px 28px',
-          marginBottom: '24px',
-          borderRadius: '16px',
-          border: '1px solid var(--border-color)',
+          marginBottom: '20px',
+          padding: '16px 20px',
           background: '#ffffff',
-          boxShadow: 'var(--shadow-sm)',
+          borderRadius: '20px',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
+          justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '12px',
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span
+              className="badge-official"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
                 background: '#fef3c7',
                 color: '#b45309',
-                border: '1px solid #fde68a',
-                padding: '2px 8px',
+                borderColor: '#fde68a',
                 borderRadius: '999px',
-                fontSize: '0.72rem',
+                padding: '3px 10px',
+                fontSize: '0.74rem',
                 fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
               }}
             >
-              <Crown size={12} /> Super Admin Dashboard
+              <Crown size={12} />
+              <span>Super Admin Console</span>
+            </span>
+            <span
+              className="badge-official badge-blue"
+              style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700 }}
+            >
+              {activeUsers.length} Active Personnel
             </span>
           </div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-            Organization Executive Overview
-          </h2>
+          <h1 style={{ fontSize: '1.38rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            Organization Command Center
+          </h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '999px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              color: '#334155',
+            }}
+          >
+            <CheckSquare size={14} color="#2563eb" />
+            <span>{totalTasksCount} Total Tasks</span>
+          </span>
         </div>
       </div>
 
-      {/* 4 Core Essential Organization KPIs (Enlarged, Uniform Size, Interactive Hover) */}
-      <div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '18px',
-          }}
-        >
-          {/* 1. Total Users */}
-          <div
-            className="superadmin-kpi-card"
-            style={{
-              cursor: 'pointer',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '22px 24px',
-              minHeight: '140px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onClick={() => openEmployeeDrilldown('all', 'All Users')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(2, 132, 199, 0.15)';
-              e.currentTarget.style.borderColor = '#93c5fd';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0284c7' }}>Total Users</span>
-              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-                <Users size={20} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{activeUsers.length}</div>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '6px', display: 'block' }}>
-                {managers.length} Managers • {regularUsers.length} Contributors
-              </span>
-            </div>
-          </div>
+      {/* 9 Curved Interactive Divs Arranged in Order */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '16px',
+        }}
+      >
+        {/* Card 1: Total Personnel */}
+        <MetricCard
+          title="Total Personnel"
+          value={activeUsers.length}
+          subtitle="Registered & Active Roster"
+          icon={Users}
+          color="#0f172a"
+          bgLight="#f8fafc"
+          isClickable={true}
+          onClick={() => openEmployeeDrilldown('all', 'All Organization Personnel', 'all')}
+        />
 
-          {/* 2. Total Tasks */}
-          <div
-            className="superadmin-kpi-card"
-            style={{
-              cursor: 'pointer',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '22px 24px',
-              minHeight: '140px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onClick={() => openTasksDrilldown('all', 'All Organization Tasks')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(79, 70, 229, 0.15)';
-              e.currentTarget.style.borderColor = '#a5b4fc';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#4f46e5' }}>Total Tasks</span>
-              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
-                <ListTodo size={20} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{totalTasksCount}</div>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '6px', display: 'block' }}>
-                Assigned Workflows
-              </span>
-            </div>
-          </div>
+        {/* Card 2: Managers & Leadership */}
+        <MetricCard
+          title="Managers & Leadership"
+          value={managers.length}
+          subtitle="Supervisors & Admins"
+          icon={ShieldCheck}
+          color="#2563eb"
+          bgLight="#eff6ff"
+          isClickable={true}
+          onClick={() => openEmployeeDrilldown('all', 'Managers & Leadership Roster', 'managers')}
+        />
 
-          {/* 3. In Progress */}
-          <div
-            className="superadmin-kpi-card"
-            style={{
-              cursor: 'pointer',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '22px 24px',
-              minHeight: '140px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onClick={() => openTasksDrilldown('In Progress', 'In Progress Tasks')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(217, 119, 6, 0.15)';
-              e.currentTarget.style.borderColor = '#fcd34d';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#d97706' }}>In Progress</span>
-              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
-                <Clock size={20} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{inProgressTasksCount}</div>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '6px', display: 'block' }}>
-                Active Execution
-              </span>
-            </div>
-          </div>
+        {/* Card 3: Sales Coordinators */}
+        <MetricCard
+          title="Sales Coordinators"
+          value={salesCoordinators.length}
+          subtitle="CRM Pipeline Assigned"
+          icon={Target}
+          color="#0284c7"
+          bgLight="#f0f9ff"
+          isClickable={true}
+          onClick={() => openEmployeeDrilldown('all', 'Sales Coordinators Directory', 'sales')}
+        />
 
-          {/* 4. Completed */}
-          <div
-            className="superadmin-kpi-card"
-            style={{
-              cursor: 'pointer',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '14px',
-              padding: '22px 24px',
-              minHeight: '140px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onClick={() => openTasksDrilldown('Completed', 'Completed Tasks')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(5, 150, 105, 0.15)';
-              e.currentTarget.style.borderColor = '#86efac';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#059669' }}>Completed</span>
-              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
-                <CheckCircle2 size={20} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{completedTasksCount}</div>
-              <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 700, marginTop: '6px', display: 'block' }}>
-                {totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0}% Delivered
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Card 4: Service Coordinators */}
+        <MetricCard
+          title="Service Coordinators"
+          value={serviceCoordinators.length}
+          subtitle="Complaints & SLA Support"
+          icon={AlertCircle}
+          color="#dc2626"
+          bgLight="#fef2f2"
+          isClickable={true}
+          onClick={() => openEmployeeDrilldown('all', 'Service Coordinators Directory', 'service')}
+        />
+
+        {/* Card 5: Regular Staff */}
+        <MetricCard
+          title="Regular Staff"
+          value={regularUsers.length}
+          subtitle="Core Operations Team"
+          icon={Briefcase}
+          color="#7c3aed"
+          bgLight="#f5f3ff"
+          isClickable={true}
+          onClick={() => openEmployeeDrilldown('all', 'Regular Staff Directory', 'regular')}
+        />
+
+        {/* Card 6: Total Assigned Tasks */}
+        <MetricCard
+          title="Total Assigned Tasks"
+          value={totalTasksCount}
+          subtitle="All Active Workflows"
+          icon={ListTodo}
+          color="#4f46e5"
+          bgLight="#eef2ff"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('all', 'Organization Tasks Overview')}
+        />
+
+        {/* Card 7: In Progress Work */}
+        <MetricCard
+          title="In Progress Work"
+          value={inProgressTasksCount}
+          subtitle="Active ongoing execution"
+          icon={Clock}
+          color="#d97706"
+          bgLight="#fffbeb"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('In Progress', 'In Progress Workflows')}
+        />
+
+        {/* Card 8: Completed Workflows */}
+        <MetricCard
+          title="Completed Workflows"
+          value={completedTasksCount}
+          subtitle="Delivered & Signed Off"
+          icon={CheckCircle2}
+          color="#059669"
+          bgLight="#ecfdf5"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('Completed', 'Completed Workflows')}
+        />
+
+        {/* Card 9: Pending Queue */}
+        <MetricCard
+          title="Pending Queue"
+          value={todoTasksCount}
+          subtitle="Awaiting Task Execution"
+          icon={FolderKanban}
+          color="#6366f1"
+          bgLight="#f5f3ff"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('To Do', 'Pending Queue Tasks')}
+        />
       </div>
 
-
-
-      {/* 1-Click Drilldown Modals */}
+      {/* Drilldown Modals (Opened on specific card clicks) */}
       <EmployeeDrilldownModal
         isOpen={isEmployeeModalOpen}
-        initialDepartmentFilter={employeeDeptFilter}
-        modalTitle={employeeModalTitle}
         onClose={() => setIsEmployeeModalOpen(false)}
-        onOpenUserWork={openUserWork}
+        initialDepartmentFilter={employeeDeptFilter}
+        roleFilter={employeeRoleFilter}
+        modalTitle={employeeModalTitle}
+        onSelectUserForWork={(targetUser) => openUserWork(targetUser)}
       />
 
       <ManagerTasksDrilldownModal
         isOpen={isTasksModalOpen}
+        onClose={() => setIsTasksModalOpen(false)}
         initialFilter={tasksFilter}
         modalTitle={tasksModalTitle}
-        onClose={() => setIsTasksModalOpen(false)}
       />
 
       <UserWorkModal
-        user={selectedUserForWork}
-        initialFilter={userWorkFilter}
         isOpen={isWorkModalOpen}
         onClose={closeUserWork}
+        user={selectedUserForWork}
+        initialFilter={userWorkFilter}
       />
     </div>
   );

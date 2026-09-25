@@ -412,6 +412,465 @@ export const api = {
     }
     return data;
   },
+
+  // Leads API
+  async getLeads(params = {}) {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.source && params.source !== 'all') query.append('source', params.source);
+    if (params.assignedTo && params.assignedTo !== 'all') query.append('assignedTo', params.assignedTo);
+    if (params.myLeadsOnly) query.append('myLeadsOnly', 'true');
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads${queryString}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch leads');
+    }
+    return data;
+  },
+
+  async getLeadStats() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/stats`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch lead statistics');
+    }
+    return data;
+  },
+
+  async getLead(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch lead details');
+    }
+    return data;
+  },
+
+  async createLead(leadData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(leadData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create lead');
+    }
+    return data;
+  },
+
+  async updateLead(id, leadData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(leadData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update lead');
+    }
+    return data;
+  },
+
+  async updateLeadStatus(id, status) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update lead status');
+    }
+    return data;
+  },
+
+  async convertLeadToOpportunity(id, conversionData = {}) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/convert`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(conversionData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to convert lead to opportunity');
+    }
+    return data;
+  },
+
+  async deleteLead(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete lead');
+    }
+    return data;
+  },
+
+  // Opportunities API
+  async getOpportunities(params = {}) {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.stage && params.stage !== 'all') query.append('stage', params.stage);
+    if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.assignedTo && params.assignedTo !== 'all') query.append('assignedTo', params.assignedTo);
+    if (params.myOpportunitiesOnly) query.append('myOpportunitiesOnly', 'true');
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities${queryString}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch opportunities');
+    }
+    return data;
+  },
+
+  async getOpportunityStats() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/stats`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch opportunity statistics');
+    }
+    return data;
+  },
+
+  async getOpportunity(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch opportunity details');
+    }
+    return data;
+  },
+
+  async createOpportunity(oppData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(oppData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create opportunity');
+    }
+    return data;
+  },
+
+  async updateOpportunity(id, oppData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(oppData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update opportunity');
+    }
+    return data;
+  },
+
+  async updateOpportunityStage(id, stage, probability) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/${id}/stage`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ stage, probability }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update opportunity stage');
+    }
+    return data;
+  },
+
+  async deleteOpportunity(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete opportunity');
+    }
+    return data;
+  },
+};
+
+// ==========================================
+// Subscriptions & Module Pricing API Service
+// ==========================================
+export const subscriptionApi = {
+  async getSubscription() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/subscriptions`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch subscription data');
+    }
+    return data;
+  },
+
+  async updateModules(activeModules) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/subscriptions/modules`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ activeModules }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update modules');
+    }
+    return data;
+  },
+
+  async updateSeats(userSeats) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/subscriptions/seats`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userSeats }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update user seats');
+    }
+    return data;
+  },
+
+  async updateCurrency(currency) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/subscriptions/currency`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ currency }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update currency');
+    }
+    return data;
+  },
+
+  async calculatePricing(params) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/subscriptions/calculate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to calculate pricing');
+    }
+    return data;
+  },
+};
+
+// ==========================================
+// Complaints & SLA API Service
+// ==========================================
+export const complaintApi = {
+  async getComplaints(params = {}) {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.slaStatus && params.slaStatus !== 'all') query.append('slaStatus', params.slaStatus);
+    if (params.assignedTo && params.assignedTo !== 'all') query.append('assignedTo', params.assignedTo);
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints${qs}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Failed to fetch complaints');
+      err.moduleDisabled = data.moduleDisabled;
+      throw err;
+    }
+    return data;
+  },
+
+  async getComplaint(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch complaint');
+    }
+    return data;
+  },
+
+  async createComplaint(complaintData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(complaintData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create complaint ticket');
+    }
+    return data;
+  },
+
+  async updateComplaint(id, complaintData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(complaintData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update complaint ticket');
+    }
+    return data;
+  },
+
+  async resolveComplaint(id, resolveData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/resolve`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(resolveData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to resolve complaint');
+    }
+    return data;
+  },
+
+  async deleteComplaint(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete complaint ticket');
+    }
+    return data;
+  },
+};
+
+// ==========================================
+// Projects & Milestones API Service
+// ==========================================
+export const projectApi = {
+  async getProjects(params = {}) {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.manager && params.manager !== 'all') query.append('manager', params.manager);
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects${qs}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.message || 'Failed to fetch projects');
+      err.moduleDisabled = data.moduleDisabled;
+      throw err;
+    }
+    return data;
+  },
+
+  async getProject(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch project');
+    }
+    return data;
+  },
+
+  async createProject(projectData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(projectData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create project');
+    }
+    return data;
+  },
+
+  async updateProject(id, projectData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(projectData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update project');
+    }
+    return data;
+  },
+
+  async toggleMilestone(projectId, milestoneIndex) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/milestones/${milestoneIndex}/toggle`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to toggle milestone');
+    }
+    return data;
+  },
+
+  async deleteProject(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete project');
+    }
+    return data;
+  },
 };
 
 // ==========================================

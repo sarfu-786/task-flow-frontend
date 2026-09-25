@@ -9,9 +9,9 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
-  KeyRound,
+  Users,
+  BarChart3,
   ShieldAlert,
-  Building2,
 } from 'lucide-react';
 
 export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg = '' }) => {
@@ -90,9 +90,9 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
     return (
       <ForgotPassword
         onBackToLogin={() => setShowForgotPassword(false)}
-        onSuccessReset={({ email, message }) => {
-          if (email) {
-            setUsernameOrEmail(email);
+        onSuccessReset={({ email: resetEmail, message }) => {
+          if (resetEmail) {
+            setEmail(resetEmail);
           }
           setShowForgotPassword(false);
           if (message) setSuccessBanner(message);
@@ -102,269 +102,666 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
   }
 
   return (
-    <div className="login-page-wrapper">
-      <div className="login-card">
-        {/* Top Enterprise Logo & Header */}
-        <div className="login-header-block">
-          <div className="login-icon-box">
-            <Building2 size={28} color="#ffffff" />
-          </div>
-          <h1 className="login-title">Sign In</h1>
-          <p className="login-subtitle">
-            Hierarchy-Based Task & Employee Management System
-          </p>
-        </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #f0f6ff 50%, #e8f0fe 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Decorative ambient background blur shapes */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-10%',
+          left: '-5%',
+          width: '500px',
+          height: '500px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(255, 255, 255, 0) 70%)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-15%',
+          right: '-5%',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.06) 0%, rgba(255, 255, 255, 0) 70%)',
+          pointerEvents: 'none',
+        }}
+      />
 
-        {/* Success Banner */}
-        {successBanner && (
-          <div
-            style={{
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              borderRadius: '10px',
-              padding: '12px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              color: '#047857',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              marginBottom: '18px',
-            }}
-          >
-            <CheckCircle2 size={18} color="#059669" />
-            <span>{successBanner}</span>
-          </div>
-        )}
-
-        {/* Account Approval Warning Banner */}
-        {approvalWarning && (
-          <div
-            style={{
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              borderRadius: '10px',
-              padding: '12px 16px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              color: '#92400e',
-              fontSize: '0.875rem',
-              marginBottom: '18px',
-            }}
-          >
-            <ShieldAlert size={20} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+      {/* Main Container */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '1120px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '40px',
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {/* Left Side: Brand & Feature Highlights */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            padding: '20px 16px',
+          }}
+        >
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: '0 8px 16px rgba(37, 99, 235, 0.25)',
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="16" height="18" x="4" y="3" rx="3" />
+                <line x1="8" x2="16" y1="8" y2="8" />
+                <line x1="8" x2="16" y1="12" y2="12" />
+                <line x1="8" x2="12" y1="16" y2="16" />
+              </svg>
+            </div>
             <div>
-              <div style={{ fontWeight: 700, color: '#78350f', marginBottom: '2px' }}>
-                Account Pending Approval
+              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>
+                Task<span style={{ color: '#2563eb' }}>Flow</span>
               </div>
-              <span>{approvalWarning}</span>
+              <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>
+                Unified Task Management
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Error Alert Banner */}
-        {generalError && (
+          {/* Accent Line */}
           <div
-            className="alert alert-danger"
-            role="alert"
-            style={{ marginBottom: '18px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{
+              width: '38px',
+              height: '3.5px',
+              background: '#2563eb',
+              borderRadius: '999px',
+              margin: '12px 0 24px 0',
+            }}
+          />
+
+          {/* Heading */}
+          <h1
+            style={{
+              fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+              fontWeight: 850,
+              color: '#0f172a',
+              lineHeight: 1.15,
+              margin: '0 0 16px 0',
+              letterSpacing: '-0.8px',
+            }}
           >
-            <AlertCircle size={18} />
-            <span>{generalError}</span>
-          </div>
-        )}
+            Work Smarter<br />
+            <span style={{ color: '#2563eb' }}>Together</span>
+          </h1>
 
-        {/* Official Login Form */}
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Email Field */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" htmlFor="login-email">
-              Email Address <span className="required">*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
+          {/* Subtitle */}
+          <p
+            style={{
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              color: '#64748b',
+              margin: '0 0 32px 0',
+              maxWidth: '440px',
+            }}
+          >
+            Plan, track and manage tasks, projects, leads, opportunities and your team — all in one place.
+          </p>
+
+          {/* Feature List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '36px' }}>
+            {/* Feature 1 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div
                 style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Mail size={16} />
-              </div>
-              <input
-                id="login-email"
-                type="email"
-                className="form-control"
-                style={{ paddingLeft: '38px' }}
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (fieldErrors.email) {
-                    setFieldErrors((prev) => ({ ...prev, email: '' }));
-                  }
-                  if (generalError) setGeneralError('');
-                }}
-                disabled={isLoading}
-                autoComplete="email"
-              />
-            </div>
-            {fieldErrors.email && (
-              <span className="form-error-msg">{fieldErrors.email}</span>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div className="form-group" style={{ marginBottom: '22px' }}>
-            <label className="form-label" htmlFor="password">
-              Password <span className="required">*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Lock size={16} />
-              </div>
-
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                className="form-control"
-                style={{ paddingLeft: '38px', paddingRight: '40px' }}
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) {
-                    setFieldErrors((prev) => ({ ...prev, password: '' }));
-                  }
-                  if (generalError) setGeneralError('');
-                }}
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
-
-              {/* Show / Hide Eye Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: showPassword ? '#2563eb' : '#94a3b8',
-                  cursor: 'pointer',
-                  padding: '4px',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  background: '#eff6ff',
+                  color: '#2563eb',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.08)',
                 }}
-                title={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
+                  Stay Organized
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
+                  Manage your work efficiently
+                </div>
+              </div>
             </div>
-            {fieldErrors.password && (
-              <span className="form-error-msg">{fieldErrors.password}</span>
-            )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
+            {/* Feature 2 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#2563eb',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'inline-flex',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  background: '#ecfdf5',
+                  color: '#10b981',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
                 }}
               >
-                <KeyRound size={13} />
-                <span>Forgot password?</span>
-              </button>
+                <Users size={22} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
+                  Work as a Team
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
+                  Collaborate and achieve more
+                </div>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  background: '#fff7ed',
+                  color: '#f97316',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(249, 115, 22, 0.08)',
+                }}
+              >
+                <BarChart3 size={22} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
+                  Track Progress
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.84rem' }}>
+                  Turn plans into results
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Login Submit Button */}
-          <button
-            type="submit"
-            className="btn btn-primary"
+          {/* Doodle quote note */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginTop: 'auto', paddingTop: '10px' }}>
+            <svg
+              width="24"
+              height="30"
+              viewBox="0 0 24 30"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ color: '#94a3b8', flexShrink: 0, marginTop: '2px' }}
+            >
+              <path
+                d="M4 3C12 3 20 9 16 18C14 22 10 24 6 24M6 24L10 20M6 24L9 28"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div style={{ color: '#64748b', fontSize: '0.82rem', lineHeight: '1.4' }}>
+              A better way<br />
+              to manage your work.
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Floating Login Card */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div
             style={{
               width: '100%',
-              padding: '12px',
-              borderRadius: '10px',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
+              maxWidth: '470px',
+              background: '#ffffff',
+              borderRadius: '36px',
+              padding: '42px 38px 36px',
+              boxShadow: '0 25px 60px -15px rgba(37, 99, 235, 0.12), 0 0 1px 1px rgba(226, 232, 240, 0.9)',
+              position: 'relative',
             }}
-            disabled={isLoading}
           >
-            {isLoading ? (
-              <span>Signing in...</span>
-            ) : (
-              <>
-                <LogIn size={18} />
-                <span>Sign In</span>
-              </>
-            )}
-          </button>
-        </form>
+            {/* Top Logo Icon */}
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '18px',
+                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                margin: '0 auto 18px',
+                boxShadow: '0 10px 20px rgba(37, 99, 235, 0.28)',
+              }}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="16" height="18" x="4" y="3" rx="3" />
+                <line x1="8" x2="16" y1="8" y2="8" />
+                <line x1="8" x2="16" y1="12" y2="12" />
+                <line x1="8" x2="12" y1="16" y2="16" />
+              </svg>
+            </div>
 
-        {/* Register Option */}
-        <div
-          style={{
-            marginTop: '20px',
-            paddingTop: '16px',
-            borderTop: '1px solid var(--border-color)',
-            textAlign: 'center',
-            fontSize: '0.85rem',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <span>Need an employee account? </span>
-          <button
-            type="button"
-            onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#2563eb',
-              fontWeight: 700,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: '0 2px',
-              fontSize: '0.85rem',
-            }}
-          >
-            Register
-          </button>
+            {/* Header Text */}
+            <h2
+              style={{
+                textAlign: 'center',
+                fontSize: '1.7rem',
+                fontWeight: 800,
+                color: '#0f172a',
+                margin: '0 0 6px 0',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              Welcome Back
+            </h2>
+            <p
+              style={{
+                textAlign: 'center',
+                fontSize: '0.92rem',
+                color: '#64748b',
+                margin: '0 0 28px 0',
+              }}
+            >
+              Sign in to your TaskFlow account
+            </p>
+
+            {/* Success Banner */}
+            {successBanner && (
+              <div
+                style={{
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#047857',
+                  fontSize: '0.86rem',
+                  fontWeight: 500,
+                  marginBottom: '20px',
+                }}
+              >
+                <CheckCircle2 size={18} color="#059669" />
+                <span>{successBanner}</span>
+              </div>
+            )}
+
+            {/* Account Approval Warning */}
+            {approvalWarning && (
+              <div
+                style={{
+                  background: '#fffbeb',
+                  border: '1px solid #fde68a',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  color: '#92400e',
+                  fontSize: '0.86rem',
+                  marginBottom: '20px',
+                }}
+              >
+                <ShieldAlert size={20} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontWeight: 700, color: '#78350f', marginBottom: '2px' }}>
+                    Account Pending Approval
+                  </div>
+                  <span>{approvalWarning}</span>
+                </div>
+              </div>
+            )}
+
+            {/* General Error Banner */}
+            {generalError && (
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#dc2626',
+                  fontSize: '0.86rem',
+                  fontWeight: 500,
+                  marginBottom: '20px',
+                }}
+              >
+                <AlertCircle size={18} color="#dc2626" />
+                <span>{generalError}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} noValidate>
+              {/* Email Address */}
+              <div style={{ marginBottom: '18px' }}>
+                <label
+                  htmlFor="login-email"
+                  style={{
+                    display: 'block',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    color: '#0f172a',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Email Address <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '14px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    id="login-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (fieldErrors.email) {
+                        setFieldErrors((prev) => ({ ...prev, email: '' }));
+                      }
+                      if (generalError) setGeneralError('');
+                    }}
+                    disabled={isLoading}
+                    autoComplete="email"
+                    style={{
+                      width: '100%',
+                      height: '46px',
+                      paddingLeft: '42px',
+                      paddingRight: '14px',
+                      borderRadius: '12px',
+                      border: `1.5px solid ${fieldErrors.email ? '#ef4444' : '#e2e8f0'}`,
+                      background: '#ffffff',
+                      fontSize: '0.92rem',
+                      color: '#0f172a',
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      if (!fieldErrors.email) {
+                        e.target.style.borderColor = '#2563eb';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!fieldErrors.email) {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                </div>
+                {fieldErrors.email && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '5px', fontWeight: 500 }}>
+                    {fieldErrors.email}
+                  </div>
+                )}
+              </div>
+
+              {/* Password */}
+              <div style={{ marginBottom: '14px' }}>
+                <label
+                  htmlFor="password"
+                  style={{
+                    display: 'block',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    color: '#0f172a',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Password <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '14px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <Lock size={18} />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (fieldErrors.password) {
+                        setFieldErrors((prev) => ({ ...prev, password: '' }));
+                      }
+                      if (generalError) setGeneralError('');
+                    }}
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                    style={{
+                      width: '100%',
+                      height: '46px',
+                      paddingLeft: '42px',
+                      paddingRight: '42px',
+                      borderRadius: '12px',
+                      border: `1.5px solid ${fieldErrors.password ? '#ef4444' : '#e2e8f0'}`,
+                      background: '#ffffff',
+                      fontSize: '0.92rem',
+                      color: '#0f172a',
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      if (!fieldErrors.password) {
+                        e.target.style.borderColor = '#2563eb';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!fieldErrors.password) {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                  {/* Eye Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {fieldErrors.password && (
+                  <div style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '5px', fontWeight: 500 }}>
+                    {fieldErrors.password}
+                  </div>
+                )}
+              </div>
+
+              {/* Forgot Password Link */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '22px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              {/* Sign In Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, #1d68f7, #1d4ed8)',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: '0.98rem',
+                  fontWeight: 700,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 8px 22px rgba(29, 104, 247, 0.35)',
+                  transition: 'all 0.2s ease',
+                  opacity: isLoading ? 0.75 : 1,
+                }}
+              >
+                {isLoading ? (
+                  <span>Signing In...</span>
+                ) : (
+                  <>
+                    <LogIn size={18} />
+                    <span>Sign In</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* OR Divider */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                margin: '22px 0',
+              }}
+            >
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              <span
+                style={{
+                  padding: '0 12px',
+                  color: '#94a3b8',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                }}
+              >
+                OR
+              </span>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+            </div>
+
+            {/* Register Link */}
+            <div
+              style={{
+                textAlign: 'center',
+                fontSize: '0.88rem',
+                color: '#475569',
+              }}
+            >
+              <span>Don’t have an account? </span>
+              <button
+                type="button"
+                onClick={() => onSwitchToRegister && onSwitchToRegister('user')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#1d68f7',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                  fontSize: '0.88rem',
+                }}
+              >
+                Register
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default Login;

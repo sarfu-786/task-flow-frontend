@@ -25,7 +25,6 @@ const DEPARTMENT_OPTIONS = [
   'Documentation',
   'Backend',
   'Social Media',
-  'Sells',
 ];
 
 export const ApprovalSection = () => {
@@ -149,7 +148,7 @@ export const ApprovalSection = () => {
         <div>
           <h2 className="section-title">Registration Approvals</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Review pending user sign-ups, assign working departments, and approve system access.
+            Review pending employee sign-ups, assign working departments, and approve system access.
           </p>
         </div>
 
@@ -465,7 +464,7 @@ export const ApprovalSection = () => {
                               {item.name}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              {item.role} • {item.department || 'Internet Work'}
+                              @{item.username || 'user'} • {item.role}
                             </div>
                           </div>
                         </div>

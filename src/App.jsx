@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider, useTasks } from './context/TaskContext';
 import { UserProvider } from './context/UserContext';
+import { LeadProvider } from './context/LeadContext';
+import { OpportunityProvider } from './context/OpportunityContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
+import { ComplaintProvider } from './context/ComplaintContext';
+import { ProjectProvider } from './context/ProjectContext';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Navbar } from './components/Navbar';
@@ -13,9 +18,22 @@ import { TaskList } from './components/TaskManagement/TaskList';
 import { UserSection } from './components/UserSection';
 import { UserWorkspace } from './components/UserWorkspace/UserWorkspace';
 import { ApprovalSection } from './components/ManagerDashboard/ApprovalSection';
+import { LeadSection } from './components/Leads/LeadSection';
+import { OpportunitySection } from './components/Opportunities/OpportunitySection';
+import { ComplaintSection } from './components/Complaints/ComplaintSection';
+import { ComplaintModal } from './components/Complaints/ComplaintModal';
+import { ResolveComplaintModal } from './components/Complaints/ResolveComplaintModal';
+import { DeleteComplaintModal } from './components/Complaints/DeleteComplaintModal';
+import { ProjectSection } from './components/Projects/ProjectSection';
+import { ProjectModal } from './components/Projects/ProjectModal';
+import { MilestonesModal } from './components/Projects/MilestonesModal';
+import { DeleteProjectModal } from './components/Projects/DeleteProjectModal';
+import { SubscriptionManagement } from './components/Subscription/SubscriptionManagement';
 import { RealtimeToast } from './components/RealtimeToast';
 import { TaskModal } from './components/TaskManagement/TaskModal';
 import { DeleteConfirmModal } from './components/TaskManagement/DeleteConfirmModal';
+import { TaskDetailModal } from './components/TaskManagement/TaskDetailModal';
+import { CommandPalette } from './components/CommandPalette';
 
 const AuthenticatedLayout = ({
   activeSection,
@@ -26,9 +44,39 @@ const AuthenticatedLayout = ({
   isManager,
 }) => {
   const { liveToast, dismissLiveToast } = useTasks();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K and custom event listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+
+    const handleCustomOpen = () => {
+      setIsCommandPaletteOpen(true);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-command-palette', handleCustomOpen);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-command-palette', handleCustomOpen);
+    };
+  }, []);
 
   return (
     <>
+      {/* Global Spotlight Command Palette (Ctrl+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        setActiveSection={handleSectionChange}
+      />
+
       {/* Real-time floating toast alert */}
       <RealtimeToast
         toast={liveToast}
@@ -48,9 +96,16 @@ const AuthenticatedLayout = ({
         }}
       />
 
-      {/* Global Task Modal & Delete Confirmation Modal */}
+      {/* Global Modals for Tasks, Complaints, Projects */}
       <TaskModal />
       <DeleteConfirmModal />
+      <TaskDetailModal />
+      <ComplaintModal />
+      <ResolveComplaintModal />
+      <DeleteComplaintModal />
+      <ProjectModal />
+      <MilestonesModal />
+      <DeleteProjectModal />
 
       <div className="app-container">
         {/* Dynamic Role-Based Sidebar */}
@@ -79,6 +134,11 @@ const AuthenticatedLayout = ({
                 {activeSection === 'hierarchy' && <OrganizationHierarchy setActiveSection={handleSectionChange} />}
                 {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                 {activeSection === 'tasks' && <TaskList />}
+                {activeSection === 'leads' && <LeadSection />}
+                {activeSection === 'opportunities' && <OpportunitySection />}
+                {activeSection === 'complaints' && <ComplaintSection />}
+                {activeSection === 'projects' && <ProjectSection />}
+                {activeSection === 'subscription' && <SubscriptionManagement />}
                 {activeSection === 'approvals' && <ApprovalSection />}
               </>
             ) : isManager ? (
@@ -88,15 +148,25 @@ const AuthenticatedLayout = ({
                 {activeSection === 'hierarchy' && <OrganizationHierarchy setActiveSection={handleSectionChange} />}
                 {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                 {activeSection === 'tasks' && <TaskList />}
+                {activeSection === 'leads' && <LeadSection />}
+                {activeSection === 'opportunities' && <OpportunitySection />}
+                {activeSection === 'complaints' && <ComplaintSection />}
+                {activeSection === 'projects' && <ProjectSection />}
+                {activeSection === 'subscription' && <SubscriptionManagement />}
                 {activeSection === 'approvals' && <ApprovalSection />}
               </>
             ) : (
-              /* User Sections */
+              /* User / Coordinator Sections */
               <>
                 {activeSection === 'user-workspace' && <UserWorkspace setActiveSection={handleSectionChange} />}
                 {activeSection === 'hierarchy' && <OrganizationHierarchy setActiveSection={handleSectionChange} />}
                 {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                 {activeSection === 'tasks' && <TaskList />}
+                {activeSection === 'leads' && <LeadSection />}
+                {activeSection === 'opportunities' && <OpportunitySection />}
+                {activeSection === 'complaints' && <ComplaintSection />}
+                {activeSection === 'projects' && <ProjectSection />}
+                {activeSection === 'subscription' && <SubscriptionManagement />}
               </>
             )}
           </main>
@@ -107,9 +177,7 @@ const AuthenticatedLayout = ({
 };
 
 const MainApplication = () => {
-  const { isAuthenticated, loading, user } = useAuth();
-  const isSuperAdmin = user && user.role === 'Super Admin';
-  const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+  const { isAuthenticated, loading, user, isSuperAdmin, isManager } = useAuth();
 
   // Unauthenticated view toggle: default to 'login'
   const [authView, setAuthView] = useState('login');
@@ -123,20 +191,28 @@ const MainApplication = () => {
     }
   }, [isAuthenticated]);
 
+  const validSections = [
+    'superadmin',
+    'manager',
+    'user-workspace',
+    'hierarchy',
+    'employees',
+    'user',
+    'tasks',
+    'leads',
+    'opportunities',
+    'complaints',
+    'projects',
+    'subscription',
+    'approvals',
+  ];
+
   // Set active section depending on role and persisted preference
   const [activeSection, setActiveSection] = useState(() => {
     try {
       const savedSection = localStorage.getItem('taskflow_active_section');
-      if (savedSection) {
-        if (isSuperAdmin && ['superadmin', 'hierarchy', 'employees', 'user', 'tasks', 'approvals'].includes(savedSection)) {
-          return savedSection;
-        }
-        if (isManager && ['manager', 'hierarchy', 'employees', 'user', 'tasks', 'approvals'].includes(savedSection)) {
-          return savedSection;
-        }
-        if (!isSuperAdmin && !isManager && ['user-workspace', 'hierarchy', 'employees', 'user', 'tasks'].includes(savedSection)) {
-          return savedSection;
-        }
+      if (savedSection && validSections.includes(savedSection)) {
+        return savedSection;
       }
     } catch {
       // ignore storage access error
@@ -150,23 +226,12 @@ const MainApplication = () => {
 
   useEffect(() => {
     if (user) {
-      const superRole = user.role === 'Super Admin';
-      const managerRole = ['Manager', 'Executive', 'Administrator'].includes(user.role);
-
       setActiveSection((prev) => {
         let next = prev;
-        if (superRole) {
-          if (!['superadmin', 'hierarchy', 'employees', 'user', 'tasks', 'approvals'].includes(prev)) {
-            next = 'superadmin';
-          }
-        } else if (managerRole) {
-          if (!['manager', 'hierarchy', 'employees', 'user', 'tasks', 'approvals'].includes(prev)) {
-            next = 'manager';
-          }
-        } else {
-          if (!['user-workspace', 'hierarchy', 'employees', 'user', 'tasks'].includes(prev)) {
-            next = 'user-workspace';
-          }
+        if (!validSections.includes(prev)) {
+          if (isSuperAdmin) next = 'superadmin';
+          else if (isManager) next = 'manager';
+          else next = 'user-workspace';
         }
         try {
           localStorage.setItem('taskflow_active_section', next);
@@ -174,7 +239,7 @@ const MainApplication = () => {
         return next;
       });
     }
-  }, [user]);
+  }, [user, isSuperAdmin, isManager]);
 
   // Close mobile sidebar on section change & persist selection
   const handleSectionChange = (section) => {
@@ -250,16 +315,26 @@ const MainApplication = () => {
   // Authenticated Layout
   return (
     <UserProvider>
-      <TaskProvider>
-        <AuthenticatedLayout
-          activeSection={activeSection}
-          handleSectionChange={handleSectionChange}
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          isSuperAdmin={isSuperAdmin}
-          isManager={isManager}
-        />
-      </TaskProvider>
+      <SubscriptionProvider>
+        <TaskProvider>
+          <LeadProvider>
+            <OpportunityProvider>
+              <ComplaintProvider>
+                <ProjectProvider>
+                  <AuthenticatedLayout
+                    activeSection={activeSection}
+                    handleSectionChange={handleSectionChange}
+                    isMobileMenuOpen={isMobileMenuOpen}
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+                    isSuperAdmin={isSuperAdmin}
+                    isManager={isManager}
+                  />
+                </ProjectProvider>
+              </ComplaintProvider>
+            </OpportunityProvider>
+          </LeadProvider>
+        </TaskProvider>
+      </SubscriptionProvider>
     </UserProvider>
   );
 };
@@ -273,3 +348,5 @@ export function App() {
 }
 
 export default App;
+
+

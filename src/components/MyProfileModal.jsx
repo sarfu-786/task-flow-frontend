@@ -13,7 +13,6 @@ import {
   EyeOff,
   ArrowLeft,
   Lock,
-  Camera,
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -21,7 +20,6 @@ const DEPARTMENTS = [
   'Documentation',
   'Social Media',
   'Backend Work',
-  'Sells',
   'Operations',
   'Executive Leadership',
   'Design & Media',
@@ -39,9 +37,9 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     department: 'Internet Work',
-    avatar: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -60,9 +58,9 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     if (isOpen && user) {
       setFormData({
         name: user.name || '',
+        username: user.username || '',
         email: user.email || '',
         department: user.department || 'Internet Work',
-        avatar: user.avatar || '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -91,6 +89,9 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     if (!formData.name.trim()) {
       errors.name = 'Full name is required';
     }
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+    }
     if (!formData.email.trim()) {
       errors.email = 'Email address is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -117,29 +118,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     return Object.keys(errors).length === 0;
   };
 
-  // Handle selecting / uploading profile picture
-  const handleAvatarFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please select a valid image file (PNG, JPG, JPEG, WEBP).');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Image file size must be less than 5MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((prev) => ({ ...prev, avatar: reader.result }));
-      setErrorMessage('');
-    };
-    reader.readAsDataURL(file);
-  };
-
   // Submit profile details update
   const handleSaveProfile = async (e) => {
     if (e) e.preventDefault();
@@ -154,9 +132,9 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     try {
       const payload = {
         name: formData.name.trim(),
+        username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         department: formData.department,
-        avatar: formData.avatar !== undefined ? formData.avatar : (user.avatar || ''),
       };
 
       const res = await updateProfile(payload);
@@ -189,6 +167,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     try {
       const payload = {
         name: formData.name.trim() || user.name,
+        username: formData.username.trim() || user.username,
         email: (formData.email.trim() || user.email).toLowerCase(),
         department: formData.department || user.department,
         newPassword: formData.newPassword.trim(),
@@ -354,81 +333,25 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {/* Clean Avatar with Camera Option at Corner */}
-                  <div style={{ position: 'relative', width: '58px', height: '58px', flexShrink: 0 }}>
-                    {formData.avatar && formData.avatar.trim() ? (
-                      <img
-                        src={formData.avatar}
-                        alt={formData.name || user.name}
-                        style={{
-                          width: '58px',
-                          height: '58px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '58px',
-                          height: '58px',
-                          borderRadius: '50%',
-                          background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
-                          color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
-                          fontSize: '1.4rem',
-                          fontWeight: 800,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        }}
-                      >
-                        {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                    )}
-
-                    {/* Camera Button at the corner of name/avatar */}
-                    <label
-                      htmlFor="profile-picture-input"
-                      style={{
-                        position: 'absolute',
-                        bottom: '-2px',
-                        right: '-2px',
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        background: '#2563eb',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: '2px solid #ffffff',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
-                        transition: 'all 0.15s ease',
-                      }}
-                      title="Select Profile Picture"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.12)';
-                        e.currentTarget.style.background = '#1d4ed8';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.background = '#2563eb';
-                      }}
-                    >
-                      <Camera size={12} />
-                      <input
-                        id="profile-picture-input"
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={handleAvatarFileChange}
-                      />
-                    </label>
+                  {/* Clean Initial Letter Avatar */}
+                  <div
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
+                      color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
+                      fontSize: '1.4rem',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
                   </div>
 
                   {/* Identity & Badges */}
@@ -452,7 +375,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                       </span>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                      {formData.email || user.email} • {formData.department || user.department}
+                      @{formData.username || user.username} • {formData.email || user.email}
                     </div>
                   </div>
                 </div>
@@ -507,6 +430,29 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     {fieldErrors.name && (
                       <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px', display: 'block' }}>
                         {fieldErrors.name}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Username */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px', display: 'block' }}>
+                      Username <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`form-input ${fieldErrors.username ? 'is-invalid' : ''}`}
+                      value={formData.username}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, username: e.target.value }));
+                        if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: '' }));
+                      }}
+                      placeholder="e.g. sarfraj"
+                      style={{ width: '100%', padding: '9px 12px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                    {fieldErrors.username && (
+                      <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px', display: 'block' }}>
+                        {fieldErrors.username}
                       </span>
                     )}
                   </div>

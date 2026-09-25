@@ -27,55 +27,11 @@ import {
   Upload,
   Camera,
   Crown,
-  PlusCircle,
 } from 'lucide-react';
-
-// Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
-const getSubordinateUserIds = (user, allUsers) => {
-  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
-  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
-  const userNameStr = (user.name || '').toLowerCase().trim();
-
-  const subordinateIds = new Set();
-  if (!userIdStr && !userNameStr) return subordinateIds;
-
-  const queue = [userIdStr];
-  const processed = new Set([userIdStr]);
-
-  while (queue.length > 0) {
-    const currentParentId = queue.shift();
-    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
-    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
-
-    for (const u of allUsers) {
-      if (!u) continue;
-      const uIdStr = (u._id || u.id || '').toString();
-      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
-
-      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
-      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
-      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
-
-      const isDirectReport =
-        (currentParentId && repIdStr === currentParentId) ||
-        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
-
-      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
-
-      if (isDirectReport || isCreatedByParent) {
-        subordinateIds.add(uIdStr);
-        processed.add(uIdStr);
-        queue.push(uIdStr);
-      }
-    }
-  }
-
-  return subordinateIds;
-};
 
 export const UserSection = () => {
   const { user: currentUser, updateUserProfile } = useAuth();
-  const { tasks, openCreateModal: openTaskCreateModal } = useTasks();
+  const { tasks } = useTasks();
   const {
     users,
     paginatedUsers,
@@ -121,10 +77,11 @@ export const UserSection = () => {
     setSelectedUserForWork(null);
   };
 
-  // Form state for Add/Edit user
+  // Form state for Add/Edit employee
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    username: '',
     role: 'User',
     department: 'Operations',
     reportsTo: '',
@@ -137,16 +94,12 @@ export const UserSection = () => {
   const [modalServerError, setModalServerError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isSuperAdmin = currentUser && currentUser.role === 'Super Admin';
-  const isManager = currentUser && ['Manager', 'Executive', 'Administrator'].includes(currentUser.role);
-  const isRegularUser = !isSuperAdmin && !isManager;
-  const currentUserId = (currentUser?._id || currentUser?.id || '').toString();
-
   useEffect(() => {
     if (modalMode === 'edit' && selectedUser) {
       setFormData({
         name: selectedUser.name || '',
         email: selectedUser.email || '',
+        username: selectedUser.username || '',
         role: selectedUser.role || 'User',
         department: selectedUser.department || 'Operations',
         reportsTo: selectedUser.reportsTo || '',
@@ -155,27 +108,21 @@ export const UserSection = () => {
         avatar: selectedUser.avatar || '',
       });
     } else {
-      const defaultReportsTo = isSuperAdmin
-        ? ''
-        : (currentUser?._id ? currentUser._id.toString() : (currentUser?.id || ''));
-      const defaultReportsToName = isSuperAdmin
-        ? ''
-        : (currentUser?.name ? `${currentUser.name} (${currentUser.role || 'User'})` : '');
-
       setFormData({
         name: '',
         email: '',
+        username: '',
         role: 'User',
-        department: currentUser?.department || 'Operations',
-        reportsTo: defaultReportsTo,
-        reportsToName: defaultReportsToName,
+        department: 'Operations',
+        reportsTo: '',
+        reportsToName: '',
         password: '',
         avatar: '',
       });
     }
     setFormErrors({});
     setModalServerError('');
-  }, [modalMode, selectedUser, isUserModalOpen, currentUser, isManager, isSuperAdmin]);
+  }, [modalMode, selectedUser, isUserModalOpen]);
 
   const validateForm = () => {
     const errs = {};
@@ -185,6 +132,7 @@ export const UserSection = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errs.email = 'Please provide a valid email';
     }
+    if (!formData.username.trim()) errs.username = 'Username is required';
     if (modalMode === 'create' && !formData.password.trim()) {
       errs.password = 'Initial password is required';
     }
@@ -303,73 +251,51 @@ export const UserSection = () => {
   const startEntry = totalUsers > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const endEntry = Math.min(currentPage * itemsPerPage, totalUsers);
 
-  let rawManagerOptions = [];
-  if (isSuperAdmin) {
-    // Super Admin can set the user to report to ANY active user in the organization
-    rawManagerOptions = users.filter(
-      (u) =>
-        u.status !== 'Rejected' &&
-        u.status !== 'Pending' &&
-        (!selectedUser || ((selectedUser._id || selectedUser.id) !== (u._id || u.id)))
-    );
-  } else if (isManager) {
-    // Manager can assign subordinates to report to the Manager himself OR to any user who is under that manager in their branch
-    const currentUserIdStr = currentUser ? (currentUser._id || currentUser.id || '').toString() : '';
-
-    const subordinatesUnderManager = users.filter((u) => {
-      if (!u || u.status === 'Rejected' || u.status === 'Pending') return false;
-      if (u.role === 'Super Admin') return false; // Exclude senior Super Admin
-      const uIdStr = (u._id || u.id || '').toString();
-      if (uIdStr === currentUserIdStr) return false;
-      if (selectedUser && ((selectedUser._id || selectedUser.id || '').toString() === uIdStr)) return false;
-      return true;
-    });
-
-    rawManagerOptions = currentUser ? [currentUser, ...subordinatesUnderManager] : subordinatesUnderManager;
-  } else {
-    // Regular User: newly created users report directly to themselves
-    rawManagerOptions = currentUser ? [currentUser] : [];
-  }
-  const managerOptions = rawManagerOptions;
+  // Available managers/seniors to report to
+  const managerOptions = users.filter(
+    (u) =>
+      u.status !== 'Rejected' &&
+      u.status !== 'Pending' &&
+      (u.role === 'Super Admin' || u.role === 'Manager' || u.role === 'Executive' || u.role === 'Administrator') &&
+      (!selectedUser || (selectedUser._id !== u._id && selectedUser.id !== u._id))
+  );
 
   return (
-    <div className="employee-management-page">
-      {/* Top Header */}
-      <div
-        className="section-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: '14px',
-          marginBottom: '18px',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users className="text-primary" size={24} />
-            <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
-              User Management
-            </h2>
+    <div className="user-management-page">
+      {/* Top Header - Curvy Card Container */}
+      <div className="user-curvy-header-card">
+        <div className="user-curvy-title-box">
+          <div className="user-curvy-icon">
+            <Users size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h2 className="section-title" style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700 }}>
+                User Management
+              </h2>
+              <span className="user-count-pill">
+                {totalUsers} {totalUsers === 1 ? 'User' : 'Users'}
+              </span>
+            </div>
+            <p className="section-subtitle" style={{ margin: '3px 0 0 0', fontSize: '0.85rem' }}>
+              View, add, edit, and assign reporting structures for all users across the organization
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            className="btn btn-primary"
-            onClick={openCreateModal}
-            id="btn-add-new-employee"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <UserPlus size={16} />
-            <span>Add User</span>
-          </button>
-        </div>
+        <button
+          className="btn btn-primary btn-curvy-action"
+          onClick={openCreateModal}
+          id="btn-add-new-user"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <UserPlus size={16} />
+          <span>Add User</span>
+        </button>
       </div>
 
       {error && (
-        <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
+        <div className="alert alert-danger" style={{ marginBottom: '16px', borderRadius: '14px' }}>
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
@@ -384,10 +310,10 @@ export const UserSection = () => {
             <input
               type="text"
               className="search-input-top"
-              placeholder="Search by name, email, role, or department..."
+              placeholder="Search by user name, email, role, or department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              id="employee-search-input"
+              id="user-search-input"
             />
           </div>
 
@@ -400,12 +326,12 @@ export const UserSection = () => {
                 className="select-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                id="filter-employee-role"
+                id="filter-user-role"
               >
                 <option value="all">All Roles</option>
                 <option value="Super Admin">Super Admin</option>
                 <option value="Manager">Manager</option>
-                <option value="User">User</option>
+                <option value="User">User / Employee</option>
               </select>
             </div>
 
@@ -421,7 +347,7 @@ export const UserSection = () => {
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
-                <th>Name & Email</th>
+                <th>User Name & Email</th>
                 <th>Role & Department</th>
                 <th>Reports To (Manager)</th>
                 <th style={{ textAlign: 'center' }}>Completed</th>
@@ -458,7 +384,6 @@ export const UserSection = () => {
                   const empName = (emp.name || '').trim().toLowerCase();
                   const empUsername = (emp.username || '').trim().toLowerCase();
                   const empId = (emp._id || '').toString();
-                  const isCurrentSelf = currentUser && ((currentUser._id && (emp._id === currentUser._id || emp.id === currentUser._id)) || (currentUser.name === emp.name));
 
                   const memberTasks = tasks.filter((t) => {
                     if (!t) return false;
@@ -581,7 +506,7 @@ export const UserSection = () => {
 
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
-                        <div className="task-actions-cell" style={{ justifyContent: 'flex-end', gap: '6px' }}>
+                        <div className="task-actions-cell" style={{ justifyContent: 'flex-end' }}>
                           <button
                             type="button"
                             className="btn-icon"
@@ -596,7 +521,7 @@ export const UserSection = () => {
                             className="btn-action-update"
                             onClick={() => openEditModal(emp)}
                             title="Edit User"
-                            id={`btn-edit-employee-${emp._id}`}
+                            id={`btn-edit-user-${emp._id}`}
                           >
                             <Edit2 size={14} />
                           </button>
@@ -606,8 +531,8 @@ export const UserSection = () => {
                             className="btn-action-delete"
                             onClick={() => openDeleteModal(emp)}
                             title="Remove User"
-                            id={`btn-delete-employee-${emp._id}`}
-                            disabled={isCurrentSelf}
+                            id={`btn-delete-user-${emp._id}`}
+                            disabled={currentUser && (currentUser._id === emp._id || currentUser.id === emp._id)}
                           >
                             <Trash2 size={15} />
                           </button>
@@ -805,23 +730,43 @@ export const UserSection = () => {
                   {formErrors.name && <span className="form-error-msg">{formErrors.name}</span>}
                 </div>
 
-                {/* Email Address */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="emp-email">
-                    Email Address <span className="required">*</span>
-                  </label>
-                  <input
-                    id="emp-email"
-                    type="email"
-                    className="form-control"
-                    placeholder="user@example.com"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
-                    }}
-                  />
-                  {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
+                {/* Email & Username */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-email">
+                      Email Address <span className="required">*</span>
+                    </label>
+                    <input
+                      id="emp-email"
+                      type="email"
+                      className="form-control"
+                      placeholder="employee@example.com"
+                      value={formData.email}
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
+                      }}
+                    />
+                    {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="emp-username">
+                      Username <span className="required">*</span>
+                    </label>
+                    <input
+                      id="emp-username"
+                      type="text"
+                      className="form-control"
+                      placeholder="username"
+                      value={formData.username}
+                      onChange={(e) => {
+                        setFormData({ ...formData, username: e.target.value });
+                        if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
+                      }}
+                    />
+                    {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
+                  </div>
                 </div>
 
                 {/* Role & Department */}
@@ -835,12 +780,10 @@ export const UserSection = () => {
                       className="form-control select-filter"
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                      disabled={!isSuperAdmin && !isManager}
                     >
-                      <option value="User">User</option>
-                      {isManager && <option value="Manager">Manager</option>}
-                      {isSuperAdmin && <option value="Manager">Manager</option>}
-                      {isSuperAdmin && <option value="Super Admin">Super Admin</option>}
+                      <option value="User">User / Employee</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Super Admin">Super Admin</option>
                     </select>
                   </div>
 
@@ -858,69 +801,50 @@ export const UserSection = () => {
                       <option value="Documentation">Documentation</option>
                       <option value="Backend Work">Backend Work</option>
                       <option value="Social Media">Social Media</option>
-                      <option value="Sells">Sells</option>
                       <option value="Operations">Operations</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Reports To (Manager / Direct Senior Selection) */}
+                {/* Reports To (Manager Selection) */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="emp-reports-to">
-                    Reports To (Direct Senior / Manager)
+                    Reports To (Manager / Superior)
                   </label>
                   <select
                     id="emp-reports-to"
                     className="form-control select-filter"
                     value={formData.reportsTo || ''}
-                    disabled={!isSuperAdmin && !isManager}
                     onChange={(e) => {
                       const selectedVal = e.target.value;
                       if (!selectedVal) {
                         setFormData({ ...formData, reportsTo: '', reportsToName: '' });
                       } else {
-                        const targetMgr = [...managerOptions, currentUser].find(
-                          (u) =>
-                            (u && u._id && u._id.toString() === selectedVal) ||
-                            (u && u.id && u.id.toString() === selectedVal) ||
-                            (u && u.name === selectedVal)
-                        );
+                        const targetMgr = users.find((u) => (u._id && u._id.toString() === selectedVal) || u.name === selectedVal);
                         setFormData({
                           ...formData,
-                          reportsTo: targetMgr?._id || targetMgr?.id || selectedVal,
-                          reportsToName: targetMgr ? `${targetMgr.name} (${targetMgr.role || 'User'})` : selectedVal,
+                          reportsTo: targetMgr?._id || selectedVal,
+                          reportsToName: targetMgr ? `${targetMgr.name} (${targetMgr.role})` : selectedVal,
                         });
                       }
                     }}
                   >
-                    {isSuperAdmin && <option value="">Direct to Super Admin (Root)</option>}
-                    {!isSuperAdmin && !isManager && currentUser && (
-                      <option value={currentUser._id || currentUser.id || currentUser.name}>
-                        {currentUser.name} ({currentUser.role || 'User'}) [You — Direct Senior]
+                    <option value="">Direct to Super Admin (Root)</option>
+                    {managerOptions.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.role} — {u.department || 'Operations'})
                       </option>
-                    )}
-                    {(isSuperAdmin || isManager) && managerOptions.map((u) => {
-                      const isCurrentSelf = currentUser && ((currentUser._id && (u._id === currentUser._id || u.id === currentUser._id)) || (currentUser.name === u.name));
-                      return (
-                        <option key={u._id || u.id || u.name} value={u._id || u.id || u.name}>
-                          {u.name} ({u.role || 'User'} — {u.department || 'Operations'}){isCurrentSelf ? ' [You — Direct Senior]' : ''}
-                        </option>
-                      );
-                    })}
+                    ))}
                   </select>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                    {isSuperAdmin
-                      ? 'Selecting a manager attaches this user to their branch in the organizational hierarchy.'
-                      : isManager
-                      ? 'Select yourself or any team member under your branch that this user will report directly to.'
-                      : '✓ Hierarchy Rule: New assigned user will report directly to you as their direct senior.'}
+                    Selecting a manager attaches this user to their branch in the organizational hierarchy.
                   </span>
                 </div>
 
                 {/* Password (Optional for Edit) */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="emp-password">
-                    Password
+                    Password {modalMode === 'edit' ? '(Leave blank to keep unchanged)' : '<span className="required">*</span>'}
                   </label>
                   <input
                     id="emp-password"

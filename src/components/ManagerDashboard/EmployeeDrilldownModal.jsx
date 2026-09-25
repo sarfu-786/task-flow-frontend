@@ -8,6 +8,10 @@ import {
   Clock,
   ListTodo,
   Eye,
+  ShieldCheck,
+  Target,
+  AlertCircle,
+  Briefcase,
 } from 'lucide-react';
 import { useUserManagement } from '../../context/UserContext';
 import { useTasks } from '../../context/TaskContext';
@@ -16,7 +20,9 @@ export const EmployeeDrilldownModal = ({
   isOpen,
   onClose,
   initialDepartmentFilter = 'all',
+  roleFilter = 'all',
   modalTitle = 'User Details & Team Directory',
+  onSelectUserForWork,
   onOpenUserWork,
 }) => {
   const { users } = useUserManagement();
@@ -43,25 +49,40 @@ export const EmployeeDrilldownModal = ({
 
   if (!isOpen) return null;
 
-  // Filter ONLY active approved regular employees (exclude Rejected/Pending users and Managers)
-  const employeeUsers = users.filter(
-    (u) =>
-      u.status !== 'Rejected' &&
-      u.status !== 'Pending' &&
-      (u.role === 'User' ||
-        (!u.role &&
-          u.role !== 'Manager' &&
-          u.role !== 'Executive' &&
-          u.role !== 'Administrator'))
-  );
+  // Active Approved Users
+  const activeUsers = users.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
-  // Extract unique departments from employees only
+  // Filter based on roleFilter prop
+  let baseUsers = activeUsers;
+  if (roleFilter === 'managers') {
+    baseUsers = activeUsers.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+      return roles.some((r) => ['Manager', 'Executive', 'Administrator', 'Super Admin'].includes(r));
+    });
+  } else if (roleFilter === 'sales') {
+    baseUsers = activeUsers.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+      return roles.includes('Sales Coordinator') || u.role === 'Sales Coordinator';
+    });
+  } else if (roleFilter === 'service') {
+    baseUsers = activeUsers.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+      return roles.includes('Service Coordinator') || u.role === 'Service Coordinator';
+    });
+  } else if (roleFilter === 'regular') {
+    baseUsers = activeUsers.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [u.role || 'User'];
+      return roles.includes('User') || roles.length === 0 || u.role === 'User';
+    });
+  }
+
+  // Extract unique departments
   const allDepartments = Array.from(
-    new Set(employeeUsers.map((u) => u.department || 'Operations').filter(Boolean))
+    new Set(baseUsers.map((u) => u.department || 'Operations').filter(Boolean))
   );
 
   // Filtered employees list by department and search
-  let filtered = [...employeeUsers];
+  let filtered = [...baseUsers];
   if (departmentFilter !== 'all') {
     filtered = filtered.filter((u) => (u.department || 'Operations') === departmentFilter);
   }
@@ -75,6 +96,15 @@ export const EmployeeDrilldownModal = ({
         (u.department || '').toLowerCase().includes(q)
     );
   }
+
+  const handleOpenWork = (member) => {
+    onClose();
+    if (onSelectUserForWork) {
+      onSelectUserForWork(member);
+    } else if (onOpenUserWork) {
+      onOpenUserWork(member, 'all');
+    }
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -146,9 +176,9 @@ export const EmployeeDrilldownModal = ({
                 onChange={(e) => setDepartmentFilter(e.target.value)}
                 style={{ padding: '6px 12px', fontSize: '0.825rem' }}
               >
-                <option value="all">All Departments ({employeeUsers.length})</option>
+                <option value="all">All Departments ({baseUsers.length})</option>
                 {allDepartments.map((dept) => {
-                  const count = employeeUsers.filter((u) => (u.department || 'Operations') === dept).length;
+                  const count = baseUsers.filter((u) => (u.department || 'Operations') === dept).length;
                   return (
                     <option key={dept} value={dept}>
                       {dept} ({count})
@@ -159,16 +189,16 @@ export const EmployeeDrilldownModal = ({
             </div>
           </div>
 
-          {/* Employee Table - Only Employees and their details */}
+          {/* Employee Table */}
           <div className="table-responsive" style={{ maxHeight: '480px', overflowY: 'auto' }}>
             <table className="task-table">
               <thead>
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
                   <th>User Info</th>
+                  <th>Assigned Roles</th>
                   <th>Department</th>
                   <th style={{ textAlign: 'center' }}>Workload Status</th>
-                  <th style={{ width: '130px' }}>Joined Date</th>
                   <th style={{ width: '130px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -204,65 +234,79 @@ export const EmployeeDrilldownModal = ({
                     });
                     const userCompleted = memberTasks.filter((t) => t.status === 'Completed').length;
                     const userInProgress = memberTasks.filter((t) => t.status === 'In Progress').length;
-                    const userPending = memberTasks.filter((t) => t.status === 'To Do').length;
+                    const userPending = memberTasks.filter((t) => t.status === 'To Do' || !t.status).length;
 
-                    const dateStr = member.createdAt
-                    ? new Date(member.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : '—';
+                    const mRoles = Array.isArray(member.roles) && member.roles.length > 0 ? member.roles : [member.role || 'User'];
 
-                  return (
-                    <tr key={member._id}>
-                      <td style={{ textAlign: 'center' }}>
-                        <span className="sr-no-badge">{idx + 1}</span>
-                      </td>
+                    return (
+                      <tr key={member._id}>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className="sr-no-badge">{idx + 1}</span>
+                        </td>
 
-                      {/* Employee Info */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {member.avatar ? (
-                            <img
-                              src={member.avatar}
-                              alt={member.name}
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '1.5px solid var(--border-color)',
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: '38px',
-                                height: '38px',
-                                borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontWeight: 700,
-                                fontSize: '0.9rem',
-                              }}
-                            >
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
-                              {member.name}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                              {member.email}
+                        {/* Employee Info */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {member.avatar ? (
+                              <img
+                                src={member.avatar}
+                                alt={member.name}
+                                style={{
+                                  width: '38px',
+                                  height: '38px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  border: '1.5px solid var(--border-color)',
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: '38px',
+                                  height: '38px',
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#fff',
+                                  fontWeight: 700,
+                                  fontSize: '0.9rem',
+                                }}
+                              >
+                                {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                              </div>
+                            )}
+                            <div>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
+                                {member.name}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                {member.email}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
+
+                        {/* Roles */}
+                        <td>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {mRoles.map((r, ri) => (
+                              <span
+                                key={ri}
+                                className="badge-official"
+                                style={{
+                                  background: r === 'Super Admin' ? '#fef3c7' : r === 'Manager' ? '#eff6ff' : r === 'Sales Coordinator' ? '#eff6ff' : r === 'Service Coordinator' ? '#fef2f2' : '#f8fafc',
+                                  color: r === 'Super Admin' ? '#b45309' : r === 'Manager' ? '#1d4ed8' : r === 'Sales Coordinator' ? '#1d4ed8' : r === 'Service Coordinator' ? '#b91c1c' : '#334155',
+                                  borderColor: r === 'Super Admin' ? '#fde68a' : r === 'Manager' ? '#bfdbfe' : r === 'Sales Coordinator' ? '#bfdbfe' : r === 'Service Coordinator' ? '#fecaca' : '#e2e8f0',
+                                  fontSize: '0.72rem',
+                                }}
+                              >
+                                {r}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
 
                         {/* Department */}
                         <td>
@@ -320,25 +364,12 @@ export const EmployeeDrilldownModal = ({
                           </div>
                         </td>
 
-                        {/* Joined Date */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            <Calendar size={13} />
-                            <span>{dateStr}</span>
-                          </div>
-                        </td>
-
                         {/* Action: Open Workload */}
                         <td style={{ textAlign: 'right' }}>
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            onClick={() => {
-                              onClose();
-                              if (onOpenUserWork) {
-                                onOpenUserWork(member, 'all');
-                              }
-                            }}
+                            onClick={() => handleOpenWork(member)}
                             style={{
                               padding: '5px 10px',
                               fontSize: '0.775rem',
@@ -349,7 +380,7 @@ export const EmployeeDrilldownModal = ({
                             title={`Inspect tasks for ${member.name}`}
                           >
                             <Eye size={13} />
-                            <span>View Tasks</span>
+                            <span>View Work</span>
                           </button>
                         </td>
                       </tr>

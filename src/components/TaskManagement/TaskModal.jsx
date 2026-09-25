@@ -72,26 +72,35 @@ export const TaskModal = () => {
   const activeUsers = (users || []).filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
 
   // Hierarchy filter:
-  // 1. Super Admin: can assign to everybody in the organization including themselves
-  // 2. Manager: can assign to ALL users who are under them in hierarchy AND themselves
-  // 3. User: can assign to ALL users who are under them in hierarchy AND themselves
+  // 1. Super Admin: can assign to everybody in the organization INCLUDING himself
+  // 2. Manager: can assign to junior team members reporting to them AND himself
+  // 3. User: can assign to junior team members reporting to them AND himself
   const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
 
   let assignableUsers = [];
   if (isSuperAdmin) {
-    assignableUsers = activeUsers;
+    assignableUsers = [...activeUsers];
   } else {
     assignableUsers = activeUsers.filter((u) => {
       const uId = (u._id || u.id || '').toString();
-      const isSelf = (currentUserId && uId === currentUserId) || 
-                     (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
-                     (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName);
+      const isSelf =
+        (currentUserId && uId === currentUserId) ||
+        (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+        (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName);
       return isSelf || subordinateIds.has(uId);
     });
   }
 
-  // Ensure current user is present in assignable list if activeUsers hasn't populated them
-  if (currentUser && !assignableUsers.some(u => (u._id || u.id || '').toString() === currentUserId || (u.email && u.email === currentUser.email))) {
+  // Ensure currentUser (himself) is always included in assignableUsers list
+  if (
+    currentUser &&
+    !assignableUsers.some(
+      (u) =>
+        (u._id || u.id || '').toString() === currentUserId ||
+        (u.name && u.name.toLowerCase().trim() === currentUserName) ||
+        (u.email && u.email === currentUser.email)
+    )
+  ) {
     assignableUsers = [currentUser, ...assignableUsers];
   }
 
@@ -165,9 +174,7 @@ export const TaskModal = () => {
     if (!description.trim()) errs.description = 'Task description is required';
     if (!expectedDate) errs.expectedDate = 'Expected completion date is required';
     if (!assignedTo.trim()) {
-      errs.assignedTo = isSuperAdmin
-        ? 'Please select a user to assign this task'
-        : 'Please select a junior team member who reports to you to assign this task';
+      errs.assignedTo = 'Please select an assignee (you can assign to yourself or a subordinate)';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -225,11 +232,19 @@ export const TaskModal = () => {
               <span>
                 {modalMode === 'edit'
                   ? 'Update Task Details'
-                  : 'Assign Task'}
+                  : isSuperAdmin
+                    ? 'Assign Task (Self or Organization)'
+                    : isManager
+                      ? 'Assign Task (Self or Team Member)'
+                      : 'Assign Task (Self or Subordinate)'}
               </span>
             </h3>
             <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Assign tasks to yourself or to any team member below you in the hierarchy
+              {isSuperAdmin
+                ? 'Assign tasks to yourself or any team member across the organization'
+                : isManager
+                  ? 'Assign tasks to yourself or team members reporting under your team'
+                  : 'Assign tasks to yourself or users who report to you'}
             </p>
           </div>
           <button
@@ -269,15 +284,17 @@ export const TaskModal = () => {
               <Info size={16} style={{ flexShrink: 0 }} />
               <span>
                 {isSuperAdmin
-                  ? 'Hierarchy Rule: As Super Admin, you can assign tasks to yourself or anyone across the organization.'
-                  : 'Hierarchy Rule: You can assign tasks to yourself or any team member reporting below you.'}
+                  ? 'Hierarchy Rule: As Super Admin, you can assign tasks to yourself or any member across the organization.'
+                  : isManager
+                    ? 'Hierarchy Rule: As a Manager, you can assign tasks to yourself or junior members in your reporting hierarchy.'
+                    : 'Hierarchy Rule: You can assign tasks to yourself or junior members who report to you.'}
               </span>
             </div>
 
-            {/* Assign To Member Dropdown (Role-Enforced) */}
+            {/* Assign To Member Dropdown (Role-Enforced with Self-Assignment) */}
             <div className="form-group">
               <label className="form-label" htmlFor="assignedTo">
-                Assignee <span className="required">*</span>
+                Assignee (Self or Subordinate) <span className="required">*</span>
               </label>
               <select
                 id="assignedTo"
@@ -291,14 +308,15 @@ export const TaskModal = () => {
                 <option value="">— Select Assignee —</option>
                 {assignableUsers.map((u) => {
                   const uId = (u._id || u.id || '').toString();
-                  const isSelf = (currentUserId && uId === currentUserId) || 
-                                 (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
-                                 (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName);
-                  const selfBadge = isSelf ? ' (You)' : '';
-                  const reportsInfo = !isSelf && u.reportsToName ? ` • Reports to: ${u.reportsToName}` : '';
+                  const isSelf =
+                    (currentUserId && uId === currentUserId) ||
+                    (currentUserName && (u.name || '').toLowerCase().trim() === currentUserName) ||
+                    (currentUser?.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
+                  const reportsInfo = u.reportsToName ? ` • Reports to: ${u.reportsToName}` : '';
+                  const selfLabel = isSelf ? ' (Assign to Myself)' : '';
                   return (
                     <option key={u._id || u.name} value={u.name}>
-                      {u.name}{selfBadge} ({u.role || 'User'} • {u.department || 'Operations'}{reportsInfo})
+                      {u.name} ({u.role || 'User'} • {u.department || 'Operations'}{reportsInfo}){selfLabel}
                     </option>
                   );
                 })}

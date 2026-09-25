@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -28,7 +28,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
-    // Clear stale permanent localStorage tokens so fresh visits face Login page first
     try {
       localStorage.removeItem('taskflow_token');
       localStorage.removeItem('taskflow_user');
@@ -48,8 +47,11 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn('Session background sync notice:', err.message);
-        // Only clear credentials if token is explicitly invalid or expired
-        if (err.status === 401 && err.message && (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid'))) {
+        if (
+          err.status === 401 &&
+          err.message &&
+          (err.message.includes('expired') || err.message.includes('revoked') || err.message.includes('invalid'))
+        ) {
           sessionStorage.removeItem('taskflow_token');
           sessionStorage.removeItem('taskflow_user');
           if (isMounted) {
@@ -85,6 +87,12 @@ export const AuthProvider = ({ children }) => {
       if (res.success) {
         sessionStorage.setItem('taskflow_token', res.token);
         sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
+        const role = res.user?.role || 'User';
+        const defaultSection = role === 'Super Admin' ? 'superadmin' : ['Manager', 'Executive', 'Administrator'].includes(role) ? 'manager' : 'user-workspace';
+        try {
+          localStorage.setItem('taskflow_active_section', defaultSection);
+          sessionStorage.setItem('taskflow_active_section', defaultSection);
+        } catch {}
         setToken(res.token);
         setUser(res.user);
         return { success: true, user: res.user };
@@ -144,6 +152,30 @@ export const AuthProvider = ({ children }) => {
     setError('');
   };
 
+  // Multi-Role & Permission Helpers
+  const userRoles = useMemo(() => {
+    if (!user) return [];
+    if (Array.isArray(user.roles) && user.roles.length > 0) return user.roles;
+    return user.role ? [user.role] : ['User'];
+  }, [user]);
+
+  const isSuperAdmin = user?.role === 'Super Admin' || userRoles.includes('Super Admin');
+  const isManager =
+    isSuperAdmin || userRoles.some((r) => ['Manager', 'Executive', 'Administrator'].includes(r));
+  const isSalesCoordinator = isSuperAdmin || userRoles.includes('Sales Coordinator');
+  const isServiceCoordinator = isSuperAdmin || userRoles.includes('Service Coordinator');
+
+  const hasRole = (roleName) => {
+    if (isSuperAdmin) return true;
+    return userRoles.includes(roleName);
+  };
+
+  const hasAnyRole = (rolesList) => {
+    if (isSuperAdmin) return true;
+    if (!Array.isArray(rolesList)) return false;
+    return rolesList.some((r) => userRoles.includes(r));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -152,6 +184,13 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token && !!user,
         loading,
         error,
+        userRoles,
+        isSuperAdmin,
+        isManager,
+        isSalesCoordinator,
+        isServiceCoordinator,
+        hasRole,
+        hasAnyRole,
         setError,
         register,
         login,

@@ -68,33 +68,75 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
     <>
       <header className="navbar">
         <div className="navbar-brand">
-          {/* Mobile Hamburger Drawer Toggle Button */}
+          {/* Mobile hamburger toggle */}
           <button
             type="button"
-            className="mobile-menu-toggle"
+            className="navbar-mobile-toggle"
             onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            title={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <div className="navbar-logo">
-            <CheckSquare size={20} />
+          <div
+            className="navbar-brand-link"
+            style={{
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              userSelect: 'none',
+            }}
+            onClick={() => setActiveSection(isSuperAdmin ? 'superadmin' : isManager ? 'manager' : 'user-workspace')}
+          >
+            <div
+              className="navbar-logo"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                background: isSuperAdmin
+                  ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                  : isManager
+                    ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                    : 'linear-gradient(135deg, #059669, #10b981)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: isSuperAdmin
+                  ? '0 2px 8px rgba(245, 158, 11, 0.25)'
+                  : isManager
+                    ? '0 2px 8px rgba(37, 99, 235, 0.25)'
+                    : '0 2px 8px rgba(5, 150, 105, 0.25)',
+                flexShrink: 0,
+              }}
+            >
+              <CheckSquare size={18} />
+            </div>
+            <span
+              className="navbar-title"
+              style={{
+                fontWeight: 800,
+                fontSize: '1.25rem',
+                letterSpacing: '-0.02em',
+                color: 'var(--text-primary)',
+                lineHeight: 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Task<span style={{ color: 'var(--primary)' }}>Flow</span>
+            </span>
           </div>
-          <span className="navbar-title">TaskFlow Pro</span>
+
           {isSuperAdmin && (
             <span
-              className="navbar-role-pill"
+              className="badge-official badge-amber"
               style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                padding: '2px 8px',
                 borderRadius: '999px',
-                marginLeft: '4px',
-                background: '#fef3c7',
-                color: '#b45309',
-                border: '1px solid #fde68a',
+                padding: '2px 8px',
+                fontSize: '0.7rem',
+                fontWeight: 700,
               }}
             >
               Super Admin
@@ -102,7 +144,7 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
           )}
         </div>
 
-        <div className="navbar-actions">
+        <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Notification Inbox Icon-Only Bell */}
           <button
             type="button"
@@ -182,8 +224,10 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
                     objectFit: 'cover',
                   }}
                 />
+              ) : user?.name ? (
+                user.name.charAt(0).toUpperCase()
               ) : (
-                user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                'U'
               )}
             </button>
 
@@ -289,4 +333,3 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
     </>
   );
 };
-

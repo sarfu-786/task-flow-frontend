@@ -49,6 +49,8 @@ export const TaskProvider = ({ children }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [taskToView, setTaskToView] = useState(null);
 
   // Trigger live toast with auto-dismiss
   const showLiveToast = useCallback((toastData) => {
@@ -74,9 +76,9 @@ export const TaskProvider = ({ children }) => {
     if (!silent) setLoading(true);
     setError('');
     try {
-      const isManagerOrAdmin = user && ['Super Admin', 'Manager', 'Executive', 'Administrator'].includes(user.role);
+      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
       const res = await api.getTasks({
-        myTasksOnly: !isManagerOrAdmin,
+        myTasksOnly: !isManager,
       });
       if (res.success) {
         setTasks(res.tasks);
@@ -94,8 +96,8 @@ export const TaskProvider = ({ children }) => {
   const fetchStats = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const isManagerOrAdmin = user && ['Super Admin', 'Manager', 'Executive', 'Administrator'].includes(user.role);
-      const res = await api.getStats({ myTasksOnly: !isManagerOrAdmin });
+      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+      const res = await api.getStats({ myTasksOnly: !isManager });
       if (res.success) {
         setStats(res.stats);
         localStorage.setItem('taskflow_cached_stats', JSON.stringify(res.stats));
@@ -136,29 +138,23 @@ export const TaskProvider = ({ children }) => {
     const handleNewNotification = (data) => {
       console.log('[Real-Time] Received new notification:', data);
       const notif = data.notification || data;
-      const notifType = data.type || notif.type;
 
       // Filter relevance for this client
       let isRelevant = false;
-      const rName = (notif.recipientName || '').toLowerCase().trim();
-      const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
-      const isTargetedToMe = (rUser && rUser === myId) || (rName && (rName === myName || rName === myUsername || myName.includes(rName) || rName.includes(myName)));
-
-      if (notifType === 'task_completed' || notif.type === 'task_completed') {
-        // Direct Assigner rule: Task completion notifications MUST only go to the user who assigned the task!
-        if (isTargetedToMe) {
+      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All')) {
+        isRelevant = true;
+      } else if (!isManager) {
+        const rName = (notif.recipientName || '').toLowerCase().trim();
+        const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
+        if (
+          rUser === myId ||
+          rName === myName ||
+          rName === myUsername ||
+          notif.forRole === 'User' ||
+          notif.forRole === 'All'
+        ) {
           isRelevant = true;
         }
-      } else if (notifType === 'user_registered') {
-        if (isManager || (user && user.role === 'Super Admin')) {
-          isRelevant = true;
-        }
-      } else if (isTargetedToMe) {
-        isRelevant = true;
-      } else if (notif.forRole === 'All') {
-        isRelevant = true;
-      } else if (isManager && notif.forRole === 'Manager' && !notif.recipientUser && !notif.recipientName) {
-        isRelevant = true;
       }
 
       if (isRelevant) {
@@ -169,21 +165,14 @@ export const TaskProvider = ({ children }) => {
         });
         setUnreadCount((prev) => prev + 1);
 
-        let defaultToastTitle = (notifType === 'task_completed' || notif.type === 'task_completed')
-          ? 'Task Completed Report'
-          : (notifType === 'user_registered' ? 'New Registration Request' : 'New Task Assigned');
-
         // Trigger Instant Live Toast Banner
         showLiveToast({
-          title: data.title || notif.title || defaultToastTitle,
+          title: data.title || notif.title || (isManager ? 'Task Completed Alert' : 'New Task Assigned'),
           message: data.message || notif.message || notif.taskDescription,
           remark: data.remark || notif.remark || notif.completionRemark,
-          type: notifType,
+          type: data.type || notif.type,
           forRole: notif.forRole,
           assignedBy: notif.assignedBy,
-          userName: notif.userName,
-          userEmail: notif.userEmail,
-          department: notif.department,
         });
 
         // Instant silent background data update
@@ -382,9 +371,9 @@ export const TaskProvider = ({ children }) => {
   };
 
   // Modal Open / Close Handlers
-  const openCreateModal = (prefillData = null) => {
+  const openCreateModal = () => {
     setModalMode('create');
-    setSelectedTask(prefillData ? { ...prefillData } : null);
+    setSelectedTask(null);
     setIsTaskModalOpen(true);
   };
 
@@ -397,6 +386,16 @@ export const TaskProvider = ({ children }) => {
   const closeTaskModal = () => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
+  };
+
+  const openViewModal = (task) => {
+    setTaskToView(task);
+    setIsViewModalOpen(true);
+  };
+
+  const closeViewModal = () => {
+    setIsViewModalOpen(false);
+    setTaskToView(null);
   };
 
   const openDeleteModal = (task) => {
@@ -462,6 +461,8 @@ export const TaskProvider = ({ children }) => {
         selectedTask,
         isDeleteModalOpen,
         taskToDelete,
+        isViewModalOpen,
+        taskToView,
         notifications,
         unreadCount,
         liveToast,
@@ -484,6 +485,8 @@ export const TaskProvider = ({ children }) => {
         openCreateModal,
         openEditModal,
         closeTaskModal,
+        openViewModal,
+        closeViewModal,
         openDeleteModal,
         closeDeleteModal,
       }}
