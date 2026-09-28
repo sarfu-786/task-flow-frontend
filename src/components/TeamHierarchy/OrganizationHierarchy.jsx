@@ -214,6 +214,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
 
   // State Management
   const [hierarchyData, setHierarchyData] = useState(null);
+  const [hierarchyViewMode, setHierarchyViewMode] = useState('tree'); // 'tree' | 'chain'
   const [metaStats, setMetaStats] = useState({
     myReportingChain: [],
     mySupervisor: null,
@@ -968,7 +969,7 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
                   ? 'Enterprise Organizational Hierarchy'
                   : isManager
                   ? 'My Team Organizational Hierarchy'
-                  : 'My Organizational Hierarchy & Team Structure'}
+                  : 'My Subordinate Hierarchy'}
               </h1>
               <span
                 className="badge-official"
@@ -987,17 +988,15 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
               {isSuperAdmin
                 ? 'Complete company-wide structure and reporting chains across all levels'
                 : isManager
-                ? 'Manage your team hierarchy and view direct reporting relationships'
-                : 'View your direct supervisor, complete reporting line, and department peers'}
+                ? 'Manage team members and subordinates reporting directly or indirectly under you'
+                : 'Hierarchy structure of team members and subordinates reporting under your branch'}
             </p>
           </div>
         </div>
       </div>
 
       {/* Main Hierarchy Canvas */}
-      {isRegularUser ? (
-        <UserPersonalHierarchyView />
-      ) : loading ? (
+      {loading ? (
         <div className="org-loading-state card" style={{ minHeight: '400px' }}>
           <div className="spinner-circle" />
           <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginTop: '12px' }}>

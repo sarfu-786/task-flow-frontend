@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUserManagement } from '../context/UserContext';
 import { useTasks } from '../context/TaskContext';
+import { MetricCard } from './ManagerDashboard/MetricCard';
 import { UserWorkModal } from './ManagerDashboard/UserWorkModal';
+import { EmployeeDrilldownModal } from './ManagerDashboard/EmployeeDrilldownModal';
+import { ManagerTasksDrilldownModal } from './ManagerDashboard/ManagerTasksDrilldownModal';
+import { SuperiorDetailModal } from './ManagerDashboard/SuperiorDetailModal';
+import { UserDetailModal } from './UserManagement/UserDetailModal';
+import { RoleDeptModal } from './UserManagement/RoleDeptModal';
 import {
   Users,
   UserPlus,
@@ -27,10 +33,56 @@ import {
   Upload,
   Camera,
   Crown,
+  ListTodo,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
+// Helper to get all subordinate user IDs for a given user in the organizational hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
+
 export const UserSection = () => {
-  const { user: currentUser, updateUserProfile } = useAuth();
+  const { user: currentUser, isSuperAdmin, isManager, updateUserProfile } = useAuth();
   const { tasks } = useTasks();
   const {
     users,
@@ -61,11 +113,35 @@ export const UserSection = () => {
     closeDeleteModal,
   } = useUserManagement();
 
-  // User Work Modal State (1-Click Drilldown)
+  // 1. User Work Modal State (1-Click Drilldown)
   const [selectedUserForWork, setSelectedUserForWork] = useState(null);
   const [userWorkFilter, setUserWorkFilter] = useState('all');
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
 
+  // 2. User Detail Modal State (Popup Reference on clicking user row/name)
+  const [selectedUserForDetail, setSelectedUserForDetail] = useState(null);
+  const [isUserDetailModalOpen, setIsUserDetailModalOpen] = useState(false);
+
+  // 3. Superior / Manager Detail Modal State (Popup Reference on clicking manager field)
+  const [selectedSuperiorName, setSelectedSuperiorName] = useState('');
+  const [isSuperiorModalOpen, setIsSuperiorModalOpen] = useState(false);
+
+  // 4. Role & Department Detail Modal State (Popup Reference on clicking role/dept field)
+  const [selectedRoleForModal, setSelectedRoleForModal] = useState('User');
+  const [selectedDeptForModal, setSelectedDeptForModal] = useState('Operations');
+  const [isRoleDeptModalOpen, setIsRoleDeptModalOpen] = useState(false);
+
+  // 5. Employee Directory Drilldown Modal State (Popup Reference on clicking Total Users top card)
+  const [isEmployeeDirectoryOpen, setIsEmployeeDirectoryOpen] = useState(false);
+  const [employeeDirectoryRoleFilter, setEmployeeDirectoryRoleFilter] = useState('all');
+  const [employeeDirectoryTitle, setEmployeeDirectoryTitle] = useState('All Organization Personnel Directory');
+
+  // 6. Organization Tasks Overview Modal State (Popup Reference on clicking Total Assigned Work / Completed / Pending top cards)
+  const [isTasksOverviewOpen, setIsTasksOverviewOpen] = useState(false);
+  const [tasksOverviewFilter, setTasksOverviewFilter] = useState('all');
+  const [tasksOverviewTitle, setTasksOverviewTitle] = useState('All Assigned Organization Tasks');
+
+  // Handlers for Drilldown Popups
   const openUserWork = (targetUser, filter = 'all') => {
     setSelectedUserForWork(targetUser);
     setUserWorkFilter(filter);
@@ -75,6 +151,56 @@ export const UserSection = () => {
   const closeUserWork = () => {
     setIsWorkModalOpen(false);
     setSelectedUserForWork(null);
+  };
+
+  const openUserDetail = (targetUser) => {
+    setSelectedUserForDetail(targetUser);
+    setIsUserDetailModalOpen(true);
+  };
+
+  const closeUserDetail = () => {
+    setIsUserDetailModalOpen(false);
+    setSelectedUserForDetail(null);
+  };
+
+  const openSuperiorDetail = (mgrName) => {
+    setSelectedSuperiorName(mgrName || 'Super Admin');
+    setIsSuperiorModalOpen(true);
+  };
+
+  const closeSuperiorDetail = () => {
+    setIsSuperiorModalOpen(false);
+    setSelectedSuperiorName('');
+  };
+
+  const openRoleDeptDetail = (role, dept) => {
+    setSelectedRoleForModal(role || 'User');
+    setSelectedDeptForModal(dept || 'Operations');
+    setIsRoleDeptModalOpen(true);
+  };
+
+  const closeRoleDeptDetail = () => {
+    setIsRoleDeptModalOpen(false);
+  };
+
+  const openEmployeeDirectory = (roleFilterParam = 'all', title = 'All Organization Personnel Directory') => {
+    setEmployeeDirectoryRoleFilter(roleFilterParam);
+    setEmployeeDirectoryTitle(title);
+    setIsEmployeeDirectoryOpen(true);
+  };
+
+  const closeEmployeeDirectory = () => {
+    setIsEmployeeDirectoryOpen(false);
+  };
+
+  const openTasksOverview = (filter = 'all', title = 'All Assigned Organization Tasks') => {
+    setTasksOverviewFilter(filter);
+    setTasksOverviewTitle(title);
+    setIsTasksOverviewOpen(true);
+  };
+
+  const closeTasksOverview = () => {
+    setIsTasksOverviewOpen(false);
   };
 
   // Form state for Add/Edit employee
@@ -163,9 +289,18 @@ export const UserSection = () => {
     }
   };
 
-  // Prevent background scrolling when modal is active
+  // Prevent background scrolling when any modal is active
   useEffect(() => {
-    if (isUserModalOpen || isDeleteModalOpen || isWorkModalOpen) {
+    if (
+      isUserModalOpen ||
+      isDeleteModalOpen ||
+      isWorkModalOpen ||
+      isUserDetailModalOpen ||
+      isSuperiorModalOpen ||
+      isRoleDeptModalOpen ||
+      isEmployeeDirectoryOpen ||
+      isTasksOverviewOpen
+    ) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
     } else {
@@ -176,7 +311,16 @@ export const UserSection = () => {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
     };
-  }, [isUserModalOpen, isDeleteModalOpen, isWorkModalOpen]);
+  }, [
+    isUserModalOpen,
+    isDeleteModalOpen,
+    isWorkModalOpen,
+    isUserDetailModalOpen,
+    isSuperiorModalOpen,
+    isRoleDeptModalOpen,
+    isEmployeeDirectoryOpen,
+    isTasksOverviewOpen,
+  ]);
 
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
@@ -201,6 +345,7 @@ export const UserSection = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
+              cursor: 'pointer',
             }}
           >
             <Crown size={11} color="#d97706" />
@@ -223,6 +368,7 @@ export const UserSection = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
+              cursor: 'pointer',
             }}
           >
             <Shield size={11} color="#2563eb" />
@@ -240,6 +386,7 @@ export const UserSection = () => {
               background: '#ecfdf5',
               color: '#047857',
               border: '1px solid #a7f3d0',
+              cursor: 'pointer',
             }}
           >
             User
@@ -260,10 +407,61 @@ export const UserSection = () => {
       (!selectedUser || (selectedUser._id !== u._id && selectedUser.id !== u._id))
   );
 
+  // Active Approved Users
+  const activeUsers = (users || []).filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending');
+
+  // Role-Based Scoping
+  const currentUserId = (currentUser?._id || currentUser?.id || '').toString();
+  const currentUserName = (currentUser?.name || '').toLowerCase().trim();
+  const currentUserUsername = (currentUser?.username || '').toLowerCase().trim();
+  const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
+
+  let scopedUsers = activeUsers;
+  if (!isSuperAdmin && currentUser) {
+    scopedUsers = activeUsers.filter((u) => {
+      const uId = (u._id || u.id || '').toString();
+      const repId = (u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '').trim();
+      const repName = (u.reportsToName || '').toLowerCase().trim();
+      return uId === currentUserId || subordinateIds.has(uId) || repId === currentUserId || (currentUserName && repName.includes(currentUserName));
+    });
+  }
+
+  const scopedNames = new Set(scopedUsers.map((u) => (u.name || '').toLowerCase().trim()));
+  const scopedUsernames = new Set(scopedUsers.map((u) => (u.username || '').toLowerCase().trim()));
+  if (currentUserName) scopedNames.add(currentUserName);
+  if (currentUserUsername) scopedUsernames.add(currentUserUsername);
+
+  // Calculated overall task metrics for summary metric cards
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  let scopedTasks = safeTasks;
+  if (!isSuperAdmin && currentUser) {
+    scopedTasks = safeTasks.filter((t) => {
+      if (!t) return false;
+      const assigned = (t.assignedTo || '').toLowerCase().trim();
+      const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+      const assignedBy = (t.assignedBy || '').toLowerCase().trim();
+
+      const isSelf = assigned === currentUserName || assigned === currentUserUsername || taskUserId === currentUserId || assigned === 'current user';
+      const isSub = scopedNames.has(assigned) || scopedUsernames.has(assigned) || subordinateIds.has(taskUserId);
+      const isBySelf = currentUserName && assignedBy.includes(currentUserName);
+
+      return isSelf || isSub || isBySelf;
+    });
+  }
+
+  const totalTasksCount = scopedTasks.length;
+  const totalCompletedTasksCount = scopedTasks.filter((t) => t.status === 'Completed').length;
+  const totalInProgressTasksCount = scopedTasks.filter((t) => t.status === 'In Progress').length;
+  const totalPendingTasksCount = scopedTasks.filter((t) => t.status === 'To Do' || !t.status).length;
+
+  const personnelCardTitle = isSuperAdmin ? 'Total Personnel' : isManager ? 'Reporting Team' : 'My Team Personnel';
+  const personnelCardSubtitle = isSuperAdmin ? 'Registered & Active Roster' : isManager ? 'Direct & Reporting Subordinates' : 'My Reporting Team';
+  const personnelDirectoryTitle = isSuperAdmin ? 'All Organization Personnel Directory' : isManager ? 'My Reporting Team Directory' : 'My Team Directory';
+
   return (
     <div className="user-management-page">
       {/* Top Header - Curvy Card Container */}
-      <div className="user-curvy-header-card">
+      <div className="user-curvy-header-card" style={{ marginBottom: '16px' }}>
         <div className="user-curvy-title-box">
           <div className="user-curvy-icon">
             <Users size={24} />
@@ -271,27 +469,113 @@ export const UserSection = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h2 className="section-title" style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700 }}>
-                User Management
+                {isSuperAdmin ? 'User Management' : isManager ? 'Team Management' : 'My Team Directory'}
               </h2>
               <span className="user-count-pill">
-                {totalUsers} {totalUsers === 1 ? 'User' : 'Users'}
+                {scopedUsers.length} {scopedUsers.length === 1 ? 'User' : 'Users'}
               </span>
             </div>
             <p className="section-subtitle" style={{ margin: '3px 0 0 0', fontSize: '0.85rem' }}>
-              View, add, edit, and assign reporting structures for all users across the organization
+              {isSuperAdmin
+                ? 'View, add, edit, and assign reporting structures for all users across the organization'
+                : isManager
+                ? 'Manage and monitor your reporting team members and workload structures'
+                : 'View your team and subordinate personnel details'}
             </p>
           </div>
         </div>
 
         <button
+          type="button"
           className="btn btn-primary btn-curvy-action"
           onClick={openCreateModal}
           id="btn-add-new-user"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, #1d68f7, #1d4ed8)',
+            backgroundColor: '#1d68f7',
+            color: '#ffffff',
+            borderRadius: '999px',
+            padding: '8px 20px',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(29, 104, 247, 0.35)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1.5px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(29, 104, 247, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 14px rgba(29, 104, 247, 0.35)';
+          }}
         >
           <UserPlus size={16} />
           <span>Add User</span>
         </button>
+      </div>
+
+      {/* 4 Interactive Curved Metric Cards - Click any card for instant Pop-Up Reference */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: '16px',
+          marginBottom: '20px',
+        }}
+      >
+        {/* Card 1: Personnel */}
+        <MetricCard
+          title={personnelCardTitle}
+          value={scopedUsers.length}
+          subtitle={personnelCardSubtitle}
+          icon={Users}
+          color="#0f172a"
+          bgLight="#f8fafc"
+          isClickable={true}
+          onClick={() => openEmployeeDirectory('all', personnelDirectoryTitle)}
+        />
+
+        {/* Card 2: Total Assigned Work */}
+        <MetricCard
+          title="Total Assigned Work"
+          value={totalTasksCount}
+          subtitle={isSuperAdmin ? 'All active organizational workflows' : 'Assigned workflows'}
+          icon={Briefcase}
+          color="#2563eb"
+          bgLight="#eff6ff"
+          isClickable={true}
+          onClick={() => openTasksOverview('all', isSuperAdmin ? 'Total Assigned Organization Work' : 'Assigned Work')}
+        />
+
+        {/* Card 3: Completed Tasks */}
+        <MetricCard
+          title="Completed Work"
+          value={totalCompletedTasksCount}
+          subtitle="Successfully finalized deliverables"
+          icon={CheckCircle2}
+          color="#059669"
+          bgLight="#ecfdf5"
+          isClickable={true}
+          onClick={() => openTasksOverview('Completed', 'Completed Tasks')}
+        />
+
+        {/* Card 4: Pending & In Progress */}
+        <MetricCard
+          title="Pending / In Progress"
+          value={totalPendingTasksCount + totalInProgressTasksCount}
+          subtitle="Active execution & to-do tasks"
+          icon={Clock}
+          color="#d97706"
+          bgLight="#fffbeb"
+          isClickable={true}
+          onClick={() => openTasksOverview('To Do', 'Pending & In Progress Tasks')}
+        />
       </div>
 
       {error && (
@@ -301,299 +585,59 @@ export const UserSection = () => {
         </div>
       )}
 
-      {/* Main Table Container */}
-      <div className="task-container-box">
-        {/* Search & Role Filter Bar */}
-        <div className="task-nav-toolbar">
-          <div className="search-wrapper-top">
-            <Search className="search-icon-inside" />
-            <input
-              type="text"
-              className="search-input-top"
-              placeholder="Search by user name, email, role, or department..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              id="user-search-input"
-            />
-          </div>
 
-          <div className="task-filters-row">
-            <div className="filters-group-center">
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Role:
-              </label>
-              <select
-                className="select-filter"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                id="filter-user-role"
-              >
-                <option value="all">All Roles</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="User">User / Employee</option>
-              </select>
-            </div>
 
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Total: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{totalUsers}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* User Table */}
-        <div className="table-responsive">
-          <table className="task-table">
-            <thead>
-              <tr>
-                <th style={{ width: '50px', textAlign: 'center' }}>Sr. No</th>
-                <th>User Name & Email</th>
-                <th>Role & Department</th>
-                <th>Reports To (Manager)</th>
-                <th style={{ textAlign: 'center' }}>Completed</th>
-                <th style={{ textAlign: 'center' }}>Pending</th>
-                <th style={{ width: '140px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-                      <RefreshCw size={18} className="animate-spin" />
-                      <span>Loading users...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : paginatedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      No users found
-                    </p>
-                    <p style={{ fontSize: '0.85rem', margin: 0 }}>
-                      {search || roleFilter !== 'all'
-                        ? 'Try adjusting your search query or filter.'
-                        : 'Click "Add User" to create the first record.'}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedUsers.map((emp, index) => {
-                  const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                  const empName = (emp.name || '').trim().toLowerCase();
-                  const empUsername = (emp.username || '').trim().toLowerCase();
-                  const empId = (emp._id || '').toString();
-
-                  const memberTasks = tasks.filter((t) => {
-                    if (!t) return false;
-                    const taskAssigned = (t.assignedTo || '').trim().toLowerCase();
-                    const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
-                    return taskAssigned === empName || taskAssigned === empUsername || (taskUserId && taskUserId === empId);
-                  });
-
-                  const completedCount = memberTasks.filter((t) => t.status === 'Completed').length;
-                  const pendingCount = memberTasks.filter((t) => t.status !== 'Completed').length;
-                  const isSuper = emp.role === 'Super Admin';
-
-                  return (
-                    <tr key={emp._id}>
-                      {/* Sr. No */}
-                      <td style={{ textAlign: 'center' }}>
-                        <span className="sr-no-badge">{serialNumber}</span>
-                      </td>
-
-                      {/* Name & Avatar */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {emp.avatar ? (
-                            <img
-                              src={emp.avatar}
-                              alt={emp.name}
-                              style={{
-                                width: '34px',
-                                height: '34px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '1px solid var(--border-color)',
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: '34px',
-                                height: '34px',
-                                borderRadius: '50%',
-                                background: isSuper ? '#f59e0b' : emp.role === 'Manager' ? '#2563eb' : '#059669',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#ffffff',
-                                fontWeight: 700,
-                                fontSize: '0.82rem',
-                              }}
-                            >
-                              {emp.name ? emp.name.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                          )}
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span>{emp.name}</span>
-                              {isSuper && <Crown size={12} color="#d97706" />}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {emp.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Role & Department */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          {getRoleBadge(emp.role)}
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                            {emp.department || 'Operations'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Reports To (Superior) */}
-                      <td>
-                        <span
-                          style={{
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            color: emp.reportsToName ? '#334155' : '#059669',
-                            background: '#f8fafc',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            display: 'inline-block',
-                          }}
-                        >
-                          {emp.reportsToName || (isSuper ? '— (Super Admin Root)' : 'Direct to Super Admin')}
-                        </span>
-                      </td>
-
-                      {/* Completed Tasks Pill */}
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="badge-status badge-status-completed"
-                          onClick={() => openUserWork(emp, 'Completed')}
-                          title={`Click to view ${emp.name}'s completed tasks`}
-                          style={{ cursor: 'pointer', padding: '3px 8px', fontSize: '0.75rem' }}
-                        >
-                          <CheckCircle2 size={12} />
-                          <span>{completedCount} Done</span>
-                        </button>
-                      </td>
-
-                      {/* Pending Tasks Pill */}
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="badge-status badge-status-progress"
-                          onClick={() => openUserWork(emp, 'To Do')}
-                          title={`Click to view ${emp.name}'s pending tasks`}
-                          style={{ cursor: 'pointer', padding: '3px 8px', fontSize: '0.75rem' }}
-                        >
-                          <Clock size={12} />
-                          <span>{pendingCount} Pending</span>
-                        </button>
-                      </td>
-
-                      {/* Actions */}
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="task-actions-cell" style={{ justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            onClick={() => openUserWork(emp, 'all')}
-                            title="Inspect Workload"
-                          >
-                            <Eye size={14} />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn-action-update"
-                            onClick={() => openEditModal(emp)}
-                            title="Edit User"
-                            id={`btn-edit-user-${emp._id}`}
-                          >
-                            <Edit2 size={14} />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn-action-delete"
-                            onClick={() => openDeleteModal(emp)}
-                            title="Remove User"
-                            id={`btn-delete-user-${emp._id}`}
-                            disabled={currentUser && (currentUser._id === emp._id || currentUser.id === emp._id)}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalUsers > 0 && (
-          <div className="pagination-container">
-            <div className="pagination-info">
-              Showing <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{startEntry}</span> to{' '}
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{endEntry}</span> of{' '}
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalUsers}</span> users
-            </div>
-
-            <div className="pagination-controls">
-              <button
-                className="page-btn"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                aria-label="Previous Page"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  className={`page-btn ${page === currentPage ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                className="page-btn"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                aria-label="Next Page"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 1-Click User Work Modal */}
+      {/* Pop-Up Reference 1: 1-Click User Work Modal */}
       <UserWorkModal
         user={selectedUserForWork}
         initialFilter={userWorkFilter}
         isOpen={isWorkModalOpen}
         onClose={closeUserWork}
+      />
+
+      {/* Pop-Up Reference 2: Dedicated User Detail Profile Reference Modal */}
+      <UserDetailModal
+        user={selectedUserForDetail}
+        isOpen={isUserDetailModalOpen}
+        onClose={closeUserDetail}
+        onOpenWork={(targetUser, filter) => openUserWork(targetUser, filter)}
+        onOpenEdit={(targetUser) => openEditModal(targetUser)}
+        onViewManager={(mgrName) => openSuperiorDetail(mgrName)}
+      />
+
+      {/* Pop-Up Reference 3: Superior / Manager Profile Reference Modal */}
+      <SuperiorDetailModal
+        isOpen={isSuperiorModalOpen}
+        onClose={closeSuperiorDetail}
+        superiorName={selectedSuperiorName}
+        currentUser={currentUser}
+        onOpenWork={(targetUser, filter) => openUserWork(targetUser, filter)}
+      />
+
+      {/* Pop-Up Reference 4: Role & Department Breakdown Reference Modal */}
+      <RoleDeptModal
+        role={selectedRoleForModal}
+        department={selectedDeptForModal}
+        isOpen={isRoleDeptModalOpen}
+        onClose={closeRoleDeptDetail}
+        onFilterRole={(r) => setRoleFilter(r)}
+      />
+
+      {/* Pop-Up Reference 5: Full Organization Personnel Directory Modal */}
+      <EmployeeDrilldownModal
+        isOpen={isEmployeeDirectoryOpen}
+        onClose={closeEmployeeDirectory}
+        roleFilter={employeeDirectoryRoleFilter}
+        modalTitle={employeeDirectoryTitle}
+        onOpenUserWork={(targetUser, filter) => openUserWork(targetUser, filter)}
+      />
+
+      {/* Pop-Up Reference 6: Organization Tasks Overview Modal (for Top Cards) */}
+      <ManagerTasksDrilldownModal
+        isOpen={isTasksOverviewOpen}
+        onClose={closeTasksOverview}
+        initialFilter={tasksOverviewFilter}
+        modalTitle={tasksOverviewTitle}
       />
 
       {/* Add / Edit User Modal */}
@@ -649,64 +693,61 @@ export const UserSection = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#ffffff',
+                          color: '#fff',
                           fontWeight: 700,
-                          fontSize: '1.1rem',
                         }}
                       >
-                        {formData.name ? formData.name.charAt(0).toUpperCase() : <Camera size={18} />}
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                     )}
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label
-                        className="btn btn-secondary"
-                        style={{
-                          cursor: 'pointer',
-                          padding: '5px 12px',
-                          fontSize: '0.78rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          width: 'fit-content',
-                        }}
-                      >
-                        <Upload size={13} />
-                        <span>Choose Image</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                setFormData((prev) => ({ ...prev, avatar: event.target.result }));
-                              };
-                              reader.readAsDataURL(file);
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="user-avatar-upload"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            if (file.size > 2 * 1024 * 1024) {
+                              setModalServerError('Image size must be under 2MB');
+                              return;
                             }
-                          }}
-                        />
-                      </label>
-
-                      {formData.avatar && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData((prev) => ({ ...prev, avatar: '' }))}
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormData((prev) => ({ ...prev, avatar: reader.result }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <label
+                          htmlFor="user-avatar-upload"
+                          className="btn btn-secondary"
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            fontSize: '0.72rem',
                             cursor: 'pointer',
-                            textAlign: 'left',
-                            padding: '0',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.8rem',
                           }}
                         >
-                          Remove photo
-                        </button>
-                      )}
+                          <Camera size={14} />
+                          <span>Choose Photo</span>
+                        </label>
+                        {formData.avatar && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setFormData((prev) => ({ ...prev, avatar: '' }))}
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#dc2626' }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -720,60 +761,50 @@ export const UserSection = () => {
                     id="emp-name"
                     type="text"
                     className="form-control"
-                    placeholder="Enter user full name"
+                    placeholder="e.g. Sarah Jenkins"
                     value={formData.name}
-                    onChange={(e) => {
-                      setFormData({ ...formData, name: e.target.value });
-                      if (formErrors.name) setFormErrors({ ...formErrors, name: '' });
-                    }}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                   {formErrors.name && <span className="form-error-msg">{formErrors.name}</span>}
                 </div>
 
-                {/* Email & Username */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="emp-email">
-                      Email Address <span className="required">*</span>
-                    </label>
-                    <input
-                      id="emp-email"
-                      type="email"
-                      className="form-control"
-                      placeholder="employee@example.com"
-                      value={formData.email}
-                      onChange={(e) => {
-                        setFormData({ ...formData, email: e.target.value });
-                        if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
-                      }}
-                    />
-                    {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="emp-username">
-                      Username <span className="required">*</span>
-                    </label>
-                    <input
-                      id="emp-username"
-                      type="text"
-                      className="form-control"
-                      placeholder="username"
-                      value={formData.username}
-                      onChange={(e) => {
-                        setFormData({ ...formData, username: e.target.value });
-                        if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
-                      }}
-                    />
-                    {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
-                  </div>
+                {/* Email Address */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="emp-email">
+                    Email Address <span className="required">*</span>
+                  </label>
+                  <input
+                    id="emp-email"
+                    type="email"
+                    className="form-control"
+                    placeholder="e.g. sarah.j@company.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                  {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
                 </div>
 
-                {/* Role & Department */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Username */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="emp-username">
+                    Username <span className="required">*</span>
+                  </label>
+                  <input
+                    id="emp-username"
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. sarah_j"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  />
+                  {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
+                </div>
+
+                {/* Role & Department Row */}
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label" htmlFor="emp-role">
-                      Role
+                      Organization Role <span className="required">*</span>
                     </label>
                     <select
                       id="emp-role"
@@ -781,15 +812,17 @@ export const UserSection = () => {
                       value={formData.role}
                       onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     >
-                      <option value="User">User / Employee</option>
+                      <option value="User">User / Regular Employee</option>
                       <option value="Manager">Manager</option>
+                      <option value="Executive">Executive</option>
+                      <option value="Administrator">Administrator</option>
                       <option value="Super Admin">Super Admin</option>
                     </select>
                   </div>
 
                   <div className="form-group">
                     <label className="form-label" htmlFor="emp-dept">
-                      Department
+                      Department <span className="required">*</span>
                     </label>
                     <select
                       id="emp-dept"
@@ -844,7 +877,7 @@ export const UserSection = () => {
                 {/* Password (Optional for Edit) */}
                 <div className="form-group">
                   <label className="form-label" htmlFor="emp-password">
-                    Password {modalMode === 'edit' ? '(Leave blank to keep unchanged)' : '<span className="required">*</span>'}
+                    Password {modalMode === 'edit' ? '(Leave blank to keep unchanged)' : <span className="required">*</span>}
                   </label>
                   <input
                     id="emp-password"
@@ -965,3 +998,5 @@ export const UserSection = () => {
     </div>
   );
 };
+
+export default UserSection;

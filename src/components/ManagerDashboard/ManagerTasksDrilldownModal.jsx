@@ -15,15 +15,60 @@ import {
   Edit2,
   Trash2,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
+
+// Helper to get all subordinate user IDs for a given user in the organizational hierarchy
+const getSubordinateUserIds = (user, allUsers) => {
+  if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
+  const userIdStr = (user._id ? user._id.toString() : (user.id ? user.id.toString() : '')).trim();
+  const userNameStr = (user.name || '').toLowerCase().trim();
+
+  const subordinateIds = new Set();
+  if (!userIdStr && !userNameStr) return subordinateIds;
+
+  const queue = [userIdStr];
+  const processed = new Set([userIdStr]);
+
+  while (queue.length > 0) {
+    const currentParentId = queue.shift();
+    const parentUser = allUsers.find((u) => u && (u._id || u.id) && (u._id || u.id).toString() === currentParentId);
+    const parentName = (parentUser?.name || (currentParentId === userIdStr ? userNameStr : '')).toLowerCase().trim();
+
+    for (const u of allUsers) {
+      if (!u) continue;
+      const uIdStr = (u._id || u.id || '').toString();
+      if (!uIdStr || uIdStr === userIdStr || processed.has(uIdStr)) continue;
+
+      const repIdStr = u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '';
+      const repNameStr = (u.reportsToName || '').toLowerCase().trim();
+      const createdByStr = u.createdBy ? (u.createdBy._id ? u.createdBy._id.toString() : u.createdBy.toString()) : '';
+
+      const isDirectReport =
+        (currentParentId && repIdStr === currentParentId) ||
+        (parentName && repNameStr && (repNameStr.includes(parentName) || parentName.includes(repNameStr)));
+
+      const isCreatedByParent = currentParentId && createdByStr === currentParentId;
+
+      if (isDirectReport || isCreatedByParent) {
+        subordinateIds.add(uIdStr);
+        processed.add(uIdStr);
+        queue.push(uIdStr);
+      }
+    }
+  }
+
+  return subordinateIds;
+};
 
 export const ManagerTasksDrilldownModal = ({
   isOpen,
   onClose,
-  initialFilter = 'Completed', // 'Completed' | 'In Progress' | 'To Do'
+  initialFilter = 'Completed', // 'Completed' | 'In Progress' | 'To Do' | 'all'
   modalTitle = 'Tasks Overview',
 }) => {
+  const { user: currentUser, isSuperAdmin, isManager } = useAuth();
   const { tasks, updateStatus, openEditModal, openDeleteModal, openViewModal } = useTasks();
   const { users } = useUserManagement();
 
@@ -50,8 +95,50 @@ export const ManagerTasksDrilldownModal = ({
 
   if (!isOpen) return null;
 
+  // Active Approved Users
+  const activeUsers = users.filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending');
+
+  // Role-Based Task Scoping:
+  // 1. Super Admin: sees all tasks organization-wide.
+  // 2. Manager: sees tasks for themselves and their subordinate team.
+  // 3. User: sees tasks for themselves (and their direct subordinates if any).
+  let scopedTasks = tasks;
+  let scopedUsers = activeUsers;
+
+  if (!isSuperAdmin && currentUser) {
+    const currentUserId = (currentUser._id || currentUser.id || '').toString();
+    const currentUserName = (currentUser.name || '').toLowerCase().trim();
+    const currentUserUsername = (currentUser.username || '').toLowerCase().trim();
+    const subordinateIds = getSubordinateUserIds(currentUser, activeUsers);
+
+    scopedUsers = activeUsers.filter((u) => {
+      const uId = (u._id || u.id || '').toString();
+      const repId = (u.reportsTo ? (u.reportsTo._id ? u.reportsTo._id.toString() : u.reportsTo.toString()) : '').trim();
+      const repName = (u.reportsToName || '').toLowerCase().trim();
+      return uId === currentUserId || subordinateIds.has(uId) || repId === currentUserId || (currentUserName && repName.includes(currentUserName));
+    });
+
+    const scopedNames = new Set(scopedUsers.map((u) => (u.name || '').toLowerCase().trim()));
+    const scopedUsernames = new Set(scopedUsers.map((u) => (u.username || '').toLowerCase().trim()));
+    if (currentUserName) scopedNames.add(currentUserName);
+    if (currentUserUsername) scopedUsernames.add(currentUserUsername);
+
+    scopedTasks = tasks.filter((t) => {
+      if (!t) return false;
+      const assigned = (t.assignedTo || '').toLowerCase().trim();
+      const taskUserId = t.user ? (t.user._id ? t.user._id.toString() : t.user.toString()) : '';
+      const assignedBy = (t.assignedBy || '').toLowerCase().trim();
+
+      const isSelf = assigned === currentUserName || assigned === currentUserUsername || taskUserId === currentUserId || assigned === 'current user';
+      const isSub = scopedNames.has(assigned) || scopedUsernames.has(assigned) || subordinateIds.has(taskUserId);
+      const isBySelf = currentUserName && assignedBy.includes(currentUserName);
+
+      return isSelf || isSub || isBySelf;
+    });
+  }
+
   // Filter tasks dynamically
-  let filtered = [...tasks];
+  let filtered = [...scopedTasks];
 
   // Status Filter (Completed, In Progress, To Do)
   if (statusFilter && statusFilter !== 'all') {
@@ -62,7 +149,7 @@ export const ManagerTasksDrilldownModal = ({
   if (memberFilter !== 'all') {
     filtered = filtered.filter(
       (t) =>
-        t.assignedTo === memberFilter ||
+        (t.assignedTo && t.assignedTo.toLowerCase() === memberFilter.toLowerCase()) ||
         (t.user && (t.user.name === memberFilter || t.user === memberFilter))
     );
   }
@@ -75,13 +162,14 @@ export const ManagerTasksDrilldownModal = ({
         (t.description && t.description.toLowerCase().includes(q)) ||
         (t.remark && t.remark.toLowerCase().includes(q)) ||
         (t.taskType && t.taskType.toLowerCase().includes(q)) ||
-        (t.assignedTo && t.assignedTo.toLowerCase().includes(q))
+        (t.assignedTo && t.assignedTo.toLowerCase().includes(q)) ||
+        (t.assignedBy && t.assignedBy.toLowerCase().includes(q))
     );
   }
 
-  const totalCompleted = tasks.filter((t) => t.status === 'Completed').length;
-  const totalInProgress = tasks.filter((t) => t.status === 'In Progress').length;
-  const totalToDo = tasks.filter((t) => t.status === 'To Do').length;
+  const totalCompleted = scopedTasks.filter((t) => t.status === 'Completed').length;
+  const totalInProgress = scopedTasks.filter((t) => t.status === 'In Progress').length;
+  const totalToDo = scopedTasks.filter((t) => t.status === 'To Do' || !t.status).length;
 
   const getTaskTypeBadge = (type) => {
     switch (type) {
@@ -169,142 +257,149 @@ export const ManagerTasksDrilldownModal = ({
                   border: '1px solid #bfdbfe',
                 }}
               >
-                {filtered.length} Record{filtered.length === 1 ? '' : 's'}
+                {filtered.length} Task{filtered.length === 1 ? '' : 's'}
               </span>
             </div>
           </div>
 
-          <button type="button" className="btn-icon" onClick={onClose} aria-label="Close dialog">
+          <button type="button" className="btn-icon" onClick={onClose} aria-label="Close modal">
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
         <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
-          {/* Quick 1-Click Status Filter Tabs & Member Filter (All Tasks removed) */}
+          {/* Controls Bar */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '12px',
               flexWrap: 'wrap',
-              paddingBottom: '14px',
+              gap: '12px',
+              paddingBottom: '12px',
               borderBottom: '1px solid var(--border-color)',
             }}
           >
-            {/* Status Tabs without "All Tasks" */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Status Tabs */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className={`btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setStatusFilter('all')}
+                style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+              >
+                All ({scopedTasks.length})
+              </button>
               <button
                 type="button"
                 className={`btn ${statusFilter === 'Completed' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setStatusFilter('Completed')}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderColor: statusFilter === 'Completed' ? 'transparent' : '#a7f3d0',
-                  color: statusFilter === 'Completed' ? '#fff' : '#047857',
-                }}
+                style={{ fontSize: '0.8rem', padding: '6px 14px' }}
               >
-                <CheckCircle2 size={15} />
-                <span>Completed ({totalCompleted})</span>
+                Completed ({totalCompleted})
               </button>
-
               <button
                 type="button"
                 className={`btn ${statusFilter === 'In Progress' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setStatusFilter('In Progress')}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderColor: statusFilter === 'In Progress' ? 'transparent' : '#fde68a',
-                  color: statusFilter === 'In Progress' ? '#fff' : '#b45309',
-                }}
+                style={{ fontSize: '0.8rem', padding: '6px 14px' }}
               >
-                <Clock size={15} />
-                <span>In Progress ({totalInProgress})</span>
+                In Progress ({totalInProgress})
               </button>
-
               <button
                 type="button"
                 className={`btn ${statusFilter === 'To Do' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setStatusFilter('To Do')}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderColor: statusFilter === 'To Do' ? 'transparent' : '#cbd5e1',
-                  color: statusFilter === 'To Do' ? '#fff' : '#475569',
-                }}
+                style={{ fontSize: '0.8rem', padding: '6px 14px' }}
               >
-                <AlertCircle size={15} />
-                <span>Pending / To Do ({totalToDo})</span>
+                To Do ({totalToDo})
               </button>
             </div>
 
-            {/* Filter by Member Select */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Users size={15} color="#64748b" />
-              <select
-                className="select-filter"
-                value={memberFilter}
-                onChange={(e) => setMemberFilter(e.target.value)}
-                style={{ padding: '6px 12px', fontSize: '0.825rem' }}
-              >
-                <option value="all">All Team Members</option>
-                {users.map((u) => (
-                  <option key={u._id} value={u.name}>
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
+            {/* Filters on Right */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Search */}
+              <div style={{ position: 'relative', width: '200px' }}>
+                <Search
+                  size={14}
+                  style={{
+                    position: 'absolute',
+                    left: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                  }}
+                />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search tasks..."
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  style={{ paddingLeft: '30px', fontSize: '0.8rem', height: '34px' }}
+                />
+              </div>
+
+              {/* Member Filter Dropdown */}
+              {scopedUsers.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={14} color="#64748b" />
+                  <select
+                    className="select-filter"
+                    value={memberFilter}
+                    onChange={(e) => setMemberFilter(e.target.value)}
+                    style={{ fontSize: '0.8rem', height: '34px', padding: '4px 10px' }}
+                  >
+                    <option value="all">All Members ({scopedUsers.length})</option>
+                    {scopedUsers.map((u) => (
+                      <option key={u._id} value={u.name}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Search bar inside modal */}
-          <div className="search-wrapper-top" style={{ position: 'relative' }}>
-            <Search className="search-icon-inside" />
-            <input
-              type="text"
-              className="search-input-top"
-              placeholder="Filter tasks by keyword, description, remark, or assignee..."
-              value={modalSearch}
-              onChange={(e) => setModalSearch(e.target.value)}
-              style={{ padding: '9px 14px 9px 40px', fontSize: '0.875rem' }}
-            />
-          </div>
-
           {/* Table */}
-          <div className="table-responsive" style={{ maxHeight: '440px', overflowY: 'auto' }}>
+          <div className="table-responsive" style={{ maxHeight: '480px', overflowY: 'auto' }}>
             <table className="task-table">
               <thead>
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>Sr No.</th>
-                  <th style={{ width: '160px' }}>Assigned Member</th>
-                  <th style={{ width: '130px' }}>Type of Work</th>
-                  <th>Task Description</th>
-                  <th style={{ width: '120px' }}>Due Date</th>
-                  <th style={{ width: '120px' }}>Status</th>
-                  <th>Remark</th>
-                  <th style={{ width: '110px', textAlign: 'center' }}>Actions</th>
+                  <th>Task Details</th>
+                  <th>Assigned To</th>
+                  <th>Task Type</th>
+                  <th style={{ textAlign: 'center' }}>Status</th>
+                  <th>Due Date</th>
+                  <th style={{ width: '110px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        No matching tasks found
+                        No tasks found
                       </p>
                       <p style={{ fontSize: '0.85rem' }}>
-                        Try switching the status filter or clearing your search input.
+                        No records match the current filter or search criteria.
                       </p>
                     </td>
                   </tr>
                 ) : (
                   filtered.map((task, idx) => {
-                    const assignedUserObj = users.find(
-                      (u) => u.name === task.assignedTo || u.username === task.assignedTo
-                    );
+                    let formattedDate = 'No date';
+                    if (task.expectedDate) {
+                      const d = new Date(task.expectedDate);
+                      formattedDate = d.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      });
+                    }
 
                     return (
                       <tr key={task._id}>
@@ -312,162 +407,104 @@ export const ManagerTasksDrilldownModal = ({
                           <span className="sr-no-badge">{idx + 1}</span>
                         </td>
 
-                        {/* Assigned Member with Avatar */}
+                        {/* Task Details */}
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {assignedUserObj?.avatar ? (
-                              <img
-                                src={assignedUserObj.avatar}
-                                alt={task.assignedTo}
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '50%',
-                                  objectFit: 'cover',
-                                  border: '1px solid var(--border-color)',
-                                }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '50%',
-                                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: '#fff',
-                                  fontWeight: 700,
-                                  fontSize: '0.75rem',
-                                }}
-                              >
-                                {(task.assignedTo || 'U').charAt(0)}
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                              {task.description}
+                            </div>
+                            {task.remark && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                Remark: {task.remark}
                               </div>
                             )}
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                              {task.assignedTo || 'Unassigned'}
-                            </span>
+                            {task.completionRemark && (
+                              <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '2px' }}>
+                                Completion: {task.completionRemark}
+                              </div>
+                            )}
                           </div>
                         </td>
 
-                        {/* Type of Work */}
+                        {/* Assigned To */}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div
+                              style={{
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '50%',
+                                background: '#e0e7ff',
+                                color: '#4338ca',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {task.assignedTo ? task.assignedTo.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {task.assignedTo || 'Unassigned'}
+                              </div>
+                              {task.assignedBy && (
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                  By: {task.assignedBy}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Type */}
                         <td>{getTaskTypeBadge(task.taskType)}</td>
 
-                        {/* Description */}
-                        <td>
-                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
-                            {task.description}
-                          </span>
-                        </td>
+                        {/* Status */}
+                        <td style={{ textAlign: 'center' }}>{getStatusBadge(task)}</td>
 
                         {/* Due Date */}
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
                             <Calendar size={13} />
-                            <span>
-                              {task.expectedDate
-                                ? new Date(task.expectedDate).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })
-                                : '—'}
-                            </span>
+                            <span>{formattedDate}</span>
                           </div>
                         </td>
 
-                        {/* Status */}
-                        <td>{getStatusBadge(task)}</td>
-
-                        {/* Remark */}
-                        <td>
-                          <span style={{ color: task.remark ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {task.remark || '—'}
-                          </span>
-                        </td>
-
-                        {/* Actions (View, Edit, Delete signs only) */}
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                        {/* Actions */}
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                             <button
                               type="button"
-                              onClick={() => openViewModal(task)}
-                              title="View Details"
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '6px',
-                                border: '1px solid #bfdbfe',
-                                backgroundColor: '#eff6ff',
-                                color: '#2563eb',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.15s ease',
+                              className="btn-icon"
+                              onClick={() => {
+                                onClose();
+                                openViewModal(task);
                               }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#dbeafe';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#eff6ff';
-                              }}
+                              title="View Task Details"
                             >
                               <Eye size={14} />
                             </button>
-
                             <button
                               type="button"
-                              onClick={() => openEditModal(task)}
+                              className="btn-action-update"
+                              onClick={() => {
+                                onClose();
+                                openEditModal(task);
+                              }}
                               title="Edit Task"
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '6px',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: '#f8fafc',
-                                color: '#475569',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.15s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                e.currentTarget.style.color = '#0f172a';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f8fafc';
-                                e.currentTarget.style.color = '#475569';
-                              }}
                             >
-                              <Edit2 size={14} />
+                              <Edit2 size={13} />
                             </button>
-
                             <button
                               type="button"
-                              onClick={() => openDeleteModal(task)}
+                              className="btn-action-delete"
+                              onClick={() => {
+                                onClose();
+                                openDeleteModal(task);
+                              }}
                               title="Delete Task"
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '6px',
-                                border: '1px solid #fecaca',
-                                backgroundColor: '#fef2f2',
-                                color: '#dc2626',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.15s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#fee2e2';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#fef2f2';
-                              }}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -485,3 +522,5 @@ export const ManagerTasksDrilldownModal = ({
     </div>
   );
 };
+
+export default ManagerTasksDrilldownModal;

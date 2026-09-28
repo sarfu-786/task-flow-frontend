@@ -1,7 +1,15 @@
 /**
- * TaskFlow Pro - Export Utilities
- * Provides 1-click Excel (CSV) file generation and high-fidelity Printable PDF Reports
+ * Escape XML special characters
  */
+const escapeXml = (unsafe) => {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
 
 /**
  * Clean & format a value for CSV output
@@ -19,6 +27,135 @@ const formatCSVValue = (val) => {
   }
   const str = String(val).replace(/"/g, '""');
   return `"${str}"`;
+};
+
+/**
+ * Export structured data array directly to Excel (.xls) file with styles & colors
+ * Natively opens in Microsoft Excel, Google Sheets, LibreOffice, Apple Numbers
+ * @param {string} filename - Base name for the downloaded file
+ * @param {Array<Object>} data - Array of record objects
+ * @param {Array<{ key: string, label: string, formatter?: Function }>} columns - Column definitions
+ * @param {Object} [options] - Additional options (sheetName, title)
+ */
+export const exportToExcel = (filename, data, columns, options = {}) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    alert('No data available to export.');
+    return;
+  }
+
+  const sheetName = (options.sheetName || 'Report').replace(/[:\\/?*\[\]]/g, '').slice(0, 31);
+  const title = options.title || filename.replace(/_/g, ' ');
+
+  // XML Spreadsheet 2003 (SpreadsheetML) format - 100% native Microsoft Excel format
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>${escapeXml(title)}</Title>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#0F172A"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="HeaderStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#059669" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="DataCell">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="NumberCell">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E293B"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="${sheetName}">
+  <Table ss:DefaultRowHeight="20">`;
+
+  // Columns specification
+  columns.forEach(() => {
+    xml += `<Column ss:AutoFitWidth="1" ss:Width="130"/>`;
+  });
+
+  // Header Row
+  xml += `<Row ss:Height="24">`;
+  columns.forEach((col) => {
+    xml += `<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">${escapeXml(col.label)}</Data></Cell>`;
+  });
+  xml += `</Row>`;
+
+  // Data Rows
+  data.forEach((item, index) => {
+    xml += `<Row ss:Height="20">`;
+    columns.forEach((col) => {
+      let val = item[col.key];
+      if (col.key === '_index') {
+        val = index + 1;
+      } else if (col.formatter && typeof col.formatter === 'function') {
+        val = col.formatter(val, item, index);
+      }
+
+      if (typeof val === 'number') {
+        xml += `<Cell ss:StyleID="NumberCell"><Data ss:Type="Number">${val}</Data></Cell>`;
+      } else {
+        const strVal = val === null || val === undefined ? '' : String(val);
+        xml += `<Cell ss:StyleID="DataCell"><Data ss:Type="String">${escapeXml(strVal)}</Data></Cell>`;
+      }
+    });
+    xml += `</Row>`;
+  });
+
+  xml += `</Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <Selected/>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+   <DisplayGridlines/>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const cleanFilename = `${filename.replace(/[^a-zA-Z0-9_-]/g, '_')}_${timestamp}.xls`;
+  link.setAttribute('download', cleanFilename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 /**

@@ -4,7 +4,7 @@ import { useUserManagement } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 import {
   X,
-  TrendingUp,
+  Sparkles,
   AlertCircle,
   Building,
   DollarSign,
@@ -12,16 +12,17 @@ import {
   Flag,
   User as UserIcon,
   FileText,
-  Percent,
   CheckCircle2,
+  Lock,
 } from 'lucide-react';
 
 const STAGE_DEFAULT_PROBABILITIES = {
   Qualification: 20,
-  Proposal: 50,
+  'Needs Analysis': 40,
+  Proposal: 60,
   Negotiation: 80,
-  Won: 100,
-  Lost: 0,
+  'Closed Won': 100,
+  'Closed Lost': 0,
 };
 
 export const ConvertLeadModal = () => {
@@ -30,35 +31,33 @@ export const ConvertLeadModal = () => {
   const { user: currentUser } = useAuth();
 
   const [oppName, setOppName] = useState('');
-  const [company, setCompany] = useState('');
-  const [amount, setAmount] = useState('');
+  const [dealValue, setDealValue] = useState('');
   const [stage, setStage] = useState('Qualification');
-  const [probability, setProbability] = useState(20);
   const [expectedCloseDate, setExpectedCloseDate] = useState('');
-  const [priority, setPriority] = useState('Medium');
   const [assignedTo, setAssignedTo] = useState('');
-  const [notes, setNotes] = useState('');
+  const [remarks, setRemarks] = useState('');
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  const isAlreadyConverted = leadToConvert?.status === 'Converted' || !!leadToConvert?.opportunityId;
+  const isEligibleStatus = leadToConvert?.status === 'Qualified' || leadToConvert?.status === 'Interested';
+
   useEffect(() => {
     if (leadToConvert) {
-      setOppName(`${leadToConvert.name} - Deal`);
-      setCompany(leadToConvert.company || '');
-      setAmount('');
+      const defaultName = `${leadToConvert.company || leadToConvert.name || leadToConvert.contactPerson} - Enterprise Opportunity`;
+      setOppName(defaultName);
+      setDealValue(leadToConvert.estimatedValue || leadToConvert.dealValue || '');
       setStage('Qualification');
-      setProbability(20);
 
-      // Default close date 30 days in future
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() + 30);
-      setExpectedCloseDate(defaultDate.toISOString().split('T')[0]);
+      // Default expected close date: +30 days
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      setExpectedCloseDate(d.toISOString().split('T')[0]);
 
-      setPriority(leadToConvert.priority || 'Medium');
-      setAssignedTo(leadToConvert.assignedTo || currentUser?.name || '');
-      setNotes(leadToConvert.notes ? `Converted from Lead: ${leadToConvert.notes}` : '');
+      setAssignedTo(leadToConvert.assignedSalesUser || leadToConvert.assignedTo || currentUser?.name || '');
+      setRemarks(leadToConvert.remarks || leadToConvert.notes || '');
     }
     setErrors({});
     setServerError('');
@@ -66,20 +65,13 @@ export const ConvertLeadModal = () => {
 
   if (!isConvertModalOpen || !leadToConvert) return null;
 
-  const handleStageChange = (newStage) => {
-    setStage(newStage);
-    if (STAGE_DEFAULT_PROBABILITIES[newStage] !== undefined) {
-      setProbability(STAGE_DEFAULT_PROBABILITIES[newStage]);
-    }
-  };
-
   const validate = () => {
     const errs = {};
     if (!oppName.trim()) {
       errs.oppName = 'Opportunity name is required';
     }
-    if (amount && isNaN(Number(amount))) {
-      errs.amount = 'Amount must be a valid number';
+    if (dealValue && isNaN(Number(dealValue))) {
+      errs.dealValue = 'Deal value must be a valid number';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -89,23 +81,32 @@ export const ConvertLeadModal = () => {
     e.preventDefault();
     if (!validate()) return;
 
+    if (isAlreadyConverted) {
+      setServerError(`This Lead has already been converted to Opportunity ${leadToConvert.opportunityId || ''}.`);
+      return;
+    }
+
+    if (!isEligibleStatus) {
+      setServerError(`A Lead can be converted into an Opportunity only when its status is Qualified or Interested. Current status is '${leadToConvert.status}'.`);
+      return;
+    }
+
     setIsSubmitting(true);
     setServerError('');
 
     try {
       const payload = {
         opportunityName: oppName.trim(),
-        company: company.trim(),
-        amount: Number(amount) || 0,
+        dealValue: Number(dealValue) || 0,
+        amount: Number(dealValue) || 0,
         stage,
-        probability: Number(probability) || 20,
+        probability: STAGE_DEFAULT_PROBABILITIES[stage] || 20,
         expectedCloseDate: expectedCloseDate || null,
-        priority,
-        assignedTo: assignedTo || leadToConvert.assignedTo || currentUser?.name || 'Current User',
-        notes: notes.trim(),
+        assignedTo: assignedTo.trim() || currentUser?.name || 'Current User',
+        remarks: remarks.trim(),
       };
 
-      await convertLeadToOpportunity(leadToConvert._id, payload);
+      await convertLeadToOpportunity(leadToConvert._id || leadToConvert.leadId, payload);
     } catch (err) {
       setServerError(err.message || 'Failed to convert lead to opportunity');
     } finally {
@@ -114,35 +115,39 @@ export const ConvertLeadModal = () => {
   };
 
   return (
-    <div className="modal-backdrop active" onClick={closeConvertModal}>
+    <div className="modal-backdrop active" onClick={closeConvertModal} style={{ zIndex: 1200 }}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '640px', width: '92%' }}
+        style={{ maxWidth: '640px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
       >
-        <div className="modal-header">
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981, #059669)',
+                background: '#ecfdf5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                color: '#059669',
               }}
             >
-              <TrendingUp size={20} />
+              <Sparkles size={20} />
             </div>
             <div>
-              <h3 className="modal-title" style={{ margin: 0, fontSize: '1.25rem' }}>
-                Convert Lead to Opportunity
-              </h3>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Elevate qualified lead <strong>"{leadToConvert.name}"</strong> into an active deal in your sales pipeline.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  Convert Lead to Opportunity
+                </h3>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                  {leadToConvert.leadId || 'LD-001'}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Elevate qualified lead into an active sales opportunity in the pipeline.
               </p>
             </div>
           </div>
@@ -150,6 +155,24 @@ export const ConvertLeadModal = () => {
             <X size={18} />
           </button>
         </div>
+
+        {/* Status validation notices */}
+        {isAlreadyConverted ? (
+          <div className="alert alert-warning" style={{ margin: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309' }}>
+            <Lock size={18} />
+            <span>
+              <strong>Duplicate Conversion Notice:</strong> This Lead has already been converted to Opportunity{' '}
+              <strong>{leadToConvert.opportunityId || 'OP-001'}</strong>. Duplicate conversion is prohibited.
+            </span>
+          </div>
+        ) : !isEligibleStatus ? (
+          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} />
+            <span>
+              A Lead can be converted into an Opportunity only when its status is <strong>Qualified</strong> or <strong>Interested</strong>. Current status is <strong>'{leadToConvert.status}'</strong>.
+            </span>
+          </div>
+        ) : null}
 
         {serverError && (
           <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', gap: '8px' }}>
@@ -174,28 +197,28 @@ export const ConvertLeadModal = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Converting Lead:</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {leadToConvert.name} {leadToConvert.company ? `(${leadToConvert.company})` : ''}
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Source Lead:</div>
+            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
+              {leadToConvert.name || leadToConvert.contactPerson} {leadToConvert.company ? `(${leadToConvert.company})` : ''}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
                 fontSize: '0.75rem',
-                fontWeight: 600,
-                padding: '3px 8px',
+                fontWeight: 700,
+                padding: '3px 10px',
                 borderRadius: '999px',
-                background: '#ecfdf5',
-                color: '#059669',
-                border: '1px solid #a7f3d0',
+                background: leadToConvert.status === 'Qualified' ? '#ecfdf5' : '#f0fdf4',
+                color: leadToConvert.status === 'Qualified' ? '#059669' : '#16a34a',
+                border: '1px solid #bbf7d0',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
             >
               <CheckCircle2 size={12} />
-              Qualified Lead
+              Status: {leadToConvert.status}
             </span>
           </div>
         </div>
@@ -204,166 +227,124 @@ export const ConvertLeadModal = () => {
           <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Opportunity Name */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp size={14} color="var(--primary)" />
-                <span>Opportunity / Deal Name *</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Sparkles size={14} color="#059669" />
+                <span>Opportunity Name <span style={{ color: '#ef4444' }}>*</span></span>
               </label>
               <input
                 type="text"
-                className={`form-input ${errors.oppName ? 'is-invalid' : ''}`}
-                placeholder="e.g. TechNova Enterprise Rollout"
+                className={`form-control ${errors.oppName ? 'is-invalid' : ''}`}
+                placeholder="e.g. Acme Enterprise Rollout"
                 value={oppName}
+                disabled={isAlreadyConverted || !isEligibleStatus}
                 onChange={(e) => setOppName(e.target.value)}
                 autoFocus
               />
-              {errors.oppName && <span className="error-feedback">{errors.oppName}</span>}
+              {errors.oppName && <span className="form-error-msg">{errors.oppName}</span>}
             </div>
 
-            {/* Company Name */}
+            {/* Estimated Deal Value */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building size={14} color="var(--primary)" />
-                <span>Company</span>
-              </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g. TechNova Solutions"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-              />
-            </div>
-
-            {/* Deal Amount */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <DollarSign size={14} color="var(--primary)" />
-                <span>Deal Value / Amount (₹)</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <DollarSign size={14} color="#059669" />
+                <span>Estimated Deal Value (₹)</span>
               </label>
               <input
                 type="number"
                 min="0"
-                step="1000"
-                className={`form-input ${errors.amount ? 'is-invalid' : ''}`}
-                placeholder="e.g. 350000"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-              {errors.amount && <span className="error-feedback">{errors.amount}</span>}
-            </div>
-
-            {/* Initial Stage */}
-            <div className="form-group">
-              <label className="form-label">Initial Stage</label>
-              <select
-                className="form-select"
-                value={stage}
-                onChange={(e) => handleStageChange(e.target.value)}
-              >
-                <option value="Qualification">Qualification (20%)</option>
-                <option value="Proposal">Proposal (50%)</option>
-                <option value="Negotiation">Negotiation (80%)</option>
-                <option value="Won">Won (100%)</option>
-                <option value="Lost">Lost (0%)</option>
-              </select>
-            </div>
-
-            {/* Probability % */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Percent size={14} color="var(--primary)" />
-                <span>Probability (%)</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                className="form-input"
-                value={probability}
-                onChange={(e) => setProbability(e.target.value)}
+                className={`form-control ${errors.dealValue ? 'is-invalid' : ''}`}
+                placeholder="e.g. 450000"
+                value={dealValue}
+                disabled={isAlreadyConverted || !isEligibleStatus}
+                onChange={(e) => setDealValue(e.target.value)}
               />
             </div>
 
             {/* Expected Close Date */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Calendar size={14} color="#059669" />
                 <span>Expected Close Date</span>
               </label>
               <input
                 type="date"
-                className="form-input"
+                className="form-control"
                 value={expectedCloseDate}
+                disabled={isAlreadyConverted || !isEligibleStatus}
                 onChange={(e) => setExpectedCloseDate(e.target.value)}
               />
             </div>
 
-            {/* Priority */}
+            {/* Opportunity Stage (Default Qualification) */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Flag size={14} color="var(--primary)" />
-                <span>Priority</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Flag size={14} color="#059669" />
+                <span>Opportunity Stage</span>
               </label>
               <select
-                className="form-select"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                className="form-control select-filter"
+                value={stage}
+                disabled={isAlreadyConverted || !isEligibleStatus}
+                onChange={(e) => setStage(e.target.value)}
               >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
+                <option value="Qualification">Qualification (Default)</option>
+                <option value="Needs Analysis">Needs Analysis</option>
+                <option value="Proposal">Proposal</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Closed Won">Closed Won</option>
+                <option value="Closed Lost">Closed Lost</option>
               </select>
             </div>
 
-            {/* Assigned To */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <UserIcon size={14} color="var(--primary)" />
-                <span>Assigned Deal Owner</span>
+            {/* Assigned User */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <UserIcon size={14} color="#059669" />
+                <span>Assigned Representative</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={assignedTo}
+                disabled={isAlreadyConverted || !isEligibleStatus}
                 onChange={(e) => setAssignedTo(e.target.value)}
               >
-                {(users || [])
-                  .filter((u) => u.status !== 'Rejected' && u.status !== 'Pending')
-                  .map((u) => (
-                    <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                      {u.name || u.username} ({u.role || 'Member'})
-                    </option>
-                  ))}
+                {(users || []).map((u) => (
+                  <option key={u._id || u.id} value={u.name || u.username}>
+                    {u.name || u.username} ({u.role || 'Member'})
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Notes */}
+            {/* Remarks */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FileText size={14} color="var(--primary)" />
-                <span>Opportunity Notes</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <FileText size={14} color="#059669" />
+                <span>Remarks & Conversion Notes</span>
               </label>
               <textarea
-                className="form-textarea"
-                rows={2}
-                placeholder="Add deal context, proposal specifics, timeline..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                className="form-control"
+                rows={3}
+                placeholder="Add conversion rationale, client timeline, deal notes..."
+                value={remarks}
+                disabled={isAlreadyConverted || !isEligibleStatus}
+                onChange={(e) => setRemarks(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
             <button type="button" className="btn btn-secondary" onClick={closeConvertModal} disabled={isSubmitting}>
               Cancel
             </button>
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isAlreadyConverted || !isEligibleStatus}
               style={{
-                background: 'linear-gradient(135deg, #059669, #10b981)',
-                borderColor: '#059669',
-                minWidth: '150px',
+                minWidth: '160px',
+                background: isAlreadyConverted || !isEligibleStatus ? '#94a3b8' : '#059669',
+                borderColor: isAlreadyConverted || !isEligibleStatus ? '#94a3b8' : '#059669',
               }}
             >
               {isSubmitting ? (
@@ -371,8 +352,10 @@ export const ConvertLeadModal = () => {
                   <div className="spinner-sm" />
                   <span>Converting...</span>
                 </div>
+              ) : isAlreadyConverted ? (
+                'Already Converted'
               ) : (
-                'Create Opportunity'
+                'Convert to Opportunity'
               )}
             </button>
           </div>

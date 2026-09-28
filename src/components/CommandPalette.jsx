@@ -244,17 +244,6 @@ export const CommandPalette = ({ isOpen, onClose, setActiveSection }) => {
         },
       },
       {
-        id: 'nav-opps',
-        category: 'Navigation',
-        title: 'Sales Opportunities',
-        subtitle: 'Deals negotiation, probability, and revenue forecasts',
-        icon: Briefcase,
-        action: () => {
-          setActiveSection('opportunities');
-          onClose();
-        },
-      },
-      {
         id: 'nav-projects',
         category: 'Navigation',
         title: 'Projects & Milestones',

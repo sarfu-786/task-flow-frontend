@@ -15,6 +15,11 @@ import {
   Tag,
   Flag,
   FileText,
+  DollarSign,
+  Calendar,
+  Clock,
+  Briefcase,
+  Shield,
 } from 'lucide-react';
 
 const getSubordinateUserIds = (user, allUsers) => {
@@ -60,7 +65,7 @@ const getSubordinateUserIds = (user, allUsers) => {
 };
 
 export const LeadModal = () => {
-  const { isLeadModalOpen, modalMode, selectedLead, closeLeadModal, createLead, updateLead } = useLeads();
+  const { leads, isLeadModalOpen, modalMode, selectedLead, closeLeadModal, createLead, updateLead } = useLeads();
   const { users } = useUserManagement();
   const { user: currentUser } = useAuth();
 
@@ -98,45 +103,87 @@ export const LeadModal = () => {
   }
 
   const [formData, setFormData] = useState({
-    name: '',
+    contactPerson: '',
     company: '',
-    phone: '',
+    mobileNumber: '',
     email: '',
     source: 'Website',
+    requirement: '',
     status: 'New',
     priority: 'Medium',
-    assignedTo: '',
-    notes: '',
+    estimatedValue: '',
+    assignedSalesUser: '',
+    assignedManager: '',
+    remarks: '',
+    nextFollowUpDate: '',
+    nextFollowUpTime: '',
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
 
+  // Check if an email is already used by another lead
+  const checkDuplicateEmail = (emailToCheck) => {
+    if (!emailToCheck || !emailToCheck.trim()) return null;
+    const normalized = emailToCheck.trim().toLowerCase();
+    const match = (leads || []).find((l) => {
+      if (!l.email) return false;
+      const otherEmail = l.email.trim().toLowerCase();
+      if (otherEmail !== normalized) return false;
+      if (modalMode === 'edit' && selectedLead) {
+        const isSame =
+          (l._id && selectedLead._id && l._id.toString() === selectedLead._id.toString()) ||
+          (l.leadId && selectedLead.leadId && l.leadId === selectedLead.leadId) ||
+          (l.lead_id && selectedLead.lead_id && l.lead_id === selectedLead.lead_id);
+        return !isSame;
+      }
+      return true;
+    });
+    return match;
+  };
+
   useEffect(() => {
     if (modalMode === 'edit' && selectedLead) {
+      let fDate = '';
+      if (selectedLead.nextFollowUpDate || selectedLead.next_followup_at) {
+        try {
+          fDate = new Date(selectedLead.nextFollowUpDate || selectedLead.next_followup_at).toISOString().split('T')[0];
+        } catch {}
+      }
+
       setFormData({
-        name: selectedLead.name || '',
+        contactPerson: selectedLead.contactPerson || selectedLead.name || '',
         company: selectedLead.company || '',
-        phone: selectedLead.phone || '',
+        mobileNumber: selectedLead.mobileNumber || selectedLead.phone || '',
         email: selectedLead.email || '',
         source: selectedLead.source || 'Website',
+        requirement: selectedLead.requirement || '',
         status: selectedLead.status || 'New',
         priority: selectedLead.priority || 'Medium',
-        assignedTo: selectedLead.assignedTo || '',
-        notes: selectedLead.notes || '',
+        estimatedValue: selectedLead.estimatedValue || selectedLead.dealValue || '',
+        assignedSalesUser: selectedLead.assignedSalesUser || selectedLead.assignedTo || '',
+        assignedManager: selectedLead.assignedManagerName || selectedLead.assignedManager || '',
+        remarks: selectedLead.remarks || selectedLead.notes || '',
+        nextFollowUpDate: fDate,
+        nextFollowUpTime: selectedLead.nextFollowUpTime || '',
       });
     } else {
       setFormData({
-        name: '',
+        contactPerson: '',
         company: '',
-        phone: '',
+        mobileNumber: '',
         email: '',
         source: 'Website',
+        requirement: '',
         status: 'New',
         priority: 'Medium',
-        assignedTo: currentUser?.name || '',
-        notes: '',
+        estimatedValue: '',
+        assignedSalesUser: currentUser?.name || '',
+        assignedManager: currentUser?.reportsToName || 'Executive Leadership',
+        remarks: '',
+        nextFollowUpDate: '',
+        nextFollowUpTime: '',
       });
     }
     setErrors({});
@@ -147,13 +194,21 @@ export const LeadModal = () => {
 
   const validate = () => {
     const errs = {};
-    if (!formData.name.trim()) {
-      errs.name = 'Lead name is required';
+    if (!formData.contactPerson.trim()) {
+      errs.contactPerson = 'Contact Person / Lead Name is required';
     }
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       errs.email = 'Enter a valid email address';
+    } else if (formData.email && formData.email.trim()) {
+      const duplicate = checkDuplicateEmail(formData.email);
+      if (duplicate) {
+        errs.email = `This email already exists on lead ${duplicate.leadId || duplicate.name}. Lead email must be unique.`;
+      }
     }
     setErrors(errs);
+    if (errs.email && checkDuplicateEmail(formData.email)) {
+      setServerError(`This email already exists (${formData.email.trim().toLowerCase()}). Lead emails must be unique.`);
+    }
     return Object.keys(errs).length === 0;
   };
 
@@ -166,42 +221,60 @@ export const LeadModal = () => {
 
     try {
       const payload = {
-        name: formData.name.trim(),
+        name: formData.contactPerson.trim(),
+        contactPerson: formData.contactPerson.trim(),
         company: formData.company.trim(),
-        phone: formData.phone.trim(),
+        phone: formData.mobileNumber.trim(),
+        mobileNumber: formData.mobileNumber.trim(),
         email: formData.email.trim().toLowerCase(),
         source: formData.source,
+        requirement: formData.requirement.trim(),
         status: formData.status,
         priority: formData.priority,
-        assignedTo: formData.assignedTo || currentUser?.name || 'Current User',
-        notes: formData.notes.trim(),
+        estimatedValue: formData.estimatedValue ? Number(formData.estimatedValue) : 0,
+        dealValue: formData.estimatedValue ? Number(formData.estimatedValue) : 0,
+        assignedTo: formData.assignedSalesUser || currentUser?.name || 'Current User',
+        assignedSalesUser: formData.assignedSalesUser || currentUser?.name || 'Current User',
+        assignedManager: formData.assignedManager || '',
+        assignedManagerName: formData.assignedManager || '',
+        remarks: formData.remarks.trim(),
+        notes: formData.remarks.trim(),
+        nextFollowUpDate: formData.nextFollowUpDate || null,
+        nextFollowUpTime: formData.nextFollowUpTime || '',
       };
 
       if (modalMode === 'edit' && selectedLead) {
-        await updateLead(selectedLead._id, payload);
+        await updateLead(selectedLead._id || selectedLead.leadId, payload);
       } else {
         await createLead(payload);
       }
     } catch (err) {
-      setServerError(err.message || 'Failed to save lead details');
+      const msg = err.message || 'Failed to save lead details';
+      setServerError(msg);
+      if (msg.toLowerCase().includes('email already exists') || msg.toLowerCase().includes('email must be unique')) {
+        setErrors((prev) => ({
+          ...prev,
+          email: msg,
+        }));
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="modal-backdrop active" onClick={closeLeadModal}>
+    <div className="modal-backdrop active" onClick={closeLeadModal} style={{ zIndex: 1200 }}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '620px', width: '92%' }}
+        style={{ maxWidth: '680px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
       >
-        <div className="modal-header">
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '10px',
                 background: modalMode === 'edit' ? '#eff6ff' : '#ecfdf5',
                 display: 'flex',
@@ -210,14 +283,21 @@ export const LeadModal = () => {
                 color: modalMode === 'edit' ? '#2563eb' : '#059669',
               }}
             >
-              {modalMode === 'edit' ? <Save size={18} /> : <PlusCircle size={18} />}
+              {modalMode === 'edit' ? <Save size={20} /> : <PlusCircle size={20} />}
             </div>
             <div>
-              <h3 className="modal-title" style={{ margin: 0, fontSize: '1.2rem' }}>
-                {modalMode === 'edit' ? 'Edit Lead' : 'Add New Lead'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  {modalMode === 'edit' ? 'Edit Lead' : 'Add New Lead'}
+                </h3>
+                {selectedLead?.leadId && (
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                    {selectedLead.leadId}
+                  </span>
+                )}
+              </div>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {modalMode === 'edit' ? 'Update prospective customer details' : 'Register a new customer lead into the CRM'}
+                {modalMode === 'edit' ? 'Update prospect information and CRM metadata' : 'Register a new customer lead into TaskFlow'}
               </p>
             </div>
           </div>
@@ -235,136 +315,195 @@ export const LeadModal = () => {
 
         <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '20px 24px' }}>
           <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* Lead Name */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <UserIcon size={14} color="var(--primary)" />
-                <span>Contact / Lead Name *</span>
+            {/* Contact Person */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <UserIcon size={14} color="#2563eb" />
+                <span>Contact Person <span style={{ color: '#ef4444' }}>*</span></span>
               </label>
               <input
                 type="text"
-                className={`form-input ${errors.name ? 'is-invalid' : ''}`}
-                placeholder="e.g. Rajesh Kumar"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={`form-control ${errors.contactPerson ? 'is-invalid' : ''}`}
+                placeholder="e.g. Rohan Sharma"
+                value={formData.contactPerson}
+                onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
                 autoFocus
               />
-              {errors.name && <span className="error-feedback">{errors.name}</span>}
+              {errors.contactPerson && <span className="form-error-msg" style={{ color: '#ef4444', fontSize: '0.75rem' }}>{errors.contactPerson}</span>}
             </div>
 
-            {/* Company */}
+            {/* Company Name */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Building size={14} color="#2563eb" />
                 <span>Company Name</span>
               </label>
               <input
                 type="text"
-                className="form-input"
-                placeholder="e.g. TechNova Solutions"
+                className="form-control"
+                placeholder="e.g. Acme Enterprise Solutions"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               />
             </div>
 
-            {/* Phone */}
+            {/* Mobile Number */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Phone size={14} color="var(--primary)" />
-                <span>Phone Number</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Phone size={14} color="#2563eb" />
+                <span>Mobile Number</span>
               </label>
               <input
                 type="tel"
-                className="form-input"
-                placeholder="e.g. +91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="form-control"
+                placeholder="e.g. +91 98200 45678"
+                value={formData.mobileNumber}
+                onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
               />
             </div>
 
             {/* Email */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Mail size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Mail size={14} color="#2563eb" />
                 <span>Email Address</span>
               </label>
               <input
                 type="email"
-                className={`form-input ${errors.email ? 'is-invalid' : ''}`}
-                placeholder="e.g. rajesh@technova.in"
+                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                placeholder="e.g. rohan@acme.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, email: val });
+                  if (errors.email) {
+                    setErrors((prev) => ({ ...prev, email: '' }));
+                  }
+                  if (serverError && serverError.toLowerCase().includes('email')) {
+                    setServerError('');
+                  }
+                  if (val.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) {
+                    const duplicate = checkDuplicateEmail(val);
+                    if (duplicate) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: `This email already exists on lead ${duplicate.leadId || duplicate.name}. Lead email must be unique.`,
+                      }));
+                    }
+                  }
+                }}
               />
-              {errors.email && <span className="error-feedback">{errors.email}</span>}
+              {errors.email && (
+                <div
+                  style={{
+                    marginTop: '5px',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#dc2626',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                  <span>{errors.email}</span>
+                </div>
+              )}
             </div>
 
-            {/* Source */}
+            {/* Lead Source */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Share2 size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Share2 size={14} color="#2563eb" />
                 <span>Lead Source</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
               >
                 <option value="Website">Website</option>
+                <option value="LinkedIn">LinkedIn</option>
                 <option value="Referral">Referral</option>
-                <option value="Social Media">Social Media</option>
+                <option value="Google Search Ads">Google Search Ads</option>
                 <option value="Cold Call">Cold Call</option>
-                <option value="Campaign">Marketing Campaign</option>
-                <option value="Partner">Partner</option>
+                <option value="Event / Expo">Event / Expo</option>
+                <option value="Email Campaign">Email Campaign</option>
+                <option value="Direct Outreach">Direct Outreach</option>
                 <option value="Other">Other</option>
               </select>
             </div>
 
-            {/* Status */}
+            {/* Lead Status */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Tag size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Tag size={14} color="#2563eb" />
                 <span>Lead Status</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               >
                 <option value="New">New</option>
                 <option value="Contacted">Contacted</option>
+                <option value="Follow-Up">Follow-Up</option>
                 <option value="Qualified">Qualified</option>
+                <option value="Interested">Interested</option>
                 <option value="Converted">Converted</option>
-                <option value="Lost">Lost</option>
+                <option value="Not Interested">Not Interested</option>
+                <option value="Invalid">Invalid</option>
               </select>
             </div>
 
             {/* Priority */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Flag size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Flag size={14} color="#2563eb" />
                 <span>Priority</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
                 <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
               </select>
             </div>
 
-            {/* Assigned To */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <UserIcon size={14} color="var(--primary)" />
-                <span>Assigned Representative</span>
+            {/* Estimated Value */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <DollarSign size={14} color="#2563eb" />
+                <span>Estimated Value (₹)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                className="form-control"
+                placeholder="e.g. 450000"
+                value={formData.estimatedValue}
+                onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
+              />
+            </div>
+
+            {/* Assigned Sales User */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <UserIcon size={14} color="#2563eb" />
+                <span>Assigned Sales User</span>
               </label>
               <select
-                className="form-select"
-                value={formData.assignedTo}
-                onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                className="form-control select-filter"
+                value={formData.assignedSalesUser}
+                onChange={(e) => setFormData({ ...formData, assignedSalesUser: e.target.value })}
               >
                 {assignableUsers.map((u) => {
                   const label = `${u.name || u.username} (${u.role || 'Member'})`;
@@ -375,28 +514,83 @@ export const LeadModal = () => {
                   );
                 })}
               </select>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                Hierarchy rule: Assigned members must be in your reporting line or your own account.
-              </span>
             </div>
 
-            {/* Notes */}
+            {/* Assigned Manager */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Shield size={14} color="#2563eb" />
+                <span>Assigned Manager</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Executive Leadership"
+                value={formData.assignedManager}
+                onChange={(e) => setFormData({ ...formData, assignedManager: e.target.value })}
+              />
+            </div>
+
+            {/* Requirement */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FileText size={14} color="var(--primary)" />
-                <span>Notes & Client Background</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Briefcase size={14} color="#2563eb" />
+                <span>Customer Requirement / Specification</span>
               </label>
               <textarea
-                className="form-textarea"
-                rows={3}
-                placeholder="Add background notes, budget signals, requirements..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="form-control"
+                rows={2}
+                placeholder="Describe product requirements, seat requirements, integrations..."
+                value={formData.requirement}
+                onChange={(e) => setFormData({ ...formData, requirement: e.target.value })}
+              />
+            </div>
+
+            {/* Next Follow-Up Date & Time */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Calendar size={14} color="#2563eb" />
+                <span>Next Follow-Up Date</span>
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={formData.nextFollowUpDate}
+                onChange={(e) => setFormData({ ...formData, nextFollowUpDate: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Clock size={14} color="#2563eb" />
+                <span>Next Follow-Up Time</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. 11:00 AM or 03:30 PM"
+                value={formData.nextFollowUpTime}
+                onChange={(e) => setFormData({ ...formData, nextFollowUpTime: e.target.value })}
+              />
+            </div>
+
+            {/* Remarks */}
+            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <FileText size={14} color="#2563eb" />
+                <span>Remarks & Context</span>
+              </label>
+              <textarea
+                className="form-control"
+                rows={2}
+                placeholder="Add conversation notes, client feedback, next steps..."
+                value={formData.remarks}
+                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
             <button type="button" className="btn btn-secondary" onClick={closeLeadModal} disabled={isSubmitting}>
               Cancel
             </button>

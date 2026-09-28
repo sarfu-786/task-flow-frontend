@@ -32,17 +32,23 @@ export const OpportunityTable = () => {
     const stage = opp.stage || 'Qualification';
     const stageConfig = {
       Qualification: { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
+      'Needs Analysis': { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd', dot: '#0ea5e9' },
       Proposal: { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
       Negotiation: { bg: '#fffbeb', color: '#b45309', border: '#fde68a', dot: '#d97706' },
+      'Closed Won': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
       Won: { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
+      'Closed Lost': { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
       Lost: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
     };
 
     const nextStageMap = {
-      Qualification: 'Proposal',
+      Qualification: 'Needs Analysis',
+      'Needs Analysis': 'Proposal',
       Proposal: 'Negotiation',
-      Negotiation: 'Won',
+      Negotiation: 'Closed Won',
+      'Closed Won': 'Qualification',
       Won: 'Qualification',
+      'Closed Lost': 'Qualification',
       Lost: 'Qualification',
     };
 

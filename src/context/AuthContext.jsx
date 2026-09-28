@@ -54,6 +54,10 @@ const clearAuthStorage = () => {
     localStorage.removeItem('taskflow_token');
     localStorage.removeItem('taskflow_user');
     localStorage.removeItem('taskflow_active_section');
+    localStorage.removeItem('taskflow_cached_complaints');
+    localStorage.removeItem('taskflow_cached_leads');
+    localStorage.removeItem('taskflow_cached_lead_stats');
+    localStorage.removeItem('taskflow_cached_tasks');
     sessionStorage.removeItem('taskflow_token');
     sessionStorage.removeItem('taskflow_user');
     sessionStorage.removeItem('taskflow_active_section');
@@ -63,8 +67,10 @@ const clearAuthStorage = () => {
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     try {
-      const storedToken =
-        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
+      // Clear legacy localStorage so fresh links prompt for login
+      localStorage.removeItem('taskflow_token');
+      localStorage.removeItem('taskflow_user');
+      const storedToken = sessionStorage.getItem('taskflow_token');
       if (!storedToken || isTokenExpired(storedToken)) {
         clearAuthStorage();
         return null;
@@ -77,14 +83,12 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
     try {
-      const storedToken =
-        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
+      const storedToken = sessionStorage.getItem('taskflow_token');
       if (!storedToken || isTokenExpired(storedToken)) {
         clearAuthStorage();
         return null;
       }
-      const savedUser =
-        localStorage.getItem('taskflow_user') || sessionStorage.getItem('taskflow_user');
+      const savedUser = sessionStorage.getItem('taskflow_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -99,8 +103,7 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
 
     const validateSession = async () => {
-      const savedToken =
-        localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token');
+      const savedToken = sessionStorage.getItem('taskflow_token');
       if (!savedToken) {
         return;
       }
@@ -119,7 +122,6 @@ export const AuthProvider = ({ children }) => {
         if (isMounted && res.success && res.user) {
           setUser(res.user);
           try {
-            localStorage.setItem('taskflow_user', JSON.stringify(res.user));
             sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
           } catch {}
         }
@@ -205,8 +207,8 @@ export const AuthProvider = ({ children }) => {
       const res = await api.login(usernameOrEmail, password);
       if (res.success) {
         try {
-          localStorage.setItem('taskflow_token', res.token);
-          localStorage.setItem('taskflow_user', JSON.stringify(res.user));
+          localStorage.removeItem('taskflow_token');
+          localStorage.removeItem('taskflow_user');
           sessionStorage.setItem('taskflow_token', res.token);
           sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
         } catch {}
@@ -218,7 +220,6 @@ export const AuthProvider = ({ children }) => {
             ? 'manager'
             : 'user-workspace';
         try {
-          localStorage.setItem('taskflow_active_section', defaultSection);
           sessionStorage.setItem('taskflow_active_section', defaultSection);
         } catch {}
         setToken(res.token);
@@ -240,7 +241,6 @@ export const AuthProvider = ({ children }) => {
     setUser((prev) => {
       const next = { ...prev, ...updatedUserData };
       try {
-        localStorage.setItem('taskflow_user', JSON.stringify(next));
         sessionStorage.setItem('taskflow_user', JSON.stringify(next));
       } catch {}
       return next;
@@ -254,11 +254,9 @@ export const AuthProvider = ({ children }) => {
       if (res.success && res.user) {
         setUser(res.user);
         try {
-          localStorage.setItem('taskflow_user', JSON.stringify(res.user));
           sessionStorage.setItem('taskflow_user', JSON.stringify(res.user));
           if (res.token) {
             setToken(res.token);
-            localStorage.setItem('taskflow_token', res.token);
             sessionStorage.setItem('taskflow_token', res.token);
           }
         } catch {}

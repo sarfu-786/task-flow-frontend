@@ -10,6 +10,15 @@ import {
   Edit2,
   Trash2,
   Plus,
+  Search,
+  Check,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Sparkles,
+  Building,
+  User,
 } from 'lucide-react';
 import { useComplaints } from '../../context/ComplaintContext';
 import { complaintApi } from '../../services/api';
@@ -25,43 +34,73 @@ export const ComplaintMetricDetailDialog = ({
   canDelete = false,
   onCreateTicket,
 }) => {
-  const { complaints: contextComplaints } = useComplaints();
+  const { allComplaints, fetchComplaints } = useComplaints();
 
-  // Local state for tickets inside this popup
-  const [allTickets, setAllTickets] = useState([]);
+  // Local state for tickets and filters
+  const [localTickets, setLocalTickets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [copiedId, setCopiedId] = useState(null);
   const [page, setPage] = useState(0);
-  const rowsPerPage = 8;
+  const rowsPerPage = 7;
 
-  // Fetch full tickets for this metric popup whenever dialog opens or metricType changes
+  // Lock body scroll and handle ESC key
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [open, onClose]);
+
+  // Sync tickets when dialog opens or allComplaints changes
   useEffect(() => {
     if (!open) return;
 
-    let isMounted = true;
-    const fetchModalTickets = async () => {
-      try {
-        setLoading(true);
-        const res = await complaintApi.getComplaints({ limit: 100 });
-        if (res && res.success && isMounted) {
-          setAllTickets(res.complaints || []);
+    if (allComplaints && allComplaints.length > 0) {
+      setLocalTickets(allComplaints);
+    } else {
+      let isMounted = true;
+      const loadTickets = async () => {
+        try {
+          setLoading(true);
+          const res = await complaintApi.getComplaints({ limit: 500 });
+          if (res && res.success && isMounted) {
+            setLocalTickets(res.complaints || []);
+          }
+        } catch (e) {
+          console.error('Failed to load tickets for metric popup:', e);
+        } finally {
+          if (isMounted) setLoading(false);
         }
-      } catch (e) {
-        console.error('Failed to load tickets for metric popup:', e);
-        if (isMounted && contextComplaints.length > 0) {
-          setAllTickets(contextComplaints);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchModalTickets();
+      };
+      loadTickets();
+      return () => {
+        isMounted = false;
+      };
+    }
     setPage(0);
+    setSearch('');
+    setCategoryFilter('all');
+    setPriorityFilter('all');
+  }, [open, allComplaints]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [open, metricType, contextComplaints]);
+  const handleCopy = (ticketNumber, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(ticketNumber);
+    setCopiedId(ticketNumber);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Format SLA time remaining helper
   const formatSlaRemaining = (deadlineStr, status) => {
@@ -76,7 +115,7 @@ export const ComplaintMetricDetailDialog = ({
     }
     if (!deadlineStr) {
       return {
-        text: 'Standard SLA',
+        text: 'Standard 24h',
         color: '#64748b',
         bgColor: '#f1f5f9',
         borderColor: '#e2e8f0',
@@ -105,7 +144,7 @@ export const ComplaintMetricDetailDialog = ({
         color: '#d97706',
         bgColor: '#fffbeb',
         borderColor: '#fde68a',
-        icon: <Clock size={13} />,
+        icon: <Flame size={13} />,
         isAtRisk: true,
       };
     }
@@ -130,29 +169,29 @@ export const ComplaintMetricDetailDialog = ({
           primaryColor: '#dc2626',
           bgLight: '#fef2f2',
           borderColor: '#fee2e2',
-          badgeText: '4-Hour Emergency SLA',
-          emptyMessage: 'No urgent escalation tickets currently pending.',
+          badgeText: '4-Hour Urgent SLA',
+          emptyMessage: 'No urgent escalation tickets found.',
         };
       case 'sla_risk':
         return {
-          title: 'SLA Breached & At Risk Monitor',
+          title: 'SLA Breached & At Risk Registry',
           subtitle: 'Live tracking of tickets that have either breached their resolution deadline or are within the 4-hour warning window.',
           icon: Clock,
           primaryColor: '#d97706',
           bgLight: '#fffbeb',
           borderColor: '#fef3c7',
-          badgeText: 'Real-time SLA Warning',
+          badgeText: 'SLA Alert Threshold',
           emptyMessage: 'All tickets are currently within safe SLA thresholds!',
         };
       case 'resolved':
         return {
-          title: 'Resolved Complaints & SLA Performance Breakdown',
-          subtitle: 'Successfully closed tickets, customer satisfaction ratings, root cause analysis (RCA), and resolution timelines.',
+          title: 'Resolved Complaints & Performance Registry',
+          subtitle: 'Successfully closed tickets, customer satisfaction ratings, root cause analysis (RCA), and resolution records.',
           icon: CheckCircle2,
           primaryColor: '#059669',
           bgLight: '#ecfdf5',
           borderColor: '#d1fae5',
-          badgeText: 'Resolution & CSAT',
+          badgeText: 'Resolved & SLA Met',
           emptyMessage: 'No resolved complaints found matching the criteria.',
         };
       case 'total':
@@ -170,23 +209,43 @@ export const ComplaintMetricDetailDialog = ({
     }
   }, [metricType]);
 
-  // Filter tickets according to the metricType
+  // Filter tickets according to the metricType and local search/filter
   const filteredTickets = useMemo(() => {
-    return allTickets.filter((t) => {
+    const baseTickets = localTickets.length > 0 ? localTickets : allComplaints;
+
+    return baseTickets.filter((t) => {
+      if (!t) return false;
       const isResolved = ['Resolved', 'Closed'].includes(t.status);
       const slaInfo = formatSlaRemaining(t.slaDeadline, t.status);
 
+      // Metric Filter
       if (metricType === 'urgent') {
-        return t.priority === 'Urgent';
+        if (t.priority !== 'Urgent' || isResolved) return false;
       } else if (metricType === 'sla_risk') {
-        if (isResolved) return false;
-        return slaInfo.isBreached || slaInfo.isAtRisk;
+        if (isResolved || (!slaInfo.isBreached && !slaInfo.isAtRisk)) return false;
       } else if (metricType === 'resolved') {
-        return isResolved;
+        if (!isResolved) return false;
+      }
+
+      // Dropdown & Search Filters
+      if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const matchTicket = (t.ticketNumber || '').toLowerCase().includes(q);
+        const matchCustomer = (t.customerName || '').toLowerCase().includes(q);
+        const matchOrg = (t.organization || '').toLowerCase().includes(q);
+        const matchSubject = (t.subject || '').toLowerCase().includes(q);
+        const matchAssignee = (t.assignedToName || '').toLowerCase().includes(q);
+        const matchCategory = (t.category || '').toLowerCase().includes(q);
+        if (!matchTicket && !matchCustomer && !matchOrg && !matchSubject && !matchAssignee && !matchCategory) {
+          return false;
+        }
       }
       return true;
     });
-  }, [allTickets, metricType]);
+  }, [localTickets, allComplaints, metricType, categoryFilter, priorityFilter, search]);
 
   // Priority badge styling
   const getPriorityChipStyle = (priority) => {
@@ -198,7 +257,7 @@ export const ComplaintMetricDetailDialog = ({
       case 'Medium':
         return { background: '#fffbeb', color: '#d97706', border: '1px solid #fef3c7', fontWeight: 700 };
       default:
-        return { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 600 };
+        return { background: '#ecfdf5', color: '#059669', border: '1px solid #d1fae5', fontWeight: 600 };
     }
   };
 
@@ -211,6 +270,8 @@ export const ComplaintMetricDetailDialog = ({
       case 'In Progress':
       case 'Under Investigation':
         return { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontWeight: 700 };
+      case 'Awaiting Customer':
+        return { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', fontWeight: 700 };
       default:
         return { background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 600 };
     }
@@ -219,8 +280,7 @@ export const ComplaintMetricDetailDialog = ({
   if (!open) return null;
 
   const paginatedTickets = filteredTickets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  const totalPages = Math.ceil(filteredTickets.length / rowsPerPage);
-
+  const totalPages = Math.ceil(filteredTickets.length / rowsPerPage) || 1;
   const IconComponent = config.icon;
 
   return (
@@ -249,7 +309,7 @@ export const ComplaintMetricDetailDialog = ({
           backgroundColor: '#ffffff',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '1100px',
+          maxWidth: '1120px',
           maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
@@ -259,7 +319,7 @@ export const ComplaintMetricDetailDialog = ({
           animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* MUI Dialog Header */}
+        {/* Modal Header */}
         <div
           style={{
             padding: '20px 28px',
@@ -314,7 +374,7 @@ export const ComplaintMetricDetailDialog = ({
                     fontWeight: 700,
                   }}
                 >
-                  {config.badgeText}
+                  {filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'}
                 </span>
               </div>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.84rem', color: '#64748b' }}>
@@ -352,19 +412,167 @@ export const ComplaintMetricDetailDialog = ({
           </button>
         </div>
 
-        {/* MUI Dialog Body Container */}
+        {/* Modal Toolbar: Search & Filters */}
         <div
           style={{
-            padding: '24px 28px',
+            padding: '14px 28px',
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          {/* Search Box */}
+          <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: '380px' }}>
+            <Search
+              size={15}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#94a3b8',
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search in these tickets..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 30px 8px 34px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.82rem',
+                outline: 'none',
+                background: '#f8fafc',
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '2px',
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setPage(0);
+              }}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.78rem',
+                color: '#334155',
+                fontWeight: 600,
+                background: '#ffffff',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="all">All Categories</option>
+              <option value="Technical Glitch">Technical Glitch</option>
+              <option value="Product Defect">Product Defect</option>
+              <option value="Service Delay">Service Delay</option>
+              <option value="Billing Query">Billing Query</option>
+              <option value="Hardware Fault">Hardware Fault</option>
+              <option value="Account Access">Account Access</option>
+            </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => {
+                setPriorityFilter(e.target.value);
+                setPage(0);
+              }}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.78rem',
+                color: '#334155',
+                fontWeight: 600,
+                background: '#ffffff',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="all">All Priorities</option>
+              <option value="Urgent">Urgent (4h)</option>
+              <option value="High">High (12h)</option>
+              <option value="Medium">Medium (24h)</option>
+              <option value="Low">Low (48h)</option>
+            </select>
+
+            {(search || categoryFilter !== 'all' || priorityFilter !== 'all') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setCategoryFilter('all');
+                  setPriorityFilter('all');
+                  setPage(0);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={12} />
+                <span>Reset</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Body: Table Container */}
+        <div
+          style={{
+            padding: '20px 28px',
             backgroundColor: '#f8fafc',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '18px',
+            gap: '16px',
             flex: 1,
           }}
         >
-          {/* Tickets Specification Material Table */}
           <div
             style={{
               backgroundColor: '#ffffff',
@@ -374,32 +582,32 @@ export const ComplaintMetricDetailDialog = ({
               boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
             }}
           >
-            <div style={{ overflowX: 'auto', maxHeight: '520px' }}>
+            <div style={{ overflowX: 'auto', maxHeight: '480px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 2 }}>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', width: '110px' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', width: '120px' }}>
                       Ticket ID
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
                       Customer & Org
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
                       Subject & Category
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
                       Priority
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
                       Status
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                      SLA Status
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                      Live SLA Countdown
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                      Coordinator
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                      Assignee
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', width: '130px' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', width: '130px' }}>
                       Actions
                     </th>
                   </tr>
@@ -412,19 +620,19 @@ export const ComplaintMetricDetailDialog = ({
                           <Clock size={24} color={config.primaryColor} />
                         </div>
                         <div style={{ marginTop: '8px', fontWeight: 600, fontSize: '0.86rem' }}>
-                          Loading specifications...
+                          Loading ticket details...
                         </div>
                       </td>
                     </tr>
                   ) : paginatedTickets.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b' }}>
                         <AlertCircle size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />
                         <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
                           {config.emptyMessage}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '3px' }}>
-                          No tickets available for this specification.
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
+                          No tickets match the selected criteria.
                         </div>
                       </td>
                     </tr>
@@ -448,38 +656,57 @@ export const ComplaintMetricDetailDialog = ({
                           }}
                         >
                           {/* Ticket Number */}
-                          <td style={{ padding: '12px 16px' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                backgroundColor: '#eff6ff',
-                                color: '#2563eb',
-                                border: '1px solid #bfdbfe',
-                                fontWeight: 700,
-                                fontSize: '0.74rem',
-                              }}
-                            >
-                              {ticket.ticketNumber || 'TICK-000'}
-                            </span>
+                          <td style={{ padding: '14px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  backgroundColor: '#f1f5f9',
+                                  color: '#0f172a',
+                                  border: '1px solid #e2e8f0',
+                                  fontWeight: 700,
+                                  fontSize: '0.76rem',
+                                  fontFamily: 'monospace',
+                                }}
+                              >
+                                {ticket.ticketNumber || 'TICK-000'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopy(ticket.ticketNumber, e)}
+                                title="Copy Ticket ID"
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: copiedId === ticket.ticketNumber ? '#16a34a' : '#94a3b8',
+                                  cursor: 'pointer',
+                                  padding: '2px',
+                                  display: 'flex',
+                                }}
+                              >
+                                {copiedId === ticket.ticketNumber ? <Check size={12} /> : <Copy size={12} />}
+                              </button>
+                            </div>
                           </td>
 
                           {/* Customer & Org */}
-                          <td style={{ padding: '12px 16px' }}>
+                          <td style={{ padding: '14px 16px' }}>
                             <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.86rem' }}>
                               {ticket.customerName || 'N/A'}
                             </div>
-                            <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                              {ticket.organization || 'Direct Customer'}
+                            <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+                              <Building size={11} />
+                              <span>{ticket.organization || 'Direct Customer'}</span>
                             </div>
                           </td>
 
                           {/* Subject & Category */}
-                          <td style={{ padding: '12px 16px', maxWidth: '220px' }}>
+                          <td style={{ padding: '14px 16px', maxWidth: '240px' }}>
                             <div
                               style={{
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 color: '#1e293b',
                                 fontSize: '0.84rem',
                                 whiteSpace: 'nowrap',
@@ -494,9 +721,11 @@ export const ComplaintMetricDetailDialog = ({
                               style={{
                                 display: 'inline-block',
                                 fontSize: '0.7rem',
-                                color: '#475569',
-                                backgroundColor: '#f1f5f9',
-                                padding: '2px 6px',
+                                fontWeight: 600,
+                                color: '#2563eb',
+                                backgroundColor: '#eff6ff',
+                                border: '1px solid #bfdbfe',
+                                padding: '1px 6px',
                                 borderRadius: '4px',
                                 marginTop: '2px',
                               }}
@@ -506,7 +735,7 @@ export const ComplaintMetricDetailDialog = ({
                           </td>
 
                           {/* Priority */}
-                          <td style={{ padding: '12px 16px' }}>
+                          <td style={{ padding: '14px 16px' }}>
                             <span
                               style={{
                                 ...getPriorityChipStyle(ticket.priority),
@@ -521,7 +750,7 @@ export const ComplaintMetricDetailDialog = ({
                           </td>
 
                           {/* Status */}
-                          <td style={{ padding: '12px 16px' }} onClick={(e) => e.stopPropagation()}>
+                          <td style={{ padding: '14px 16px' }} onClick={(e) => e.stopPropagation()}>
                             <span
                               style={{
                                 ...getStatusChipStyle(ticket.status),
@@ -536,18 +765,18 @@ export const ComplaintMetricDetailDialog = ({
                           </td>
 
                           {/* SLA Status */}
-                          <td style={{ padding: '12px 16px' }}>
+                          <td style={{ padding: '14px 16px' }}>
                             <div
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '5px',
                                 padding: '3px 8px',
-                                borderRadius: '999px',
+                                borderRadius: '6px',
                                 backgroundColor: slaInfo.bgColor,
                                 color: slaInfo.color,
                                 border: `1px solid ${slaInfo.borderColor}`,
-                                fontSize: '0.72rem',
+                                fontSize: '0.74rem',
                                 fontWeight: 700,
                               }}
                             >
@@ -556,16 +785,16 @@ export const ComplaintMetricDetailDialog = ({
                             </div>
                           </td>
 
-                          {/* Coordinator */}
-                          <td style={{ padding: '12px 16px' }}>
+                          {/* Assignee */}
+                          <td style={{ padding: '14px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <div
                                 style={{
-                                  width: '24px',
-                                  height: '24px',
+                                  width: '22px',
+                                  height: '22px',
                                   borderRadius: '50%',
-                                  backgroundColor: '#dbeafe',
-                                  color: '#1d4ed8',
+                                  backgroundColor: '#eff6ff',
+                                  color: '#2563eb',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -573,7 +802,7 @@ export const ComplaintMetricDetailDialog = ({
                                   fontWeight: 700,
                                 }}
                               >
-                                {(ticket.assignedToName || 'U').charAt(0).toUpperCase()}
+                                <User size={12} />
                               </div>
                               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>
                                 {ticket.assignedToName || 'Unassigned'}
@@ -582,17 +811,18 @@ export const ComplaintMetricDetailDialog = ({
                           </td>
 
                           {/* Actions */}
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          <td style={{ padding: '14px 16px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
                               <button
                                 type="button"
                                 onClick={() => onViewTicket && onViewTicket(ticket)}
                                 title="View Ticket Details"
                                 style={{
-                                  padding: '5px',
+                                  width: '28px',
+                                  height: '28px',
                                   borderRadius: '6px',
-                                  border: 'none',
-                                  backgroundColor: '#eff6ff',
+                                  border: '1px solid #e2e8f0',
+                                  backgroundColor: '#ffffff',
                                   color: '#2563eb',
                                   cursor: 'pointer',
                                   display: 'flex',
@@ -600,18 +830,19 @@ export const ComplaintMetricDetailDialog = ({
                                   justifyContent: 'center',
                                 }}
                               >
-                                <Eye size={14} />
+                                <Eye size={13} />
                               </button>
 
                               {!isResolved && onResolveTicket && (
                                 <button
                                   type="button"
                                   onClick={() => onResolveTicket(ticket)}
-                                  title="Resolve & RCA"
+                                  title="Resolve Complaint"
                                   style={{
-                                    padding: '5px',
+                                    width: '28px',
+                                    height: '28px',
                                     borderRadius: '6px',
-                                    border: 'none',
+                                    border: '1px solid #a7f3d0',
                                     backgroundColor: '#ecfdf5',
                                     color: '#059669',
                                     cursor: 'pointer',
@@ -620,7 +851,7 @@ export const ComplaintMetricDetailDialog = ({
                                     justifyContent: 'center',
                                   }}
                                 >
-                                  <CheckCircle2 size={14} />
+                                  <CheckCircle2 size={13} />
                                 </button>
                               )}
 
@@ -630,10 +861,11 @@ export const ComplaintMetricDetailDialog = ({
                                   onClick={() => onEditTicket(ticket)}
                                   title="Edit Ticket"
                                   style={{
-                                    padding: '5px',
+                                    width: '28px',
+                                    height: '28px',
                                     borderRadius: '6px',
-                                    border: 'none',
-                                    backgroundColor: '#f1f5f9',
+                                    border: '1px solid #e2e8f0',
+                                    backgroundColor: '#ffffff',
                                     color: '#475569',
                                     cursor: 'pointer',
                                     display: 'flex',
@@ -641,7 +873,7 @@ export const ComplaintMetricDetailDialog = ({
                                     justifyContent: 'center',
                                   }}
                                 >
-                                  <Edit2 size={14} />
+                                  <Edit2 size={13} />
                                 </button>
                               )}
 
@@ -651,9 +883,10 @@ export const ComplaintMetricDetailDialog = ({
                                   onClick={() => onDeleteTicket(ticket)}
                                   title="Delete Ticket"
                                   style={{
-                                    padding: '5px',
+                                    width: '28px',
+                                    height: '28px',
                                     borderRadius: '6px',
-                                    border: 'none',
+                                    border: '1px solid #fee2e2',
                                     backgroundColor: '#fef2f2',
                                     color: '#dc2626',
                                     cursor: 'pointer',
@@ -662,7 +895,7 @@ export const ComplaintMetricDetailDialog = ({
                                     justifyContent: 'center',
                                   }}
                                 >
-                                  <Trash2 size={14} />
+                                  <Trash2 size={13} />
                                 </button>
                               )}
                             </div>
@@ -679,7 +912,7 @@ export const ComplaintMetricDetailDialog = ({
             {totalPages > 1 && (
               <div
                 style={{
-                  padding: '10px 18px',
+                  padding: '12px 20px',
                   borderTop: '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
@@ -737,7 +970,7 @@ export const ComplaintMetricDetailDialog = ({
           </div>
         </div>
 
-        {/* MUI Dialog Footer Actions */}
+        {/* Modal Footer Actions */}
         <div
           style={{
             padding: '16px 28px',
@@ -750,7 +983,7 @@ export const ComplaintMetricDetailDialog = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              Specification Type: <strong style={{ color: '#0f172a' }}>{config.badgeText}</strong>
+              Specification Filter: <strong style={{ color: '#0f172a' }}>{config.badgeText}</strong>
             </span>
           </div>
 
@@ -779,7 +1012,7 @@ export const ComplaintMetricDetailDialog = ({
                 }}
               >
                 <Plus size={16} />
-                <span>Log New Complaint</span>
+                <span>Log Complaint</span>
               </button>
             )}
             <button
@@ -795,14 +1028,6 @@ export const ComplaintMetricDetailDialog = ({
                 fontSize: '0.86rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#94a3b8';
-                e.currentTarget.style.backgroundColor = '#f8fafc';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#cbd5e1';
-                e.currentTarget.style.backgroundColor = '#ffffff';
               }}
             >
               Close

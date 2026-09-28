@@ -9,7 +9,6 @@ import {
   Briefcase,
   UserCheck,
   Target,
-  TrendingUp,
   AlertCircle,
   FolderKanban,
   Sparkles,
@@ -136,31 +135,18 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 </button>
               )}
 
-              {/* Module 2: Lead Management & Opportunities */}
+              {/* Module 2: Lead Management */}
               {showLeads && (
-                <>
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('leads')}
-                    id="nav-leads"
-                    title="Leads Pipeline"
-                  >
-                    <Target className="nav-icon" />
-                    <span className="nav-label">Leads</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('opportunities')}
-                    id="nav-opportunities"
-                    title="Opportunities Pipeline"
-                  >
-                    <TrendingUp className="nav-icon" />
-                    <span className="nav-label">Opportunities</span>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('leads')}
+                  id="nav-leads"
+                  title="Leads Pipeline"
+                >
+                  <Target className="nav-icon" />
+                  <span className="nav-label">Leads</span>
+                </button>
               )}
 
               {/* Module 3: Complaint Management */}
@@ -269,31 +255,18 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 </button>
               )}
 
-              {/* Module 2: Lead Management & Opportunities */}
+              {/* Module 2: Lead Management */}
               {showLeads && (
-                <>
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('leads')}
-                    id="nav-manager-leads"
-                    title="Leads"
-                  >
-                    <Target className="nav-icon" />
-                    <span className="nav-label">Leads</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('opportunities')}
-                    id="nav-manager-opportunities"
-                    title="Opportunities"
-                  >
-                    <TrendingUp className="nav-icon" />
-                    <span className="nav-label">Opportunities</span>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('leads')}
+                  id="nav-manager-leads"
+                  title="Leads"
+                >
+                  <Target className="nav-icon" />
+                  <span className="nav-label">Leads</span>
+                </button>
               )}
 
               {/* Module 3: Complaint Management */}
@@ -402,31 +375,18 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 </button>
               )}
 
-              {/* Module 2: Lead Management & Opportunities */}
+              {/* Module 2: Lead Management */}
               {showLeads && (
-                <>
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('leads')}
-                    id="nav-user-leads"
-                    title="Leads"
-                  >
-                    <Target className="nav-icon" />
-                    <span className="nav-label">Leads</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'opportunities' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('opportunities')}
-                    id="nav-user-opportunities"
-                    title="Opportunities"
-                  >
-                    <TrendingUp className="nav-icon" />
-                    <span className="nav-label">Opportunities</span>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className={`nav-item-btn ${activeSection === 'leads' ? 'active' : ''}`}
+                  onClick={() => handleNavClick('leads')}
+                  id="nav-user-leads"
+                  title="Leads"
+                >
+                  <Target className="nav-icon" />
+                  <span className="nav-label">Leads</span>
+                </button>
               )}
 
               {/* Module 3: Complaint Management */}

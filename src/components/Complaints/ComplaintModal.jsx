@@ -105,10 +105,22 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
     try {
       setSubmitting(true);
       setError('');
+
+      const assignedUser = (users || []).find(
+        (u) =>
+          (u.name && u.name.toLowerCase().trim() === (formData.assignedToName || '').toLowerCase().trim()) ||
+          (u.username && u.username.toLowerCase().trim() === (formData.assignedToName || '').toLowerCase().trim())
+      );
+
+      const payload = {
+        ...formData,
+        assignedTo: assignedUser ? (assignedUser._id || assignedUser.id) : (formData.assignedTo || null),
+      };
+
       if (isEdit) {
-        await updateComplaint(complaintToEdit._id, formData);
+        await updateComplaint(complaintToEdit._id, payload);
       } else {
-        await createComplaint(formData);
+        await createComplaint(payload);
       }
       onClose();
     } catch (err) {

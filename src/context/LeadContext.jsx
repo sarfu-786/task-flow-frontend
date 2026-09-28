@@ -35,19 +35,61 @@ export const LeadProvider = ({ children }) => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [assignedToFilter, setAssignedToFilter] = useState('all');
+  const [managerFilter, setManagerFilter] = useState('all');
+  const [conversionStatusFilter, setConversionStatusFilter] = useState('all');
+  const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
+  const [followUpDateFilter, setFollowUpDateFilter] = useState('');
+  const [slaTierFilter, setSlaTierFilter] = useState('all');
+  const [dispositionFilter, setDispositionFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  // Active Top Navigation Tab: 'pipeline' | 'dispositions' | 'filter' | 'mis' | 'widgets' | 'sla' | 'audit'
+  const [activeTab, setActiveTab] = useState('pipeline');
+
+  // Advanced Filter Engine State
+  const [advancedRules, setAdvancedRules] = useState([]);
+  const [advancedLogic, setAdvancedLogic] = useState('AND');
+  const [isAdvancedFilterActive, setIsAdvancedFilterActive] = useState(false);
+  const [advancedFilteredLeads, setAdvancedFilteredLeads] = useState(null);
+  const [filterStats, setFilterStats] = useState(null);
 
   // Modal States
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit'
   const [selectedLead, setSelectedLead] = useState(null);
 
+  // Lead Detail View Modal (5 tabs: Lead Info, Call Logs, Follow-Ups, Timeline, Opportunity)
+  const [isLeadDetailModalOpen, setIsLeadDetailModalOpen] = useState(false);
+  const [leadForDetail, setLeadForDetail] = useState(null);
+
+  // Add Call Log Modal
+  const [isAddCallModalOpen, setIsAddCallModalOpen] = useState(false);
+  const [leadForCall, setLeadForCall] = useState(null);
+
+  // Schedule Follow-Up Modal
+  const [isScheduleFollowUpModalOpen, setIsScheduleFollowUpModalOpen] = useState(false);
+  const [leadForFollowUp, setLeadForFollowUp] = useState(null);
+
+  // Qualify Modal
+  const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
+  const [leadToQualify, setLeadToQualify] = useState(null);
+
+  // Convert Modal
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
   const [leadToConvert, setLeadToConvert] = useState(null);
 
+  // Delete Modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState(null);
+
+  // 1-Click Disposition Modal State
+  const [isDispositionModalOpen, setIsDispositionModalOpen] = useState(false);
+  const [leadForDisposition, setLeadForDisposition] = useState(null);
+
+  // Audit Trail Viewer Modal State
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [leadForAudit, setLeadForAudit] = useState(null);
 
   const [roleScope, setRoleScope] = useState('');
 
@@ -64,6 +106,13 @@ export const LeadProvider = ({ children }) => {
         try {
           localStorage.setItem('taskflow_cached_leads', JSON.stringify(res.leads));
         } catch {}
+
+        // If detail modal is open, keep leadForDetail in sync
+        setLeadForDetail((prev) => {
+          if (!prev) return null;
+          const fresh = res.leads.find((l) => (l._id && l._id === prev._id) || (l.leadId && l.leadId === prev.leadId));
+          return fresh || prev;
+        });
       }
     } catch (err) {
       console.error('Fetch leads error:', err);
@@ -95,13 +144,19 @@ export const LeadProvider = ({ children }) => {
       fetchLeads();
       fetchStats();
 
-      const unsubscribe = socketService.on('leads:updated', () => {
+      const unsubscribeLeads = socketService.on('leads:updated', () => {
+        fetchLeads(true);
+        fetchStats();
+      });
+
+      const unsubscribeSLA = socketService.on('sla:breach', () => {
         fetchLeads(true);
         fetchStats();
       });
 
       return () => {
-        if (typeof unsubscribe === 'function') unsubscribe();
+        if (typeof unsubscribeLeads === 'function') unsubscribeLeads();
+        if (typeof unsubscribeSLA === 'function') unsubscribeSLA();
       };
     }
   }, [isAuthenticated, fetchLeads, fetchStats]);
@@ -149,6 +204,127 @@ export const LeadProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Failed to update lead status:', err);
+      throw err;
+    }
+  };
+
+  // Record Call Log
+  const recordCall = async (leadId, callData) => {
+    try {
+      const res = await api.recordLeadCall(leadId, callData);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        closeAddCallModal();
+        return res;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Schedule Follow-Up
+  const scheduleFollowUp = async (leadId, followupData) => {
+    try {
+      const res = await api.scheduleLeadFollowUp(leadId, followupData);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        closeScheduleFollowUpModal();
+        return res;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Update Follow-Up
+  const updateFollowUp = async (leadId, followUpId, followupData) => {
+    try {
+      const res = await api.updateLeadFollowUp(leadId, followUpId, followupData);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        return res;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // 1-Click Disposition Matrix Logging
+  const logDisposition = async (id, dispositionData) => {
+    try {
+      const res = await api.logLeadDisposition(id, dispositionData);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        closeDispositionModal();
+        return res;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Claim Unassigned Lead from High-Priority Queue
+  const claimLead = async (id) => {
+    try {
+      const res = await api.claimUnassignedLead(id);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        return res;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Execute Advanced Multi-Dimensional Filter
+  const executeAdvancedFilter = async (rules, logic = 'AND') => {
+    try {
+      setLoading(true);
+      setAdvancedRules(rules);
+      setAdvancedLogic(logic);
+      const res = await api.filterLeadsAdvanced(rules, logic);
+      if (res.success) {
+        setAdvancedFilteredLeads(res.leads);
+        setIsAdvancedFilterActive(true);
+        setFilterStats({
+          executionTimeMs: res.executionTimeMs,
+          count: res.count,
+          rulesCount: rules.length,
+        });
+      }
+      return res;
+    } catch (err) {
+      console.error('Advanced filter error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetAdvancedFilter = () => {
+    setAdvancedRules([]);
+    setAdvancedLogic('AND');
+    setIsAdvancedFilterActive(false);
+    setAdvancedFilteredLeads(null);
+    setFilterStats(null);
+  };
+
+  // Qualify Lead (Without creating an opportunity)
+  const qualifyLead = async (id, qualificationData = {}) => {
+    try {
+      const res = await api.qualifyLead(id, qualificationData);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+        closeQualifyModal();
+        return res;
+      }
+    } catch (err) {
       throw err;
     }
   };
@@ -201,6 +377,46 @@ export const LeadProvider = ({ children }) => {
     setSelectedLead(null);
   };
 
+  const openLeadDetailModal = (lead) => {
+    setLeadForDetail(lead);
+    setIsLeadDetailModalOpen(true);
+  };
+
+  const closeLeadDetailModal = () => {
+    setIsLeadDetailModalOpen(false);
+    setLeadForDetail(null);
+  };
+
+  const openAddCallModal = (lead) => {
+    setLeadForCall(lead);
+    setIsAddCallModalOpen(true);
+  };
+
+  const closeAddCallModal = () => {
+    setIsAddCallModalOpen(false);
+    setLeadForCall(null);
+  };
+
+  const openScheduleFollowUpModal = (lead) => {
+    setLeadForFollowUp(lead);
+    setIsScheduleFollowUpModalOpen(true);
+  };
+
+  const closeScheduleFollowUpModal = () => {
+    setIsScheduleFollowUpModalOpen(false);
+    setLeadForFollowUp(null);
+  };
+
+  const openQualifyModal = (lead) => {
+    setLeadToQualify(lead);
+    setIsQualifyModalOpen(true);
+  };
+
+  const closeQualifyModal = () => {
+    setIsQualifyModalOpen(false);
+    setLeadToQualify(null);
+  };
+
   const openConvertModal = (lead) => {
     setLeadToConvert(lead);
     setIsConvertModalOpen(true);
@@ -221,23 +437,47 @@ export const LeadProvider = ({ children }) => {
     setLeadToDelete(null);
   };
 
-  // Filtered Leads
-  const filteredLeads = leads.filter((lead) => {
+  const openDispositionModal = (lead) => {
+    setLeadForDisposition(lead);
+    setIsDispositionModalOpen(true);
+  };
+
+  const closeDispositionModal = () => {
+    setIsDispositionModalOpen(false);
+    setLeadForDisposition(null);
+  };
+
+  const openAuditModal = (lead) => {
+    setLeadForAudit(lead);
+    setIsAuditModalOpen(true);
+  };
+
+  const closeAuditModal = () => {
+    setIsAuditModalOpen(false);
+    setLeadForAudit(null);
+  };
+
+  // Filtered Leads computation
+  const baseLeads = isAdvancedFilterActive && advancedFilteredLeads !== null ? advancedFilteredLeads : leads;
+
+  const filteredLeads = baseLeads.filter((lead) => {
     if (search && search.trim() !== '') {
       const q = search.trim().toLowerCase();
-      const matchName = lead.name && lead.name.toLowerCase().includes(q);
+      const matchId = (lead.leadId && lead.leadId.toLowerCase().includes(q)) || (lead.lead_id && lead.lead_id.toLowerCase().includes(q));
+      const matchName = (lead.name && lead.name.toLowerCase().includes(q)) || (lead.contactPerson && lead.contactPerson.toLowerCase().includes(q));
       const matchCompany = lead.company && lead.company.toLowerCase().includes(q);
       const matchEmail = lead.email && lead.email.toLowerCase().includes(q);
-      const matchPhone = lead.phone && lead.phone.toLowerCase().includes(q);
-      const matchNotes = lead.notes && lead.notes.toLowerCase().includes(q);
-      const matchAssignee = lead.assignedTo && lead.assignedTo.toLowerCase().includes(q);
-      const matchSource = lead.source && lead.source.toLowerCase().includes(q);
-      if (!matchName && !matchCompany && !matchEmail && !matchPhone && !matchNotes && !matchAssignee && !matchSource) {
+      const matchPhone = (lead.phone && lead.phone.toLowerCase().includes(q)) || (lead.mobileNumber && lead.mobileNumber.toLowerCase().includes(q));
+      const matchReq = lead.requirement && lead.requirement.toLowerCase().includes(q);
+      const matchNotes = (lead.notes && lead.notes.toLowerCase().includes(q)) || (lead.remarks && lead.remarks.toLowerCase().includes(q));
+      const matchAssignee = (lead.assignedTo && lead.assignedTo.toLowerCase().includes(q)) || (lead.assignedSalesUser && lead.assignedSalesUser.toLowerCase().includes(q));
+      const matchSource = (lead.source && lead.source.toLowerCase().includes(q)) || (lead.campaign_source && lead.campaign_source.toLowerCase().includes(q));
+      if (!matchId && !matchName && !matchCompany && !matchEmail && !matchPhone && !matchReq && !matchNotes && !matchAssignee && !matchSource) {
         return false;
       }
     }
 
-    if (statusFilter !== 'all' && lead.status !== statusFilter) {
+    if (statusFilter !== 'all' && lead.status !== statusFilter && lead.lead_status !== statusFilter) {
       return false;
     }
 
@@ -245,16 +485,66 @@ export const LeadProvider = ({ children }) => {
       return false;
     }
 
-    if (sourceFilter !== 'all' && lead.source?.toLowerCase() !== sourceFilter.toLowerCase()) {
+    if (sourceFilter !== 'all' && lead.source?.toLowerCase() !== sourceFilter.toLowerCase() && lead.campaign_source?.toLowerCase() !== sourceFilter.toLowerCase()) {
       return false;
     }
 
-    if (assignedToFilter !== 'all' && lead.assignedTo?.toLowerCase() !== assignedToFilter.toLowerCase()) {
+    if (assignedToFilter !== 'all' && lead.assignedTo?.toLowerCase() !== assignedToFilter.toLowerCase() && lead.assignedSalesUser?.toLowerCase() !== assignedToFilter.toLowerCase()) {
+      return false;
+    }
+
+    if (managerFilter !== 'all') {
+      const mgr = (lead.assignedManagerName || lead.assignedManager || '').toLowerCase();
+      if (!mgr.includes(managerFilter.toLowerCase())) return false;
+    }
+
+    if (conversionStatusFilter !== 'all') {
+      const isConverted = lead.status === 'Converted' || !!lead.opportunityId || !!lead.convertedOpportunityId;
+      if (conversionStatusFilter === 'converted' && !isConverted) return false;
+      if (conversionStatusFilter === 'unconverted' && isConverted) return false;
+    }
+
+    if (followUpDateFilter && followUpDateFilter !== '') {
+      if (!lead.nextFollowUpDate && !lead.next_followup_at) return false;
+      const fDate = new Date(lead.nextFollowUpDate || lead.next_followup_at).toISOString().split('T')[0];
+      if (fDate !== followUpDateFilter) return false;
+    }
+
+    if (dateRangeFilter.start) {
+      const start = new Date(dateRangeFilter.start).getTime();
+      if (new Date(lead.createdAt).getTime() < start) return false;
+    }
+    if (dateRangeFilter.end) {
+      const end = new Date(dateRangeFilter.end).getTime() + (24 * 60 * 60 * 1000 - 1);
+      if (new Date(lead.createdAt).getTime() > end) return false;
+    }
+
+    if (slaTierFilter !== 'all' && Number(lead.sla_tier || 0) !== Number(slaTierFilter)) {
+      return false;
+    }
+
+    if (dispositionFilter !== 'all' && lead.disposition_code !== dispositionFilter) {
       return false;
     }
 
     return true;
   });
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
+    setSourceFilter('all');
+    setAssignedToFilter('all');
+    setManagerFilter('all');
+    setConversionStatusFilter('all');
+    setDateRangeFilter({ start: '', end: '' });
+    setFollowUpDateFilter('');
+    setSlaTierFilter('all');
+    setDispositionFilter('all');
+    resetAdvancedFilter();
+    setCurrentPage(1);
+  };
 
   // Pagination
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage) || 1;
@@ -266,7 +556,19 @@ export const LeadProvider = ({ children }) => {
   // Reset to page 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, priorityFilter, sourceFilter, assignedToFilter]);
+  }, [
+    search,
+    statusFilter,
+    priorityFilter,
+    sourceFilter,
+    assignedToFilter,
+    managerFilter,
+    conversionStatusFilter,
+    followUpDateFilter,
+    dateRangeFilter,
+    slaTierFilter,
+    dispositionFilter,
+  ]);
 
   return (
     <LeadContext.Provider
@@ -293,27 +595,87 @@ export const LeadProvider = ({ children }) => {
         setSourceFilter,
         assignedToFilter,
         setAssignedToFilter,
+        managerFilter,
+        setManagerFilter,
+        conversionStatusFilter,
+        setConversionStatusFilter,
+        dateRangeFilter,
+        setDateRangeFilter,
+        followUpDateFilter,
+        setFollowUpDateFilter,
+        slaTierFilter,
+        setSlaTierFilter,
+        dispositionFilter,
+        setDispositionFilter,
+        clearAllFilters,
+        activeTab,
+        setActiveTab,
+        advancedRules,
+        advancedLogic,
+        isAdvancedFilterActive,
+        filterStats,
+        executeAdvancedFilter,
+        resetAdvancedFilter,
         fetchLeads,
         fetchStats,
         createLead,
         updateLead,
         updateLeadStatus,
+        recordCall,
+        scheduleFollowUp,
+        updateFollowUp,
+        logDisposition,
+        claimLead,
+        qualifyLead,
         convertLeadToOpportunity,
         deleteLead,
+        // Create / Edit Modal
         isLeadModalOpen,
         modalMode,
         selectedLead,
         openCreateModal,
         openEditModal,
         closeLeadModal,
+        // Lead Detail Modal
+        isLeadDetailModalOpen,
+        leadForDetail,
+        openLeadDetailModal,
+        closeLeadDetailModal,
+        // Add Call Modal
+        isAddCallModalOpen,
+        leadForCall,
+        openAddCallModal,
+        closeAddCallModal,
+        // Schedule Follow-Up Modal
+        isScheduleFollowUpModalOpen,
+        leadForFollowUp,
+        openScheduleFollowUpModal,
+        closeScheduleFollowUpModal,
+        // Qualify Lead Modal
+        isQualifyModalOpen,
+        leadToQualify,
+        openQualifyModal,
+        closeQualifyModal,
+        // Convert Modal
         isConvertModalOpen,
         leadToConvert,
         openConvertModal,
         closeConvertModal,
+        // Delete Modal
         isDeleteModalOpen,
         leadToDelete,
         openDeleteModal,
         closeDeleteModal,
+        // Disposition Modal
+        isDispositionModalOpen,
+        leadForDisposition,
+        openDispositionModal,
+        closeDispositionModal,
+        // Audit Modal
+        isAuditModalOpen,
+        leadForAudit,
+        openAuditModal,
+        closeAuditModal,
       }}
     >
       {children}
@@ -328,3 +690,5 @@ export const useLeads = () => {
   }
   return context;
 };
+
+export default LeadContext;

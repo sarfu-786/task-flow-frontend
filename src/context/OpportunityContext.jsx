@@ -5,7 +5,7 @@ import { socketService } from '../services/socket';
 
 const OpportunityContext = createContext(null);
 
-export const STAGES = ['Qualification', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+export const STAGES = ['Qualification', 'Needs Analysis', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
 
 export const OpportunityProvider = ({ children }) => {
   const { isAuthenticated, user } = useAuth();

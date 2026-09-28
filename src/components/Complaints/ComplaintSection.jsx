@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
 import { useAuth } from '../../context/AuthContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
+import { ComplaintMetricDetailDialog } from './ComplaintMetricDetailDialog';
 import { ComplaintModal } from './ComplaintModal';
 import { ResolveComplaintModal } from './ResolveComplaintModal';
 import { DeleteComplaintModal } from './DeleteComplaintModal';
 import { ComplaintDetailModal } from './ComplaintDetailModal';
-import { ComplaintMetricDetailDialog } from './ComplaintMetricDetailDialog';
 import {
   AlertCircle,
   Plus,
@@ -14,13 +14,12 @@ import {
   CheckCircle2,
   Flame,
   Crown,
-  ShieldCheck,
-  Briefcase,
+  User,
 } from 'lucide-react';
 
 export const ComplaintSection = () => {
   const { stats } = useComplaints();
-  const { isSuperAdmin, isManager } = useAuth();
+  const { isSuperAdmin, user } = useAuth();
 
   // Active Metric Popup Dialog: 'total' | 'urgent' | 'sla_risk' | 'resolved' | null
   const [activeMetricDialog, setActiveMetricDialog] = useState(null);
@@ -104,17 +103,15 @@ export const ComplaintSection = () => {
                   borderRadius: '999px',
                   fontSize: '0.74rem',
                   fontWeight: 700,
-                  background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
-                  color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
-                  border: `1px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
+                  background: isSuperAdmin ? '#fef3c7' : '#ecfdf5',
+                  color: isSuperAdmin ? '#b45309' : '#047857',
+                  border: `1px solid ${isSuperAdmin ? '#fde68a' : '#a7f3d0'}`,
                 }}
               >
-                {isSuperAdmin ? <Crown size={12} /> : isManager ? <ShieldCheck size={12} /> : <Briefcase size={12} />}
+                {isSuperAdmin ? <Crown size={12} /> : <User size={12} />}
                 {isSuperAdmin
-                  ? 'Full Organization Access'
-                  : isManager
-                    ? 'Department Scope'
-                    : 'Personal Scope'}
+                  ? 'Super Admin • Entire Organization (All Complaints)'
+                  : 'Assigned Complaints Only'}
               </span>
             </div>
           </div>
@@ -149,7 +146,7 @@ export const ComplaintSection = () => {
         </div>
       </div>
 
-      {/* Top 4 Interactive Curved Metrics Cards (Clicking opens related popup dialog) */}
+      {/* Top 4 Interactive Curved Metrics Cards (Clicking a card opens the table popup dialog) */}
       <div
         style={{
           display: 'grid',
@@ -161,7 +158,7 @@ export const ComplaintSection = () => {
         <MetricCard
           title="Total Complaints"
           value={stats.total}
-          subtitle="All organization tickets (Click to view details)"
+          subtitle={isSuperAdmin ? 'All organization tickets (Click for popup table)' : 'Your assigned tickets (Click for popup table)'}
           icon={AlertCircle}
           color="#2563eb"
           bgLight="#eff6ff"
@@ -172,7 +169,7 @@ export const ComplaintSection = () => {
         <MetricCard
           title="Urgent Escalations"
           value={stats.urgent}
-          subtitle="4-hour rapid SLA target (Click to view details)"
+          subtitle="4-hour rapid SLA target (Click for popup table)"
           icon={Flame}
           color="#dc2626"
           bgLight="#fee2e2"
@@ -183,7 +180,7 @@ export const ComplaintSection = () => {
         <MetricCard
           title="SLA Breached / At Risk"
           value={(stats.slaBreached || 0) + (stats.slaAtRisk || 0)}
-          subtitle={`${stats.slaBreached || 0} breached, ${stats.slaAtRisk || 0} at risk (Click to view details)`}
+          subtitle={`${stats.slaBreached || 0} breached, ${stats.slaAtRisk || 0} at risk (Click for popup table)`}
           icon={Clock}
           color="#d97706"
           bgLight="#fef3c7"
@@ -194,7 +191,7 @@ export const ComplaintSection = () => {
         <MetricCard
           title="Resolved & Met SLA"
           value={stats.resolved}
-          subtitle={`${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 100}% resolution rate (Click to view details)`}
+          subtitle={`${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 100}% resolution rate (Click for popup table)`}
           icon={CheckCircle2}
           color="#059669"
           bgLight="#ecfdf5"
@@ -203,35 +200,30 @@ export const ComplaintSection = () => {
         />
       </div>
 
-      {/* Dedicated Metric Specification Scrollable Popup Dialog */}
+      {/* Dedicated Metric Result Popup Dialog */}
       <ComplaintMetricDetailDialog
         open={!!activeMetricDialog}
         onClose={() => setActiveMetricDialog(null)}
         metricType={activeMetricDialog || 'total'}
         onViewTicket={(t) => {
-          setActiveMetricDialog(null);
           setComplaintToView(t);
         }}
         onEditTicket={(t) => {
-          setActiveMetricDialog(null);
           setComplaintToEdit(t);
         }}
         onResolveTicket={(t) => {
-          setActiveMetricDialog(null);
           setComplaintToResolve(t);
         }}
         onDeleteTicket={(t) => {
-          setActiveMetricDialog(null);
           setComplaintToDelete(t);
         }}
-        canDelete={isSuperAdmin || isManager}
+        canDelete={isSuperAdmin}
         onCreateTicket={() => {
-          setActiveMetricDialog(null);
           setIsCreateOpen(true);
         }}
       />
 
-      {/* CRUD & View Top-Up Modals */}
+      {/* CRUD & View Popups */}
       <ComplaintModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -259,7 +251,7 @@ export const ComplaintSection = () => {
         onEdit={(c) => setComplaintToEdit(c)}
         onResolve={(c) => setComplaintToResolve(c)}
         onDelete={(c) => setComplaintToDelete(c)}
-        canDelete={isSuperAdmin || isManager}
+        canDelete={isSuperAdmin}
       />
     </div>
   );

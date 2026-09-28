@@ -22,7 +22,7 @@ export const DeleteLeadModal = () => {
   };
 
   return (
-    <div className="modal-backdrop active" onClick={closeDeleteModal}>
+    <div className="modal-backdrop active" onClick={closeDeleteModal} style={{ zIndex: 1300 }}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}

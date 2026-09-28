@@ -14,6 +14,7 @@ import {
   ListTodo,
   ShieldCheck,
   ExternalLink,
+  Target,
 } from 'lucide-react';
 
 // Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
@@ -59,7 +60,7 @@ const getSubordinateUserIds = (user, allUsers) => {
   return subordinateIds;
 };
 
-export const ManagerDashboard = () => {
+export const ManagerDashboard = ({ setActiveSection }) => {
   const { tasks } = useTasks();
   const { user: currentUser, userRoles } = useAuth();
   const { users } = useUserManagement();
@@ -249,6 +250,66 @@ export const ManagerDashboard = () => {
           isClickable={true}
           onClick={() => openTasksDrilldown('To Do', 'Team Pending Queue')}
         />
+      </div>
+
+      {/* Enterprise LMS & Sales Funnel Summary for Manager */}
+      <div
+        style={{
+          marginTop: '24px',
+          padding: '20px 24px',
+          borderRadius: '20px',
+          background: '#ffffff',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              padding: '12px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#ffffff',
+            }}
+          >
+            <Target size={24} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+              Team Lead LMS & Sales Funnel Pipeline
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+              Track subordinate lead dispositions, review Tier 2 SLA escalations, and monitor team conversion velocity.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection && setActiveSection('leads')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            border: 'none',
+            color: '#ffffff',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+          }}
+        >
+          <span>Manage Team Leads</span>
+          <Target size={16} />
+        </button>
       </div>
 
       {/* Drilldown Modals */}

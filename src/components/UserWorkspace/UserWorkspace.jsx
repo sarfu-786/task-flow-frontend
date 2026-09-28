@@ -1,42 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import { useUserManagement } from '../../context/UserContext';
-import { useLeads } from '../../context/LeadContext';
-import { useOpportunities } from '../../context/OpportunityContext';
-import { useComplaints } from '../../context/ComplaintContext';
-import { useProjects } from '../../context/ProjectContext';
-import { useSubscription } from '../../context/SubscriptionContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
+import { EmployeeDrilldownModal } from '../ManagerDashboard/EmployeeDrilldownModal';
+import { ManagerTasksDrilldownModal } from '../ManagerDashboard/ManagerTasksDrilldownModal';
+import { UserWorkModal } from '../ManagerDashboard/UserWorkModal';
+import { SuperiorDetailModal } from '../ManagerDashboard/SuperiorDetailModal';
+import { RoleDeptModal } from '../UserManagement/RoleDeptModal';
+import { UserDetailModal } from '../UserManagement/UserDetailModal';
 import {
+  Users,
   CheckCircle2,
   Clock,
   ListTodo,
   Briefcase,
-  Calendar,
-  Search,
-  Send,
-  X,
   Shield,
-  PlayCircle,
-  ExternalLink,
-  ArrowRight,
-  TrendingUp,
-  Bell,
-  Sparkles,
-  Users,
-  Target,
-  DollarSign,
-  Percent,
+  ShieldCheck,
   Plus,
-  LifeBuoy,
-  FolderKanban,
-  AlertTriangle,
-  Layers,
+  ExternalLink,
   Award,
-  Eye,
-  Edit2,
-  Trash2,
+  User,
+  Bell,
+  ArrowRight,
+  Target,
 } from 'lucide-react';
 
 // Helper to get all user IDs that are subordinate to (under) the current user in hierarchy
@@ -83,34 +70,42 @@ const getSubordinateUserIds = (user, allUsers) => {
 };
 
 export const UserWorkspace = ({ setActiveSection }) => {
-  const { user, userRoles, isSalesCoordinator, isServiceCoordinator, isManager } = useAuth();
-  const { isModuleActive } = useSubscription();
-  const {
-    tasks,
-    loading,
-    completeTask,
-    updateStatus,
-    notifications,
-    unreadCount,
-    openViewModal,
-    openEditModal,
-    openDeleteModal,
-  } = useTasks();
+  const { user, userRoles } = useAuth();
+  const { tasks, notifications } = useTasks();
   const { users } = useUserManagement();
-  const { leads, stats: leadStats, openCreateModal: openCreateLeadModal } = useLeads();
-  const { opportunities, stats: oppStats } = useOpportunities();
-  const { complaints, stats: complaintStats, openCreateModal: openCreateComplaintModal } = useComplaints();
-  const { projects, stats: projectStats, openCreateModal: openCreateProjectModal } = useProjects();
 
-  // Active section popup modal state: null | 'all' | 'To Do' | 'In Progress' | 'Completed'
-  const [activeModalSection, setActiveModalSection] = useState(null);
-  const [modalSearch, setModalSearch] = useState('');
-  const [modalTypeFilter, setModalTypeFilter] = useState('all');
+  // 1. Employee / Personnel Directory Drilldown Modal State (Reference Image Popup)
+  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [employeeDeptFilter, setEmployeeDeptFilter] = useState('all');
+  const [employeeModalTitle, setEmployeeModalTitle] = useState('All Organization Personnel');
 
-  // Subordinates calculation (all recursive lower users in hierarchy)
-  const currentUserIdStr = (user?._id || user?.id || '').toString();
-  const subordinateIds = getSubordinateUserIds(user, users);
-  const mySubordinates = (users || []).filter((u) => {
+  // 2. Tasks Overview Drilldown Modal State (All, Completed, In Progress, To Do)
+  const [isTasksModalOpen, setIsTasksModalOpen] = useState(false);
+  const [tasksFilterParam, setTasksFilterParam] = useState('all');
+  const [tasksModalTitle, setTasksModalTitle] = useState('My Assigned Work');
+
+  // 3. User Work Modal State (Opened on clicking "View Work" in Employee Drilldown)
+  const [selectedUserForWork, setSelectedUserForWork] = useState(null);
+  const [userWorkFilter, setUserWorkFilter] = useState('all');
+  const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
+
+  // 4. Superior Detail Modal State
+  const [isSuperiorModalOpen, setIsSuperiorModalOpen] = useState(false);
+
+  // 5. Role & Department Detail Modal State
+  const [isRoleDeptModalOpen, setIsRoleDeptModalOpen] = useState(false);
+  const [selectedRoleForModal, setSelectedRoleForModal] = useState('User');
+
+  // 6. User Profile Detail Modal State
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
+
+  // Active Approved Users
+  const activeUsers = (users || []).filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending');
+
+  // Subordinates calculation
+  const subordinateIds = getSubordinateUserIds(user, activeUsers);
+  const mySubordinates = activeUsers.filter((u) => {
     if (!u) return false;
     const uId = (u._id || u.id || '').toString();
     return subordinateIds.has(uId);
@@ -118,13 +113,6 @@ export const UserWorkspace = ({ setActiveSection }) => {
   const subordinateNames = mySubordinates.map((u) => (u.name || '').toLowerCase().trim());
   const subordinateUsernames = mySubordinates.map((u) => (u.username || '').toLowerCase().trim());
   const subordinateIdList = Array.from(subordinateIds);
-
-  // Task Completion Modal State
-  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  const [taskToComplete, setTaskToComplete] = useState(null);
-  const [completionRemark, setCompletionRemark] = useState('');
-  const [isSubmittingCompletion, setIsSubmittingCompletion] = useState(false);
-  const [successToast, setSuccessToast] = useState('');
 
   // Filter tasks: own tasks + assigned subordinate tasks
   const userIdentifier = (user?.name || '').toLowerCase().trim();
@@ -155,307 +143,219 @@ export const UserWorkspace = ({ setActiveSection }) => {
     return isSelf || isSubordinate || isAssignedBySelfOrSub;
   });
 
-  // Self & Subordinates Metrics
+  // Self & Team Metrics
   const totalMyTasks = myTasks.length;
   const completedTasks = myTasks.filter((t) => t && t.status === 'Completed');
   const inProgressTasks = myTasks.filter((t) => t && t.status === 'In Progress');
-  const todoTasks = myTasks.filter((t) => t && t.status === 'To Do');
-
-  const completionPercentage =
-    totalMyTasks > 0 ? Math.round((completedTasks.length / totalMyTasks) * 100) : 0;
-
-  // Filter complaints: own + subordinate complaints
-  const safeComplaints = Array.isArray(complaints) ? complaints : [];
-  const myComplaints = safeComplaints.filter((c) => {
-    if (!c) return false;
-    const cAssigned = (c.assignedTo?.name || c.assignedToName || c.assignedTo || '').toLowerCase().trim();
-    const cAssignedId = (c.assignedTo?._id || c.assignedTo?.id || c.assignedTo || '').toString();
-    const cCreatedById = (c.createdBy?._id || c.createdBy?.id || c.createdBy || '').toString();
-    const isSelf =
-      (userIdentifier && cAssigned === userIdentifier) ||
-      (userId && cAssignedId === userId) ||
-      (userId && cCreatedById === userId);
-    const isSubordinate =
-      subordinateNames.includes(cAssigned) ||
-      subordinateIdList.includes(cAssignedId) ||
-      subordinateIdList.includes(cCreatedById);
-    return isSelf || isSubordinate;
-  });
-
-  // Filter projects: own + subordinate projects
-  const safeProjects = Array.isArray(projects) ? projects : [];
-  const myProjects = safeProjects.filter((p) => {
-    if (!p) return false;
-    const pMgr = (p.manager?.name || p.managerName || p.manager || '').toLowerCase().trim();
-    const pMgrId = (p.manager?._id || p.manager?.id || p.manager || '').toString();
-    const pCreatedById = (p.createdBy?._id || p.createdBy?.id || p.createdBy || '').toString();
-    const isMember = (p.teamMembers || []).some((m) => {
-      const mName = (m.user?.name || m.name || m.userName || '').toLowerCase().trim();
-      const mId = (m.user?._id || m.user?.id || m.userId || m.user || '').toString();
-      return (
-        (userIdentifier && mName === userIdentifier) ||
-        (userId && mId === userId) ||
-        subordinateNames.includes(mName) ||
-        subordinateIdList.includes(mId)
-      );
-    });
-    const isSelf =
-      (userIdentifier && pMgr === userIdentifier) ||
-      (userId && pMgrId === userId) ||
-      (userId && pCreatedById === userId);
-    const isSubordinate =
-      subordinateNames.includes(pMgr) ||
-      subordinateIdList.includes(pMgrId) ||
-      subordinateIdList.includes(pCreatedById);
-    return isSelf || isSubordinate || isMember;
-  });
+  const todoTasks = myTasks.filter((t) => t && (t.status === 'To Do' || !t.status));
 
   // Check for latest task assignment notification for this user
   const latestAssignmentNotif = safeNotifications.find(
     (n) => n && (n.type === 'task_assigned' || (n.assignedBy && n.forRole !== 'Manager') || n.forRole === 'User')
   );
 
-  // Open specific detail section popup
-  const openSectionModal = (sectionKey) => {
-    setActiveModalSection(sectionKey);
-    setModalSearch('');
-    setModalTypeFilter('all');
+  // Modal Handlers
+  const openEmployeeDrilldown = (dept = 'all', title = 'All Organization Personnel') => {
+    setEmployeeDeptFilter(dept);
+    setEmployeeModalTitle(title);
+    setIsEmployeeModalOpen(true);
   };
 
-  const closeSectionModal = () => {
-    setActiveModalSection(null);
-    setModalSearch('');
-    setModalTypeFilter('all');
+  const closeEmployeeDrilldown = () => {
+    setIsEmployeeModalOpen(false);
   };
 
-  // Filter tasks inside the active modal popup
-  const getModalTasks = () => {
-    if (!activeModalSection) return [];
+  const openTasksDrilldown = (status = 'all', title = 'My Assigned Work') => {
+    setTasksFilterParam(status);
+    setTasksModalTitle(title);
+    setIsTasksModalOpen(true);
+  };
 
-    let list = myTasks;
-    if (activeModalSection !== 'all') {
-      list = list.filter((t) => t.status === activeModalSection);
+  const closeTasksDrilldown = () => {
+    setIsTasksModalOpen(false);
+  };
+
+  const openUserWork = (targetUser, filter = 'all') => {
+    setSelectedUserForWork(targetUser);
+    setUserWorkFilter(filter);
+    setIsWorkModalOpen(true);
+  };
+
+  const closeUserWork = () => {
+    setIsWorkModalOpen(false);
+    setSelectedUserForWork(null);
+  };
+
+  const openSuperiorDetail = () => {
+    setIsSuperiorModalOpen(true);
+  };
+
+  const closeSuperiorDetail = () => {
+    setIsSuperiorModalOpen(false);
+  };
+
+  const openRoleDeptDetail = (role) => {
+    setSelectedRoleForModal(role || user?.role || 'User');
+    setIsRoleDeptModalOpen(true);
+  };
+
+  const closeRoleDeptDetail = () => {
+    setIsRoleDeptModalOpen(false);
+  };
+
+  const openUserDetail = (targetUser) => {
+    setSelectedUserDetail(targetUser || user);
+    setIsUserDetailOpen(true);
+  };
+
+  const closeUserDetail = () => {
+    setIsUserDetailOpen(false);
+    setSelectedUserDetail(null);
+  };
+
+  // Lock body scroll when any drilldown modal is open
+  useEffect(() => {
+    if (
+      isEmployeeModalOpen ||
+      isTasksModalOpen ||
+      isWorkModalOpen ||
+      isSuperiorModalOpen ||
+      isRoleDeptModalOpen ||
+      isUserDetailOpen
+    ) {
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.classList.remove('modal-open');
     }
-
-    return list.filter((t) => {
-      const matchesSearch =
-        modalSearch.trim() === '' ||
-        t.description.toLowerCase().includes(modalSearch.toLowerCase()) ||
-        (t.remark && t.remark.toLowerCase().includes(modalSearch.toLowerCase())) ||
-        (t.assignedBy && t.assignedBy.toLowerCase().includes(modalSearch.toLowerCase()));
-      const matchesType = modalTypeFilter === 'all' || t.taskType === modalTypeFilter;
-
-      return matchesSearch && matchesType;
-    });
-  };
-
-  // Open Completion Modal
-  const openCompletionModal = (task) => {
-    setTaskToComplete(task);
-    setCompletionRemark('');
-    setIsCompletionModalOpen(true);
-  };
-
-  const closeCompletionModal = () => {
-    setIsCompletionModalOpen(false);
-    setTaskToComplete(null);
-    setCompletionRemark('');
-  };
-
-  // Submit Task Completion & Send Message to Manager
-  const handleSubmitCompletion = async (e) => {
-    e.preventDefault();
-    if (!taskToComplete) return;
-
-    setIsSubmittingCompletion(true);
-    const remarkToSend =
-      completionRemark.trim() || 'Work completed successfully and ready for manager review.';
-    const res = await completeTask(taskToComplete._id, remarkToSend);
-    setIsSubmittingCompletion(false);
-
-    if (res.success) {
-      closeCompletionModal();
-      setSuccessToast(
-        `Great job! Task marked as completed and completion report sent directly to ${taskToComplete.assignedBy || 'Assigner'}.`
-      );
-      setTimeout(() => setSuccessToast(''), 5000);
-    }
-  };
-
-  // Quick Start Task
-  const handleStartTask = async (task) => {
-    await updateStatus(task._id, 'In Progress');
-    setSuccessToast(`Task status updated to In Progress.`);
-    setTimeout(() => setSuccessToast(''), 4000);
-  };
-
-  const getTaskTypeBadgeColor = (type) => {
-    switch (type) {
-      case 'internet work':
-        return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' };
-      case 'documentation':
-        return { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' };
-      case 'social media':
-        return { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8' };
-      case 'backend work':
-        return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' };
-      case 'sells':
-      case 'sales':
-        return { bg: '#fef3c7', color: '#b45309', border: '#fde68a' };
-      default:
-        return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' };
-    }
-  };
-
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case 'High':
-        return (
-          <span
-            style={{
-              fontSize: '0.72rem',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              background: '#fef2f2',
-              color: '#dc2626',
-              border: '1px solid #fecaca',
-              fontWeight: 600,
-            }}
-          >
-            High Priority
-          </span>
-        );
-      case 'Medium':
-        return (
-          <span
-            style={{
-              fontSize: '0.72rem',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              background: '#fffbeb',
-              color: '#b45309',
-              border: '1px solid #fde68a',
-              fontWeight: 600,
-            }}
-          >
-            Medium Priority
-          </span>
-        );
-      default:
-        return (
-          <span
-            style={{
-              fontSize: '0.72rem',
-              padding: '2px 8px',
-              borderRadius: '9999px',
-              background: '#f1f5f9',
-              color: '#475569',
-              border: '1px solid #cbd5e1',
-              fontWeight: 600,
-            }}
-          >
-            Low Priority
-          </span>
-        );
-    }
-  };
-
-  const modalTasksList = getModalTasks();
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.classList.remove('modal-open');
+    };
+  }, [
+    isEmployeeModalOpen,
+    isTasksModalOpen,
+    isWorkModalOpen,
+    isSuperiorModalOpen,
+    isRoleDeptModalOpen,
+    isUserDetailOpen,
+  ]);
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Toast Notification */}
-      {successToast && (
-        <div
-          style={{
-            padding: '12px 18px',
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3))',
-            border: '1px solid #10b981',
-            borderRadius: '10px',
-            color: '#a7f3d0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
-            animation: 'fadeIn 0.3s ease',
-          }}
-        >
-          <CheckCircle2 size={18} color="#10b981" />
-          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{successToast}</span>
-        </div>
-      )}
-
-      {/* Header with Title and Multi-Role Badges */}
+    <div
+      className="workspace-page-container user-workspace-wrapper fade-in"
+      id="user-workspace-root"
+      style={{
+        maxWidth: '1240px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        paddingBottom: '32px',
+      }}
+    >
+      {/* 1. CURVED HEADER BANNER (Clickable Profile & Role & Senior tags -> Pop-Ups) */}
       <div
-        className="section-header"
+        className="card workspace-header-card card-official-banner"
         style={{
+          background: '#ffffff',
+          borderRadius: '20px',
+          border: '1px solid var(--border-color)',
+          padding: '20px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
-          marginBottom: '4px',
+          boxShadow: 'var(--shadow-card)',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h2 className="section-title" style={{ margin: 0 }}>MY WORKSPACE</h2>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {(userRoles || [user?.role || 'User']).map((r) => (
-                <span
-                  key={r}
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    background: r.includes('Manager')
-                      ? '#eff6ff'
-                      : r.includes('Sales')
-                      ? '#fef3c7'
-                      : r.includes('Service')
-                      ? '#ecfdf5'
-                      : '#f1f5f9',
-                    color: r.includes('Manager')
-                      ? '#1d4ed8'
-                      : r.includes('Sales')
-                      ? '#b45309'
-                      : r.includes('Service')
-                      ? '#047857'
-                      : '#475569',
-                    border: `1px solid ${
-                      r.includes('Manager')
-                        ? '#bfdbfe'
-                        : r.includes('Sales')
-                        ? '#fde68a'
-                        : r.includes('Service')
-                        ? '#a7f3d0'
-                        : '#e2e8f0'
-                    }`,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <Award size={11} />
-                  <span>{r}</span>
-                </span>
-              ))}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+            <span
+              className="badge-official badge-blue"
+              style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700 }}
+            >
+              <Briefcase size={13} />
+              <span>User Workspace</span>
+            </span>
+
+            {/* Clickable Role Badges -> Opens RoleDeptModal */}
+            {(userRoles || [user?.role || 'User']).map((r, i) => (
+              <span
+                key={i}
+                onClick={() => openRoleDeptDetail(r)}
+                className="badge-official badge-gray"
+                style={{
+                  borderRadius: '999px',
+                  padding: '3px 10px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+                title={`Click to view ${r} role permissions in pop-up`}
+              >
+                <Award size={11} />
+                <span>{r}</span>
+              </span>
+            ))}
           </div>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
-            Logged in as <strong>{user?.name}</strong> • Unified dashboard tailored to your active roles & assigned modules.
-          </p>
+
+          <h1
+            style={{
+              fontSize: '1.45rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              margin: 0,
+              cursor: 'pointer',
+            }}
+            onClick={() => openUserDetail(user)}
+            title="Click to view personal profile in pop-up"
+          >
+            Welcome back, {user?.name || 'User'}
+          </h1>
+        </div>
+
+        {/* Header Right Links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Reports To / Direct Senior Tag -> Opens SuperiorDetailModal */}
+          <div
+            className="reports-to-tag"
+            onClick={openSuperiorDetail}
+            title="Click to view supervisor hierarchy & contact in pop-up"
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              padding: '6px 14px',
+              borderRadius: '999px',
+              fontSize: '0.82rem',
+              color: '#1d4ed8',
+              fontWeight: 600,
+            }}
+          >
+            <ShieldCheck size={14} color="#2563eb" />
+            <span>Reports To: {user?.reportsToName || 'Super Admin'}</span>
+            <ExternalLink size={11} color="#2563eb" />
+          </div>
         </div>
       </div>
 
-      {/* HORIZONTAL TASK ASSIGNMENT ALERT BANNER */}
+      {/* 2. TASK ASSIGNMENT ALERT NOTIFICATION BANNER (Clickable Div -> opens Pop-Up) */}
       {latestAssignmentNotif && (
         <div
+          onClick={() => openTasksDrilldown('To Do', 'Pending Task Assignments')}
           style={{
             background: '#eff6ff',
             border: '1px solid #bfdbfe',
-            borderRadius: '12px',
+            borderRadius: '16px',
             padding: '14px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -463,14 +363,17 @@ export const UserWorkspace = ({ setActiveSection }) => {
             flexWrap: 'wrap',
             gap: '12px',
             boxShadow: 'var(--shadow-sm)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
           }}
+          title="Click to view pending assignments in pop-up modal"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 background: '#dbeafe',
                 color: '#2563eb',
                 display: 'flex',
@@ -509,732 +412,199 @@ export const UserWorkspace = ({ setActiveSection }) => {
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => openSectionModal('To Do')}
+              onClick={(e) => {
+                e.stopPropagation();
+                openTasksDrilldown('To Do', 'Pending Task Assignments');
+              }}
               style={{
                 padding: '6px 14px',
                 fontSize: '0.8rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
+                borderRadius: '999px',
               }}
             >
-              <span>View in To Do</span>
+              <span>View in Pop-up</span>
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
       )}
 
-      {/* STRICTLY HORIZONTAL ASSIGNMENTS ROW BAR */}
+      {/* 3. TOP 5 CURVED INTERACTIVE METRIC CARDS (Click ANY Div to open exact reference pop-up modal!) */}
       <div
-        className="card"
+        className="stats-grid"
         style={{
-          background: '#ffffff',
-          border: '1px solid var(--border-color)',
-          borderRadius: '16px',
-          padding: '20px 24px',
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '16px',
-          boxShadow: 'var(--shadow-card)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Work Breakdown & Task Categories:
-          </span>
 
-          {/* Completion Progress Metric */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Overall Progress: <strong style={{ color: '#059669' }}>{completionPercentage}%</strong> ({completedTasks.length}/{totalMyTasks} completed)
-            </span>
-          </div>
-        </div>
+        {/* CARD 2: Total Assigned Work -> Opens Tasks Drilldown Modal */}
+        <MetricCard
+          title="Total Assigned Work"
+          value={totalMyTasks}
+          subtitle="All active assigned tasks"
+          icon={Briefcase}
+          color="#2563eb"
+          bgLight="#eff6ff"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('all', 'All Assigned Personal Work')}
+        />
 
-        {/* 4 Curved Interactive Metric Cards Grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '16px',
-          }}
-        >
-          <MetricCard
-            title="Total Assigned Work"
-            value={totalMyTasks}
-            subtitle="All personal active tasks"
-            icon={Briefcase}
-            color="#2563eb"
-            bgLight="#eff6ff"
-            isClickable={true}
-            onClick={() => openSectionModal('all')}
-          />
+        {/* CARD 3: In Progress Work -> Opens In Progress Tasks Modal */}
+        <MetricCard
+          title="In Progress Work"
+          value={inProgressTasks.length}
+          subtitle="Currently executing workflows"
+          icon={Clock}
+          color="#d97706"
+          bgLight="#fffbeb"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('In Progress', 'In Progress Workflows')}
+        />
 
-          <MetricCard
-            title="Completed"
-            value={completedTasks.length}
-            subtitle="Successfully finished"
-            icon={CheckCircle2}
-            color="#059669"
-            bgLight="#ecfdf5"
-            isClickable={true}
-            onClick={() => openSectionModal('Completed')}
-          />
+        {/* CARD 4: Completed Work -> Opens Completed Tasks Modal */}
+        <MetricCard
+          title="Completed Work"
+          value={completedTasks.length}
+          subtitle="Successfully finalized & delivered"
+          icon={CheckCircle2}
+          color="#059669"
+          bgLight="#ecfdf5"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('Completed', 'Completed Workflows')}
+        />
 
-          <MetricCard
-            title="In Progress"
-            value={inProgressTasks.length}
-            subtitle="Currently executing"
-            icon={Clock}
-            color="#d97706"
-            bgLight="#fffbeb"
-            isClickable={true}
-            onClick={() => openSectionModal('In Progress')}
-          />
-
-          <MetricCard
-            title="To Do"
-            value={todoTasks.length}
-            subtitle="Awaiting action"
-            icon={ListTodo}
-            color="#7c3aed"
-            bgLight="#f5f3ff"
-            isClickable={true}
-            onClick={() => openSectionModal('To Do')}
-          />
-        </div>
+        {/* CARD 5: Pending Queue -> Opens Pending Tasks Modal */}
+        <MetricCard
+          title="Pending Queue"
+          value={todoTasks.length}
+          subtitle="Awaiting task execution"
+          icon={ListTodo}
+          color="#6366f1"
+          bgLight="#eef2ff"
+          isClickable={true}
+          onClick={() => openTasksDrilldown('To Do', 'Pending Tasks Queue')}
+        />
       </div>
 
-      {/* DEDICATED SECTION POP-UP MODAL (Opens only when user clicks a specific detail) */}
-      {activeModalSection !== null && (
-        <div className="modal-backdrop" onClick={closeSectionModal}>
+      {/* Enterprise LMS & Sales Funnel Summary for User */}
+      <div
+        style={{
+          marginTop: '24px',
+          padding: '20px 24px',
+          borderRadius: '20px',
+          background: '#ffffff',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
-            className="modal-content user-section-modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: '850px',
-              width: '100%',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              animation: 'modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+              padding: '12px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#ffffff',
             }}
           >
-            {/* Modal Header */}
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    padding: '8px',
-                    borderRadius: '10px',
-                    background:
-                      activeModalSection === 'Completed'
-                        ? '#ecfdf5'
-                        : activeModalSection === 'In Progress'
-                        ? '#fffbeb'
-                        : activeModalSection === 'To Do'
-                        ? '#f5f3ff'
-                        : '#eff6ff',
-                    color:
-                      activeModalSection === 'Completed'
-                        ? '#059669'
-                        : activeModalSection === 'In Progress'
-                        ? '#d97706'
-                        : activeModalSection === 'To Do'
-                        ? '#7c3aed'
-                        : '#2563eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {activeModalSection === 'Completed' && <CheckCircle2 size={22} />}
-                  {activeModalSection === 'In Progress' && <Clock size={22} />}
-                  {activeModalSection === 'To Do' && <ListTodo size={22} />}
-                  {activeModalSection === 'all' && <Briefcase size={22} />}
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <h3 className="modal-title" style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem' }}>
-                      {activeModalSection === 'Completed' && 'Completed Tasks'}
-                      {activeModalSection === 'In Progress' && 'In Progress Tasks'}
-                      {activeModalSection === 'To Do' && 'To Do Tasks'}
-                      {activeModalSection === 'all' && 'All Assigned Tasks'}
-                    </h3>
-                    <span
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        background: '#f1f5f9',
-                        color: 'var(--text-primary)',
-                        border: '1px solid #e2e8f0',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {modalTasksList.length} task(s)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button type="button" className="btn-icon" onClick={closeSectionModal} title="Close">
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Filter Toolbar - Responsive Stack on Mobile */}
-            <div className="user-modal-filter-toolbar">
-              <div className="user-modal-search-box">
-                <Search
-                  size={15}
-                  style={{
-                    position: 'absolute',
-                    left: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#64748b',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Filter tasks in this section..."
-                  value={modalSearch}
-                  onChange={(e) => setModalSearch(e.target.value)}
-                  style={{ paddingLeft: '32px', fontSize: '0.85rem', height: '38px', width: '100%' }}
-                />
-              </div>
-
-              <div className="user-modal-select-box">
-                <select
-                  className="form-control select-filter"
-                  value={modalTypeFilter}
-                  onChange={(e) => setModalTypeFilter(e.target.value)}
-                  style={{ fontSize: '0.85rem', width: '100%', height: '38px' }}
-                  aria-label="Filter by task type"
-                >
-                  <option value="all">All Task Types</option>
-                  <option value="internet work">Internet Work</option>
-                  <option value="documentation">Documentation</option>
-                  <option value="social media">Social Media</option>
-                  <option value="backend work">Backend Work</option>
-                  <option value="sells">Sells</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Modal Task List Body */}
-            <div
-              className="modal-body user-modal-task-body"
-              style={{
-                padding: '16px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-                overflowY: 'auto',
-              }}
-            >
-              {modalTasksList.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    padding: '48px 16px',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  <Briefcase size={38} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
-                  <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: '4px' }}>
-                    No Tasks in this section
-                  </h4>
-                  <p style={{ fontSize: '0.82rem', margin: 0 }}>
-                    {modalSearch || modalTypeFilter !== 'all'
-                      ? 'No tasks match your filter criteria.'
-                      : `You currently have 0 tasks in "${activeModalSection}".`}
-                  </p>
-                </div>
-              ) : (
-                modalTasksList.map((task) => {
-                  const typeStyle = getTaskTypeBadgeColor(task.taskType);
-                  const isTaskCompleted = task.status === 'Completed';
-
-                  let formattedDate = 'No date';
-                  if (task.expectedDate) {
-                    const d = new Date(task.expectedDate);
-                    formattedDate = d.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    });
-                  }
-
-                  return (
-                    <div
-                      key={task._id}
-                      className="user-task-modal-card"
-                      style={{
-                        background: isTaskCompleted
-                          ? '#f0fdf4'
-                          : '#ffffff',
-                        border: isTaskCompleted
-                          ? '1px solid #bbf7d0'
-                          : '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '10px',
-                        boxShadow: 'var(--shadow-sm)',
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {/* Top Badges & Status Row */}
-                      <div className="user-task-badges-row">
-                        <div className="user-task-badges-left">
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              textTransform: 'uppercase',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: typeStyle.bg,
-                              color: typeStyle.color,
-                              border: `1px solid ${typeStyle.border}`,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {task.taskType}
-                          </span>
-
-                          {getPriorityBadge(task.priority)}
-
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: '#eff6ff',
-                              color: '#1d4ed8',
-                              border: '1px solid #bfdbfe',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            <Shield size={11} />
-                            <span>Assigned by: {task.assignedBy || 'Manager'}</span>
-                          </span>
-                        </div>
-
-                        <div className="user-task-badges-right">
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                            <Calendar size={13} />
-                            <span>Due: {formattedDate}</span>
-                          </span>
-
-                          <span
-                            className="user-task-status-badge"
-                            style={{
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              padding: '2px 10px',
-                              borderRadius: '999px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 0,
-                              background:
-                                task.status === 'Completed'
-                                  ? '#ecfdf5'
-                                  : task.status === 'In Progress'
-                                  ? '#fffbeb'
-                                  : '#f5f3ff',
-                              color:
-                                task.status === 'Completed'
-                                  ? '#047857'
-                                  : task.status === 'In Progress'
-                                  ? '#b45309'
-                                  : '#6d28d9',
-                              border: `1px solid ${
-                                task.status === 'Completed'
-                                  ? '#a7f3d0'
-                                  : task.status === 'In Progress'
-                                  ? '#fde68a'
-                                  : '#ddd6fe'
-                              }`,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: '6px',
-                                height: '6px',
-                                borderRadius: '50%',
-                                background:
-                                  task.status === 'Completed'
-                                    ? '#059669'
-                                    : task.status === 'In Progress'
-                                    ? '#d97706'
-                                    : '#7c3aed',
-                                display: 'inline-block',
-                              }}
-                            />
-                            <span>{task.status}</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p
-                        style={{
-                          color: 'var(--text-primary)',
-                          fontSize: '0.92rem',
-                          fontWeight: 600,
-                          margin: '2px 0',
-                          lineHeight: 1.45,
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word',
-                        }}
-                      >
-                        {task.description}
-                      </p>
-
-                      {/* Manager Instructions */}
-                      {task.remark && (
-                        <div
-                          style={{
-                            background: '#f8fafc',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #e2e8f0',
-                            borderLeft: '3px solid #2563eb',
-                            fontSize: '0.8rem',
-                            color: 'var(--text-secondary)',
-                            wordBreak: 'break-word',
-                            overflowWrap: 'break-word',
-                          }}
-                        >
-                          <span style={{ fontWeight: 600, color: '#1d4ed8', display: 'block', fontSize: '0.72rem' }}>
-                            Manager Instructions:
-                          </span>
-                          {task.remark}
-                        </div>
-                      )}
-
-                      {/* User Completion Note */}
-                      {task.completionRemark && (
-                        <div
-                          style={{
-                            background: '#f0fdf4',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #bbf7d0',
-                            borderLeft: '3px solid #059669',
-                            fontSize: '0.8rem',
-                            color: 'var(--text-secondary)',
-                            wordBreak: 'break-word',
-                            overflowWrap: 'break-word',
-                          }}
-                        >
-                          <span style={{ fontWeight: 600, color: '#047857', display: 'block', fontSize: '0.72rem' }}>
-                            Your Completion Note (Sent to Manager):
-                          </span>
-                          "{task.completionRemark}"
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div
-                        className="user-task-actions-row"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                          marginTop: '4px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          {task.status === 'To Do' && (
-                            <button
-                              className="btn btn-secondary user-task-action-btn"
-                              onClick={() => handleStartTask(task)}
-                              style={{
-                                fontSize: '0.8rem',
-                                padding: '7px 12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: '#fffbeb',
-                                borderColor: '#fde68a',
-                                color: '#b45309',
-                              }}
-                            >
-                              <PlayCircle size={15} />
-                              <span>Start Task (In Progress)</span>
-                            </button>
-                          )}
-
-                          {task.status !== 'Completed' && (
-                            <button
-                              className="btn btn-primary user-task-action-btn"
-                              onClick={() => openCompletionModal(task)}
-                              style={{
-                                fontSize: '0.8rem',
-                                padding: '7px 14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: 'linear-gradient(135deg, #10b981, #059669)',
-                                borderColor: '#059669',
-                              }}
-                            >
-                              <CheckCircle2 size={15} />
-                              <span>Complete & Add Remark</span>
-                            </button>
-                          )}
-
-                          {isTaskCompleted && (
-                            <span style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0' }}>
-                              <CheckCircle2 size={15} />
-                              <span>Completed & Notified</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* View, Edit, Delete icon signs only */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <button
-                            type="button"
-                            onClick={() => openViewModal(task)}
-                            title="View Details"
-                            style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '6px',
-                              border: '1px solid #bfdbfe',
-                              backgroundColor: '#eff6ff',
-                              color: '#2563eb',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#dbeafe';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#eff6ff';
-                            }}
-                          >
-                            <Eye size={15} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(task)}
-                            title="Edit Task"
-                            style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '6px',
-                              border: '1px solid #e2e8f0',
-                              backgroundColor: '#f8fafc',
-                              color: '#475569',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f1f5f9';
-                              e.currentTarget.style.color = '#0f172a';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f8fafc';
-                              e.currentTarget.style.color = '#475569';
-                            }}
-                          >
-                            <Edit2 size={15} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(task)}
-                            title="Delete Task"
-                            style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '6px',
-                              border: '1px solid #fecaca',
-                              backgroundColor: '#fef2f2',
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#fee2e2';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#fef2f2';
-                            }}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            <Target size={24} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+              My Sales Leads & Outreach Pipeline
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+              View assigned leads, 1-click log call dispositions, manage scheduled callbacks, and claim unassigned queue leads.
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Task Completion Modal */}
-      {isCompletionModalOpen && taskToComplete && (
-        <div className="modal-backdrop" style={{ zIndex: 1300 }}>
-          <div
-            className="modal-content"
-            style={{ maxWidth: '520px', width: '100%', animation: 'modalSlideUp 0.25s ease' }}
-          >
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    background: '#ecfdf5',
-                    color: '#059669',
-                  }}
-                >
-                  <CheckCircle2 size={22} />
-                </div>
-                <div>
-                  <h3 className="modal-title" style={{ color: 'var(--text-primary)', margin: 0 }}>Complete Task & Report to Assigner</h3>
-                </div>
-              </div>
+        <button
+          type="button"
+          onClick={() => setActiveSection && setActiveSection('leads')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            border: 'none',
+            color: '#ffffff',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+          }}
+        >
+          <span>Open My Leads</span>
+          <Target size={16} />
+        </button>
+      </div>
 
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={closeCompletionModal}
-                disabled={isSubmittingCompletion}
-              >
-                <X size={20} />
-              </button>
-            </div>
+      {/* ========================================================
+          POP-UP MODALS (All Drilldowns Render As Clean Pop-Ups)
+          ======================================================== */}
 
-            <form onSubmit={handleSubmitCompletion}>
-              <div className="modal-body">
-                {/* Task Preview Card */}
-                <div
-                  style={{
-                    background: '#f8fafc',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    marginBottom: '16px',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      textTransform: 'uppercase',
-                      color: '#2563eb',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {taskToComplete.taskType}
-                  </span>
-                  <p
-                    style={{
-                      color: 'var(--text-primary)',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      margin: '4px 0',
-                    }}
-                  >
-                    {taskToComplete.description}
-                  </p>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Assigned by: {taskToComplete.assignedBy || 'Manager'}
-                  </span>
-                </div>
+      {/* Pop-Up 1: All Organization Personnel Modal (Exact Reference Image!) */}
+      <EmployeeDrilldownModal
+        isOpen={isEmployeeModalOpen}
+        onClose={closeEmployeeDrilldown}
+        initialDepartmentFilter={employeeDeptFilter}
+        modalTitle={employeeModalTitle}
+        onSelectUserForWork={(targetUser) => openUserWork(targetUser, 'all')}
+      />
 
-                {/* Completion Remark Input */}
-                <div className="form-group">
-                  <label className="form-label" htmlFor="completionRemark">
-                    Completion Remark / Report for {taskToComplete.assignedBy ? `Assigner (${taskToComplete.assignedBy})` : 'Assigner'} <span className="required">*</span>
-                  </label>
-                  <textarea
-                    id="completionRemark"
-                    className="form-control"
-                    rows="4"
-                    placeholder="e.g. Work is done, tests are passing, and files have been verified."
-                    value={completionRemark}
-                    onChange={(e) => setCompletionRemark(e.target.value)}
-                    disabled={isSubmittingCompletion}
-                    autoFocus
-                  />
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                    This completion report will be dispatched directly to {taskToComplete.assignedBy || 'the assigner'}.
-                  </span>
-                </div>
-              </div>
+      {/* Pop-Up 2: Tasks Drilldown Modal (All, Completed, In Progress, To Do) */}
+      <ManagerTasksDrilldownModal
+        isOpen={isTasksModalOpen}
+        onClose={closeTasksDrilldown}
+        initialFilter={tasksFilterParam}
+        modalTitle={tasksModalTitle}
+      />
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={closeCompletionModal}
-                  disabled={isSubmittingCompletion}
-                >
-                  Cancel
-                </button>
+      {/* Pop-Up 3: User Work Modal (Opened when clicking "View Work" in Personnel Modal) */}
+      <UserWorkModal
+        isOpen={isWorkModalOpen}
+        onClose={closeUserWork}
+        user={selectedUserForWork}
+        initialFilter={userWorkFilter}
+      />
 
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    borderColor: '#059669',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                  disabled={isSubmittingCompletion}
-                >
-                  {isSubmittingCompletion ? (
-                    <span>Submitting...</span>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      <span>Submit & Report to Assigner</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Pop-Up 4: Superior / Supervisor Profile Modal */}
+      <SuperiorDetailModal
+        isOpen={isSuperiorModalOpen}
+        onClose={closeSuperiorDetail}
+        superiorName={user?.reportsToName}
+      />
+
+      {/* Pop-Up 5: Role & Department Permissions Modal */}
+      <RoleDeptModal
+        role={selectedRoleForModal}
+        department={user?.department || 'Operations'}
+        isOpen={isRoleDeptModalOpen}
+        onClose={closeRoleDeptDetail}
+      />
+
+      {/* Pop-Up 6: Personal Profile Modal */}
+      <UserDetailModal
+        user={selectedUserDetail}
+        isOpen={isUserDetailOpen}
+        onClose={closeUserDetail}
+        onOpenWork={(u, filter) => openUserWork(u, filter || 'all')}
+        onViewManager={() => openSuperiorDetail()}
+      />
     </div>
   );
 };
+
+export default UserWorkspace;

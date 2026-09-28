@@ -418,7 +418,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     </label>
                     <input
                       type="text"
-                      className={`form-input ${fieldErrors.name ? 'is-invalid' : ''}`}
+                      className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
                       value={formData.name}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, name: e.target.value }));
@@ -441,7 +441,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     </label>
                     <input
                       type="text"
-                      className={`form-input ${fieldErrors.username ? 'is-invalid' : ''}`}
+                      className={`form-control ${fieldErrors.username ? 'is-invalid' : ''}`}
                       value={formData.username}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, username: e.target.value }));
@@ -464,7 +464,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     </label>
                     <input
                       type="email"
-                      className={`form-input ${fieldErrors.email ? 'is-invalid' : ''}`}
+                      className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
                       value={formData.email}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, email: e.target.value }));
@@ -486,7 +486,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                       Assigned Department
                     </label>
                     <select
-                      className="form-input"
+                      className="form-control"
                       value={formData.department}
                       onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
                       style={{ width: '100%', padding: '9px 12px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
@@ -603,7 +603,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showNewPassword ? 'text' : 'password'}
-                      className={`form-input ${fieldErrors.newPassword ? 'is-invalid' : ''}`}
+                      className={`form-control ${fieldErrors.newPassword ? 'is-invalid' : ''}`}
                       value={formData.newPassword}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, newPassword: e.target.value }));
@@ -645,7 +645,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      className={`form-input ${fieldErrors.confirmPassword ? 'is-invalid' : ''}`}
+                      className={`form-control ${fieldErrors.confirmPassword ? 'is-invalid' : ''}`}
                       value={formData.confirmPassword}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }));

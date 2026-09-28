@@ -294,6 +294,66 @@ export const SuperAdminDashboard = () => {
         />
       </div>
 
+      {/* Enterprise LMS & Sales Funnel Executive Widget Summary */}
+      <div
+        style={{
+          marginTop: '24px',
+          padding: '20px 24px',
+          borderRadius: '20px',
+          background: '#ffffff',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              padding: '12px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#ffffff',
+            }}
+          >
+            <Target size={24} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+              Enterprise Lead Management & Sales Funnel MIS
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+              Access multi-dimensional filtrations, real-time SLA escalation daemon, 1-click disposition logging, and 5 structured MIS reports.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection && setActiveSection('leads')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            border: 'none',
+            color: '#ffffff',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+          }}
+        >
+          <span>Open LMS Console</span>
+          <Target size={16} />
+        </button>
+      </div>
+
       {/* Drilldown Modals (Opened on specific card clicks) */}
       <EmployeeDrilldownModal
         isOpen={isEmployeeModalOpen}

@@ -37,9 +37,6 @@ const ApprovalSection = lazy(() =>
 const LeadSection = lazy(() =>
   import('./components/Leads/LeadSection').then((m) => ({ default: m.LeadSection }))
 );
-const OpportunitySection = lazy(() =>
-  import('./components/Opportunities/OpportunitySection').then((m) => ({ default: m.OpportunitySection }))
-);
 const ComplaintSection = lazy(() =>
   import('./components/Complaints/ComplaintSection').then((m) => ({ default: m.ComplaintSection }))
 );
@@ -65,6 +62,21 @@ const DeleteConfirmModal = lazy(() =>
 );
 const TaskDetailModal = lazy(() =>
   import('./components/TaskManagement/TaskDetailModal').then((m) => ({ default: m.TaskDetailModal }))
+);
+const LeadModal = lazy(() =>
+  import('./components/Leads/LeadModal').then((m) => ({ default: m.LeadModal }))
+);
+const ConvertLeadModal = lazy(() =>
+  import('./components/Leads/ConvertLeadModal').then((m) => ({ default: m.ConvertLeadModal }))
+);
+const DeleteLeadModal = lazy(() =>
+  import('./components/Leads/DeleteLeadModal').then((m) => ({ default: m.DeleteLeadModal }))
+);
+const OpportunityModal = lazy(() =>
+  import('./components/Opportunities/OpportunityModal').then((m) => ({ default: m.OpportunityModal }))
+);
+const DeleteOpportunityModal = lazy(() =>
+  import('./components/Opportunities/DeleteOpportunityModal').then((m) => ({ default: m.DeleteOpportunityModal }))
 );
 const ComplaintModal = lazy(() =>
   import('./components/Complaints/ComplaintModal').then((m) => ({ default: m.ComplaintModal }))
@@ -260,7 +272,7 @@ const AuthenticatedLayout = ({
 
   return (
     <>
-      {/* Global Modals for Tasks, Complaints, Projects, Command Palette */}
+      {/* Global Modals for Tasks, Leads, Opportunities, Complaints, Projects, Command Palette */}
       <Suspense fallback={null}>
         <CommandPalette
           isOpen={isCommandPaletteOpen}
@@ -270,6 +282,11 @@ const AuthenticatedLayout = ({
         <TaskModal />
         <DeleteConfirmModal />
         <TaskDetailModal />
+        <LeadModal />
+        <ConvertLeadModal />
+        <DeleteLeadModal />
+        <OpportunityModal />
+        <DeleteOpportunityModal />
         <ComplaintModal />
         <ResolveComplaintModal />
         <DeleteComplaintModal />
@@ -326,7 +343,6 @@ const AuthenticatedLayout = ({
                   {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                   {activeSection === 'tasks' && <TaskList />}
                   {activeSection === 'leads' && <LeadSection />}
-                  {activeSection === 'opportunities' && <OpportunitySection />}
                   {activeSection === 'complaints' && <ComplaintSection />}
                   {activeSection === 'projects' && <ProjectSection />}
                   {activeSection === 'subscription' && <SubscriptionManagement />}
@@ -340,7 +356,6 @@ const AuthenticatedLayout = ({
                   {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                   {activeSection === 'tasks' && <TaskList />}
                   {activeSection === 'leads' && <LeadSection />}
-                  {activeSection === 'opportunities' && <OpportunitySection />}
                   {activeSection === 'complaints' && <ComplaintSection />}
                   {activeSection === 'projects' && <ProjectSection />}
                   {activeSection === 'subscription' && <SubscriptionManagement />}
@@ -354,7 +369,6 @@ const AuthenticatedLayout = ({
                   {(activeSection === 'employees' || activeSection === 'user') && <UserSection />}
                   {activeSection === 'tasks' && <TaskList />}
                   {activeSection === 'leads' && <LeadSection />}
-                  {activeSection === 'opportunities' && <OpportunitySection />}
                   {activeSection === 'complaints' && <ComplaintSection />}
                   {activeSection === 'projects' && <ProjectSection />}
                   {activeSection === 'subscription' && <SubscriptionManagement />}
@@ -392,7 +406,6 @@ const MainApplication = () => {
     'user',
     'tasks',
     'leads',
-    'opportunities',
     'complaints',
     'projects',
     'subscription',

@@ -97,7 +97,7 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
 const getAuthHeaders = () => {
   const token =
     (typeof window !== 'undefined' &&
-      (localStorage.getItem('taskflow_token') || sessionStorage.getItem('taskflow_token'))) ||
+      (sessionStorage.getItem('taskflow_token') || localStorage.getItem('taskflow_token'))) ||
     null;
   return {
     'Content-Type': 'application/json',
@@ -532,15 +532,28 @@ export const api = {
     return data;
   },
 
-  async updateLeadStatus(id, status) {
+  async updateLeadStatus(id, status, details = {}) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...details }),
     });
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to update lead status');
+    }
+    return data;
+  },
+
+  async qualifyLead(id, qualificationData = {}) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/qualify`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(qualificationData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to qualify lead');
     }
     return data;
   },
@@ -566,6 +579,170 @@ export const api = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to delete lead');
+    }
+    return data;
+  },
+
+  // Lead Call & Communication Log APIs
+  async recordLeadCall(id, callData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/calls`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(callData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to record call log');
+    }
+    return data;
+  },
+
+  async getLeadCalls(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/calls`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch call logs');
+    }
+    return data;
+  },
+
+  // Lead Follow-Up Management APIs
+  async scheduleLeadFollowUp(id, followupData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/followups`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(followupData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to schedule follow-up');
+    }
+    return data;
+  },
+
+  async getLeadFollowUps(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/followups`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch follow-ups');
+    }
+    return data;
+  },
+
+  async updateLeadFollowUp(leadId, followUpId, followupData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${leadId}/followups/${followUpId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(followupData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update follow-up');
+    }
+    return data;
+  },
+
+  // Enterprise LMS: 1-Click Disposition Matrix Logging
+  async logLeadDisposition(id, dispositionData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/disposition`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(dispositionData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to log disposition');
+    }
+    return data;
+  },
+
+  // Enterprise LMS: Advanced Multi-Dimensional Filtration Engine
+  async filterLeadsAdvanced(rules = [], logic = 'AND') {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/filter`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ rules, logic }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to execute advanced filter');
+    }
+    return data;
+  },
+
+  // Enterprise LMS: Claim High-Priority Unassigned Lead
+  async claimUnassignedLead(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/${id}/claim`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to claim unassigned lead');
+    }
+    return data;
+  },
+
+  // Enterprise LMS: MIS Reports & Analytical Dashboard API
+  async getMISAnalytics() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/mis/analytics`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch MIS analytics');
+    }
+    return data;
+  },
+
+  async getMISReport(reportId) {
+    const endpointMap = {
+      'MIS-01': 'funnel-velocity',
+      'MIS-02': 'agent-efficiency',
+      'MIS-03': 'disposition-distribution',
+      'MIS-04': 'pipeline-aging',
+      'MIS-05': 'attribution-roi',
+    };
+    const path = endpointMap[reportId] || reportId;
+    const res = await fetchWithTimeout(`${getBaseUrl()}/mis/reports/${path}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch MIS report');
+    }
+    return data;
+  },
+
+  getMISExportUrl(reportId, format = 'csv') {
+    return `${getBaseUrl()}/mis/export/${reportId}?format=${format}`;
+  },
+
+  // Enterprise LMS: Immutable Audit Trail API
+  async getAuditLogs(params = {}) {
+    const query = new URLSearchParams();
+    if (params.entity_type && params.entity_type !== 'all') query.append('entity_type', params.entity_type);
+    if (params.action && params.action !== 'all') query.append('action', params.action);
+    if (params.entity_id) query.append('entity_id', params.entity_id);
+    if (params.search) query.append('search', params.search);
+    if (params.limit) query.append('limit', params.limit);
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/audit-logs${queryString}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch audit logs');
     }
     return data;
   },

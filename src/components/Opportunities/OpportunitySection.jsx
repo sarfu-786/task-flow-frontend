@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useOpportunities } from '../../context/OpportunityContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
-import { OpportunityModal } from './OpportunityModal';
-import { DeleteOpportunityModal } from './DeleteOpportunityModal';
 import { OpportunityMetricDetailDialog } from './OpportunityMetricDetailDialog';
+import { OpportunityKanban } from './OpportunityKanban';
+import { OpportunityTable } from './OpportunityTable';
 import {
   TrendingUp,
   Plus,
@@ -14,6 +14,9 @@ import {
   Crown,
   ShieldCheck,
   Briefcase,
+  LayoutGrid,
+  Table as TableIcon,
+  Search,
 } from 'lucide-react';
 
 export const OpportunitySection = () => {
@@ -24,6 +27,12 @@ export const OpportunitySection = () => {
   const {
     opportunities,
     stats,
+    search,
+    setSearch,
+    stageFilter,
+    setStageFilter,
+    priorityFilter,
+    setPriorityFilter,
     openCreateModal,
     openEditModal,
     openDeleteModal,
@@ -32,17 +41,16 @@ export const OpportunitySection = () => {
   // Active Metric Popup Dialog: 'pipeline' | 'won' | 'win_rate' | 'negotiation' | null
   const [activeMetricDialog, setActiveMetricDialog] = useState(null);
 
+  // View Mode: 'kanban' | 'table'
+  const [viewMode, setViewMode] = useState('kanban');
+
   const formatAmount = (num) => {
-    if (!num && num !== 0) return '₹0';
-    return `₹${Number(num).toLocaleString('en-IN')}`;
+    if (!num && num !== 0) return '$0';
+    return `$${Number(num).toLocaleString()}`;
   };
 
   return (
-    <div className="opportunity-management-page">
-      {/* Modals */}
-      <OpportunityModal />
-      <DeleteOpportunityModal />
-
+    <div className="opportunity-management-page" style={{ paddingBottom: '32px' }}>
       {/* Header Section */}
       <div
         className="section-header"
@@ -59,7 +67,7 @@ export const OpportunitySection = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <TrendingUp className="text-primary" size={24} color="#059669" />
             <h2 className="section-title" style={{ margin: 0, fontSize: '1.4rem' }}>
-              Opportunities
+              Opportunities & Deal Pipeline
             </h2>
             <span
               style={{
@@ -165,6 +173,128 @@ export const OpportunitySection = () => {
         />
       </div>
 
+      {/* View Switcher & Filter Controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          background: '#ffffff',
+          padding: '12px 16px',
+          borderRadius: '14px',
+          border: '1px solid #e2e8f0',
+          marginBottom: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: 1 }}>
+          <input
+            type="text"
+            placeholder="Search deals by name, company, contact..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              minWidth: '220px',
+              flex: 1,
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.84rem',
+              outline: 'none',
+            }}
+          />
+
+          <select
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.84rem',
+              background: '#ffffff',
+              outline: 'none',
+            }}
+          >
+            <option value="all">All Stages</option>
+            <option value="Qualification">Qualification</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Negotiation">Negotiation</option>
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+          </select>
+
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.84rem',
+              background: '#ffffff',
+              outline: 'none',
+            }}
+          >
+            <option value="all">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        {/* View Mode Toggle Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
+          <button
+            type="button"
+            onClick={() => setViewMode('kanban')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: 'none',
+              background: viewMode === 'kanban' ? '#ffffff' : 'transparent',
+              color: viewMode === 'kanban' ? '#059669' : '#64748b',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              boxShadow: viewMode === 'kanban' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            }}
+          >
+            <LayoutGrid size={14} />
+            <span>Kanban Board</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: 'none',
+              background: viewMode === 'table' ? '#ffffff' : 'transparent',
+              color: viewMode === 'table' ? '#059669' : '#64748b',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              boxShadow: viewMode === 'table' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            }}
+          >
+            <TableIcon size={14} />
+            <span>Pipeline Table</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Render Kanban or Table */}
+      {viewMode === 'kanban' ? <OpportunityKanban /> : <OpportunityTable />}
+
       {/* Dedicated Opportunity Metric Detail Scrollable Pop-up Dialog */}
       <OpportunityMetricDetailDialog
         open={!!activeMetricDialog}
@@ -188,4 +318,3 @@ export const OpportunitySection = () => {
 };
 
 export default OpportunitySection;
-

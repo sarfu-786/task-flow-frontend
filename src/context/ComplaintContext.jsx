@@ -24,11 +24,18 @@ export const ComplaintProvider = ({ children }) => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [slaFilter, setSlaFilter] = useState('all');
   const [assignedFilter, setAssignedFilter] = useState('all');
+  const [metricFilter, setMetricFilterState] = useState('total'); // 'total' | 'urgent' | 'sla_risk' | 'resolved'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
+  const setMetricFilter = useCallback((filter) => {
+    setMetricFilterState(filter);
+    setCurrentPage(1);
+  }, []);
+
   const resetFilters = useCallback(() => {
     setSearch('');
+    setMetricFilterState('total');
     setStatusFilter('all');
     setCategoryFilter('all');
     setPriorityFilter('all');
@@ -70,10 +77,21 @@ export const ComplaintProvider = ({ children }) => {
     fetchComplaints(true);
   }, [fetchComplaints]);
 
-  // Compute dynamic filtered complaints matching search and filters
+  // Compute dynamic filtered complaints matching search, metric cards, and filters
   const filteredComplaints = useMemo(() => {
     return allComplaints.filter((c) => {
       if (!c) return false;
+
+      // Metric Card (Div) Filter
+      if (metricFilter === 'urgent') {
+        if (c.priority !== 'Urgent' || ['Resolved', 'Closed'].includes(c.status)) return false;
+      } else if (metricFilter === 'sla_risk') {
+        if (!['Breached', 'At Risk'].includes(c.slaStatus)) return false;
+      } else if (metricFilter === 'resolved') {
+        if (!['Resolved', 'Closed'].includes(c.status)) return false;
+      }
+
+      // Dropdown & Search Filters
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && c.category !== categoryFilter) return false;
       if (priorityFilter !== 'all' && c.priority !== priorityFilter) return false;
@@ -94,7 +112,7 @@ export const ComplaintProvider = ({ children }) => {
       }
       return true;
     });
-  }, [allComplaints, statusFilter, categoryFilter, priorityFilter, slaFilter, assignedFilter, search]);
+  }, [allComplaints, metricFilter, statusFilter, categoryFilter, priorityFilter, slaFilter, assignedFilter, search]);
 
   const totalItems = filteredComplaints.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -227,6 +245,8 @@ export const ComplaintProvider = ({ children }) => {
         loading,
         error,
         moduleDisabled,
+        metricFilter,
+        setMetricFilter,
         search,
         setSearch,
         statusFilter,

@@ -292,30 +292,30 @@ export const OpportunityModal = () => {
           <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Opportunity Name */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp size={14} color="var(--primary)" />
-                <span>Opportunity / Deal Name *</span>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <TrendingUp size={14} color="#059669" />
+                <span>Opportunity / Deal Name <span style={{ color: '#ef4444' }}>*</span></span>
               </label>
               <input
                 type="text"
-                className={`form-input ${errors.name ? 'is-invalid' : ''}`}
+                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                 placeholder="e.g. CloudScale Enterprise Rollout"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 autoFocus
               />
-              {errors.name && <span className="error-feedback">{errors.name}</span>}
+              {errors.name && <span className="form-error-msg">{errors.name}</span>}
             </div>
 
             {/* Company Name */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Building size={14} color="#059669" />
                 <span>Company</span>
               </label>
               <input
                 type="text"
-                className="form-input"
+                className="form-control"
                 placeholder="e.g. CloudScale Infotech"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -324,12 +324,12 @@ export const OpportunityModal = () => {
 
             {/* Related Lead */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Link size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Link size={14} color="#059669" />
                 <span>Related Lead</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.relatedLead || ''}
                 onChange={handleLeadSelect}
               >
@@ -344,27 +344,27 @@ export const OpportunityModal = () => {
 
             {/* Deal Amount */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <DollarSign size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <DollarSign size={14} color="#059669" />
                 <span>Deal Value / Amount (₹)</span>
               </label>
               <input
                 type="number"
                 min="0"
                 step="1000"
-                className={`form-input ${errors.amount ? 'is-invalid' : ''}`}
+                className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
                 placeholder="e.g. 450000"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               />
-              {errors.amount && <span className="error-feedback">{errors.amount}</span>}
+              {errors.amount && <span className="form-error-msg">{errors.amount}</span>}
             </div>
 
             {/* Stage */}
             <div className="form-group">
-              <label className="form-label">Pipeline Stage</label>
+              <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Pipeline Stage</label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.stage}
                 onChange={(e) => handleStageChange(e.target.value)}
               >
@@ -378,15 +378,15 @@ export const OpportunityModal = () => {
 
             {/* Probability */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Percent size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Percent size={14} color="#059669" />
                 <span>Win Probability (%)</span>
               </label>
               <input
                 type="number"
                 min="0"
                 max="100"
-                className="form-input"
+                className="form-control"
                 value={formData.probability}
                 onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
               />
@@ -394,13 +394,13 @@ export const OpportunityModal = () => {
 
             {/* Expected Close Date */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Calendar size={14} color="#059669" />
                 <span>Expected Close Date</span>
               </label>
               <input
                 type="date"
-                className="form-input"
+                className="form-control"
                 value={formData.expectedCloseDate}
                 onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
               />
@@ -408,12 +408,12 @@ export const OpportunityModal = () => {
 
             {/* Priority */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Flag size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Flag size={14} color="#059669" />
                 <span>Priority</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
               >
@@ -425,12 +425,12 @@ export const OpportunityModal = () => {
 
             {/* Assigned To */}
             <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <UserIcon size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <UserIcon size={14} color="#059669" />
                 <span>Assigned Deal Owner</span>
               </label>
               <select
-                className="form-select"
+                className="form-control select-filter"
                 value={formData.assignedTo}
                 onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
               >
@@ -444,12 +444,12 @@ export const OpportunityModal = () => {
 
             {/* Notes */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FileText size={14} color="var(--primary)" />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <FileText size={14} color="#059669" />
                 <span>Opportunity Notes & Next Steps</span>
               </label>
               <textarea
-                className="form-textarea"
+                className="form-control"
                 rows={3}
                 placeholder="Key requirements, client decision makers, proposal details..."
                 value={formData.notes}
@@ -462,7 +462,16 @@ export const OpportunityModal = () => {
             <button type="button" className="btn btn-secondary" onClick={closeOpportunityModal} disabled={isSubmitting}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '130px' }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+              style={{
+                minWidth: '130px',
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                borderColor: '#059669',
+              }}
+            >
               {isSubmitting ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div className="spinner-sm" />
