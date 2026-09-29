@@ -70,6 +70,7 @@ export const MISReportsModal = ({ isOpen, onClose }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #ffffff, #f8fafc)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -160,7 +161,8 @@ export const MISReportsModal = ({ isOpen, onClose }) => {
             padding: '24px 28px',
             backgroundColor: '#f8fafc',
             overflowY: 'auto',
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
           }}
         >
           <MISReportsDashboard />

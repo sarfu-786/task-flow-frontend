@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLeads } from '../../context/LeadContext';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -34,11 +34,13 @@ import {
   Trash2,
   Edit2,
 } from 'lucide-react';
+import { LeadOpportunitySection } from './LeadOpportunitySection';
 
 export const LeadDetailModal = () => {
   const {
     isLeadDetailModalOpen,
     leadForDetail,
+    leadDetailTab,
     closeLeadDetailModal,
     openEditModal,
     openAddCallModal,
@@ -51,8 +53,14 @@ export const LeadDetailModal = () => {
   } = useLeads();
 
   const { user: currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('info'); // 'info' | 'calls' | 'followups' | 'timeline' | 'opportunity'
+  const [activeTab, setActiveTab] = useState(leadDetailTab || 'info'); // 'info' | 'calls' | 'followups' | 'timeline' | 'opportunity'
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  useEffect(() => {
+    if (leadDetailTab) {
+      setActiveTab(leadDetailTab);
+    }
+  }, [leadDetailTab, leadForDetail]);
 
   if (!isLeadDetailModalOpen || !leadForDetail) return null;
 
@@ -128,6 +136,7 @@ export const LeadDetailModal = () => {
             padding: '20px 24px 16px',
             borderBottom: '1px solid #e2e8f0',
             background: '#f8fafc',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
@@ -470,6 +479,7 @@ export const LeadDetailModal = () => {
             borderBottom: '1px solid #e2e8f0',
             background: '#ffffff',
             overflowX: 'auto',
+            flexShrink: 0,
           }}
         >
           <button
@@ -586,7 +596,7 @@ export const LeadDetailModal = () => {
         </div>
 
         {/* Tab Content Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
           {/* TAB 1: LEAD INFORMATION */}
           {activeTab === 'info' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -713,6 +723,11 @@ export const LeadDetailModal = () => {
                   {lead.remarks || lead.notes || 'No remarks added yet.'}
                 </p>
               </div>
+
+              {/* Opportunity Workflow Section (Only for Converted Leads) */}
+              {isConverted && (
+                <LeadOpportunitySection lead={lead} />
+              )}
             </div>
           )}
 
@@ -807,8 +822,10 @@ export const LeadDetailModal = () => {
                                 </strong>
                               </div>
                               <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                                Sales User: <strong>{call.salesUser || lead.assignedTo}</strong> • {call.date} at {call.time}
-                                {call.duration ? ` • Duration: ${call.duration}` : ''}
+                                Sales User: <strong>{call.salesUser || lead.assignedTo || 'Sales Rep'}</strong> • {call.date || (call.timestamp ? new Date(call.timestamp).toLocaleDateString('en-GB') : 'Logged Call')}{call.time ? ` at ${call.time}` : ''}
+                                {call.duration || call.callDuration || call.duration_seconds
+                                  ? ` • Duration: ${call.duration || call.callDuration || `${call.duration_seconds}s`}`
+                                  : ''}
                               </span>
                             </div>
                           </div>
@@ -1139,96 +1156,10 @@ export const LeadDetailModal = () => {
             </div>
           )}
 
-          {/* TAB 5: OPPORTUNITY LINKAGE */}
+          {/* TAB 5: OPPORTUNITY WORKFLOW SECTION */}
           {activeTab === 'opportunity' && isConverted && (
             <div>
-              <div
-                style={{
-                  background: '#f5f3ff',
-                  border: '1px solid #ddd6fe',
-                  borderRadius: '12px',
-                  padding: '20px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
-                      background: '#7c3aed',
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Sparkles size={22} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#5b21b6' }}>
-                      Opportunity {lead.opportunityId || 'OP-001'}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#7c3aed' }}>
-                      Downstream deal generated from this source lead
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '14px',
-                    background: '#ffffff',
-                    padding: '16px',
-                    borderRadius: '10px',
-                    border: '1px solid #e9d5ff',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>OPPORTUNITY ID</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', marginTop: '2px' }}>
-                      {lead.opportunityId || 'OP-001'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>SOURCE LEAD</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                      {lead.leadId} ({lead.company || lead.name})
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>DEAL VALUE</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
-                      ₹{Number(lead.estimatedValue || lead.dealValue || 0).toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>CURRENT STAGE</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#7c3aed', marginTop: '2px' }}>
-                      Qualification
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>CONVERTED ON</div>
-                    <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: '2px' }}>
-                      {lead.convertedAt ? new Date(lead.convertedAt).toLocaleString('en-GB') : 'N/A'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#6b21a8', fontWeight: 600 }}>CONVERTED BY</div>
-                    <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: '2px' }}>
-                      {lead.convertedByName || 'Sales Representative'}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <LeadOpportunitySection lead={lead} />
             </div>
           )}
         </div>

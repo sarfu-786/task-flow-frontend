@@ -110,205 +110,6 @@ export const EnhancedLeadTable = () => {
         flexDirection: 'column',
       }}
     >
-      {/* Multi-Dimensional Filter & Search Bar */}
-      <div
-        style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid #e2e8f0',
-          background: '#f8fafc',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
-        {/* Row 1: Search & Quick CTA */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '480px' }}>
-            <Search
-              size={16}
-              color="#94a3b8"
-              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
-            />
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search by Lead ID, Company, Contact Person, Phone, Email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: '36px', fontSize: '0.84rem' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '6px 12px' }}
-            >
-              <RotateCcw size={13} />
-              <span>Clear Filters</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', padding: '6px 14px' }}
-            >
-              <Plus size={14} />
-              <span>New Lead</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: Comprehensive Multi-Filters */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: '10px',
-            alignItems: 'center',
-          }}
-        >
-          {/* Status Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              STATUS
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Follow-Up">Follow-Up</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Interested">Interested</option>
-              <option value="Converted">Converted</option>
-              <option value="Not Interested">Not Interested</option>
-              <option value="Invalid">Invalid</option>
-            </select>
-          </div>
-
-          {/* Assigned User Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              ASSIGNED USER
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={assignedToFilter}
-              onChange={(e) => setAssignedToFilter(e.target.value)}
-            >
-              <option value="all">All Users</option>
-              {(users || []).map((u) => (
-                <option key={u._id || u.id} value={u.name || u.username}>
-                  {u.name || u.username}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Manager Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              MANAGER
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={managerFilter}
-              onChange={(e) => setManagerFilter(e.target.value)}
-            >
-              <option value="all">All Managers</option>
-              <option value="Executive Leadership">Executive Leadership</option>
-              {(users || [])
-                .filter((u) => ['Manager', 'Executive', 'Administrator', 'Super Admin'].includes(u.role))
-                .map((u) => (
-                  <option key={u._id || u.id} value={u.name || u.username}>
-                    {u.name || u.username}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Lead Source Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              LEAD SOURCE
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-            >
-              <option value="all">All Sources</option>
-              <option value="Website">Website</option>
-              <option value="LinkedIn">LinkedIn</option>
-              <option value="Referral">Referral</option>
-              <option value="Google Search Ads">Google Search Ads</option>
-              <option value="Cold Call">Cold Call</option>
-            </select>
-          </div>
-
-          {/* Priority Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              PRIORITY
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-            >
-              <option value="all">All Priorities</option>
-              <option value="Urgent">Urgent</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-
-          {/* Conversion Status Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              CONVERSION
-            </label>
-            <select
-              className="form-control select-filter"
-              style={{ fontSize: '0.78rem', padding: '5px 8px', height: '34px' }}
-              value={conversionStatusFilter}
-              onChange={(e) => setConversionStatusFilter(e.target.value)}
-            >
-              <option value="all">All Leads</option>
-              <option value="converted">Converted Only</option>
-              <option value="unconverted">Unconverted Only</option>
-            </select>
-          </div>
-
-          {/* Follow-Up Date Filter */}
-          <div>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>
-              FOLLOW-UP DATE
-            </label>
-            <input
-              type="date"
-              className="form-control"
-              style={{ fontSize: '0.78rem', padding: '4px 8px', height: '34px' }}
-              value={followUpDateFilter}
-              onChange={(e) => setFollowUpDateFilter(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Main Responsive Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
@@ -322,7 +123,7 @@ export const EnhancedLeadTable = () => {
               <th style={{ padding: '12px 14px' }}>LAST CONTACT</th>
               <th style={{ padding: '12px 14px' }}>NEXT FOLLOW-UP</th>
               <th style={{ padding: '12px 14px' }}>VALUE</th>
-              <th style={{ padding: '12px 14px', textAlign: 'right', minWidth: '220px' }}>ACTION</th>
+              <th style={{ padding: '12px 14px', textAlign: 'center', minWidth: '220px' }}>ACTION</th>
             </tr>
           </thead>
           <tbody>
@@ -451,9 +252,28 @@ export const EnhancedLeadTable = () => {
                           : 'Not contacted'}
                       </div>
                       {lead.callLogs && lead.callLogs.length > 0 && (
-                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 600 }}>
-                          {lead.callLogs.length} call{lead.callLogs.length > 1 ? 's' : ''} logged
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openLeadDetailModal(lead, 'calls')}
+                          title="Click to view complete call history, duration, and remarks"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            margin: '2px 0 0 0',
+                            fontSize: '0.68rem',
+                            color: '#2563eb',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            textUnderlineOffset: '2px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          <span>{lead.callLogs.length} call{lead.callLogs.length > 1 ? 's' : ''} logged</span>
+                        </button>
                       )}
                     </td>
 
@@ -483,8 +303,8 @@ export const EnhancedLeadTable = () => {
                     </td>
 
                     {/* 9. Action: View | Edit | Add Call | Follow-Up | Convert | Delete (Icon-only Signs) */}
-                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap' }}>
+                    <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', flexWrap: 'nowrap' }}>
                         {/* 1. View Sign */}
                         <button
                           type="button"

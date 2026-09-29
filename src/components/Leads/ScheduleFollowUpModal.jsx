@@ -54,6 +54,10 @@ export const ScheduleFollowUpModal = () => {
       setServerError('Please select a valid follow-up date');
       return;
     }
+    if (formData.followUpDate < new Date().toISOString().split('T')[0]) {
+      setServerError('Follow-up date cannot be in the past');
+      return;
+    }
 
     setIsSubmitting(true);
     setServerError('');
@@ -81,9 +85,9 @@ export const ScheduleFollowUpModal = () => {
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '580px', width: '92%' }}
+        style={{ maxWidth: '580px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
-        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -118,15 +122,15 @@ export const ScheduleFollowUpModal = () => {
           </button>
         </div>
 
-        {serverError && (
-          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>{serverError}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '20px 24px' }}>
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div className="modal-body custom-scrollbar" style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+            {serverError && (
+              <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                <AlertCircle size={18} />
+                <span>{serverError}</span>
+              </div>
+            )}
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Follow-Up Date */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -135,6 +139,7 @@ export const ScheduleFollowUpModal = () => {
               </label>
               <input
                 type="date"
+                min={new Date().toISOString().split('T')[0]}
                 className="form-control"
                 value={formData.followUpDate}
                 onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
@@ -225,8 +230,9 @@ export const ScheduleFollowUpModal = () => {
               />
             </div>
           </div>
+        </div>
 
-          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
+        <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" onClick={closeScheduleFollowUpModal} disabled={isSubmitting}>
               Cancel
             </button>

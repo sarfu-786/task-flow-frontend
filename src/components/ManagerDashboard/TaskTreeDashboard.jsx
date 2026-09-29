@@ -34,10 +34,9 @@ export const TaskTreeDashboard = ({
   onOpenEmployeeDrilldown,
   onOpenTasksDrilldown,
   onOpenUserWork,
-  onOpenApprovals,
 }) => {
   const { tasks, openTaskModal, setIsInboxOpen, unreadCount } = useTasks();
-  const { users, approvals, pendingApprovalsCount } = useUserManagement();
+  const { users } = useUserManagement();
   const { user: currentUser } = useAuth();
 
   // View Mode: 'tree' | 'grid'
@@ -218,22 +217,22 @@ export const TaskTreeDashboard = ({
       },
       {
         id: 'F',
-        name: 'Governance & Activity Hub',
-        shortName: 'Governance',
-        type: 'Inner',
-        tier: 'inner',
+        name: 'Alerts & Notification Hub',
+        shortName: 'Notifications',
+        type: 'Leaf',
+        tier: 'leaf',
         badgeColor: '#ea580c',
         badgeBg: '#fff7ed',
         borderColor: '#fed7aa',
         glowColor: 'rgba(234, 88, 12, 0.22)',
         icon: Bell,
-        category: 'Inner Node (Orange)',
-        description: 'Supervisory communication node centralizing executive alerts, pending access approvals, and system audit logs.',
+        category: 'Leaf Node (Orange)',
+        description: 'Supervisory communication node centralizing team alerts, completed task milestones, and system notices.',
         metrics: [
-          { label: 'Pending Approvals', value: pendingApprovalsCount || 0, color: '#dc2626' },
           { label: 'Unread Alerts', value: unreadCount || 0, color: '#ea580c' },
+          { label: 'Alert Status', value: 'Active', color: '#059669' },
         ],
-        children: ['G'],
+        children: [],
         parent: 'C',
         primaryActionLabel: 'Open Inbox',
         onPrimaryAction: () => {
@@ -242,36 +241,6 @@ export const TaskTreeDashboard = ({
           }
         },
         pos: { x: 670, y: 400 },
-      },
-      {
-        id: 'G',
-        name: 'Registration Gatekeeper',
-        shortName: 'User Approvals',
-        type: 'Leaf',
-        tier: 'leaf',
-        badgeColor: '#7c3aed',
-        badgeBg: '#f5f3ff',
-        borderColor: '#ddd6fe',
-        glowColor: 'rgba(124, 58, 237, 0.22)',
-        icon: UserCheck,
-        category: 'Leaf Node (Purple)',
-        description: 'Access security gateway to review, approve, or decline incoming employee account registration requests.',
-        metrics: [
-          { label: 'Awaiting Review', value: pendingApprovalsCount || 0, color: '#dc2626' },
-          { label: 'Gate Status', value: 'Active', color: '#059669' },
-        ],
-        children: [],
-        parent: 'F',
-        primaryActionLabel: 'Review Approvals',
-        isActionHighlight: (pendingApprovalsCount || 0) > 0,
-        onPrimaryAction: () => {
-          if (onOpenApprovals) {
-            onOpenApprovals();
-          } else if (setActiveSection) {
-            setActiveSection('approvals');
-          }
-        },
-        pos: { x: 670, y: 580 },
       },
     ];
   }, [
@@ -282,11 +251,9 @@ export const TaskTreeDashboard = ({
     completionRate,
     activeEmployees,
     departments,
-    pendingApprovalsCount,
     unreadCount,
     onOpenTasksDrilldown,
     onOpenEmployeeDrilldown,
-    onOpenApprovals,
     openTaskModal,
     setIsInboxOpen,
     setActiveSection,

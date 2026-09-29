@@ -14,13 +14,24 @@ import {
   FileText,
   CheckCircle2,
   Lock,
+  Phone,
+  Mail,
+  Share2,
+  Tag,
 } from 'lucide-react';
 
 const STAGE_DEFAULT_PROBABILITIES = {
-  Qualification: 20,
+  'New Opportunity': 10,
+  Contacted: 25,
+  'Requirement Understanding': 40,
+  'Proposal / Quotation': 60,
+  Negotiation: 80,
+  Won: 100,
+  Lost: 0,
+  // Legacy mappings for backwards compatibility
+  Qualification: 10,
   'Needs Analysis': 40,
   Proposal: 60,
-  Negotiation: 80,
   'Closed Won': 100,
   'Closed Lost': 0,
 };
@@ -32,7 +43,7 @@ export const ConvertLeadModal = () => {
 
   const [oppName, setOppName] = useState('');
   const [dealValue, setDealValue] = useState('');
-  const [stage, setStage] = useState('Qualification');
+  const [stage, setStage] = useState('New Opportunity');
   const [expectedCloseDate, setExpectedCloseDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [remarks, setRemarks] = useState('');
@@ -46,10 +57,10 @@ export const ConvertLeadModal = () => {
 
   useEffect(() => {
     if (leadToConvert) {
-      const defaultName = `${leadToConvert.company || leadToConvert.name || leadToConvert.contactPerson} - Enterprise Opportunity`;
+      const defaultName = `${leadToConvert.company || leadToConvert.name || leadToConvert.contactPerson || 'Enterprise'} - Deal`;
       setOppName(defaultName);
       setDealValue(leadToConvert.estimatedValue || leadToConvert.dealValue || '');
-      setStage('Qualification');
+      setStage('New Opportunity');
 
       // Default expected close date: +30 days
       const d = new Date();
@@ -72,6 +83,9 @@ export const ConvertLeadModal = () => {
     }
     if (dealValue && isNaN(Number(dealValue))) {
       errs.dealValue = 'Deal value must be a valid number';
+    }
+    if (expectedCloseDate && expectedCloseDate < new Date().toISOString().split('T')[0]) {
+      errs.expectedCloseDate = 'Expected close date cannot be in the past';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -100,10 +114,16 @@ export const ConvertLeadModal = () => {
         dealValue: Number(dealValue) || 0,
         amount: Number(dealValue) || 0,
         stage,
-        probability: STAGE_DEFAULT_PROBABILITIES[stage] || 20,
+        probability: STAGE_DEFAULT_PROBABILITIES[stage] || 10,
         expectedCloseDate: expectedCloseDate || null,
         assignedTo: assignedTo.trim() || currentUser?.name || 'Current User',
         remarks: remarks.trim(),
+        contactPerson: leadToConvert.contactPerson || leadToConvert.name || '',
+        email: leadToConvert.email || '',
+        phone: leadToConvert.phone || '',
+        leadSource: leadToConvert.source || leadToConvert.campaign_source || '',
+        originalLeadId: leadToConvert.leadId || leadToConvert._id || '',
+        company: leadToConvert.company || '',
       };
 
       await convertLeadToOpportunity(leadToConvert._id || leadToConvert.leadId, payload);
@@ -119,9 +139,9 @@ export const ConvertLeadModal = () => {
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '640px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
+        style={{ maxWidth: '660px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
-        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -156,75 +176,95 @@ export const ConvertLeadModal = () => {
           </button>
         </div>
 
-        {/* Status validation notices */}
-        {isAlreadyConverted ? (
-          <div className="alert alert-warning" style={{ margin: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309' }}>
-            <Lock size={18} />
-            <span>
-              <strong>Duplicate Conversion Notice:</strong> This Lead has already been converted to Opportunity{' '}
-              <strong>{leadToConvert.opportunityId || 'OP-001'}</strong>. Duplicate conversion is prohibited.
-            </span>
-          </div>
-        ) : !isEligibleStatus ? (
-          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>
-              A Lead can be converted into an Opportunity only when its status is <strong>Qualified</strong> or <strong>Interested</strong>. Current status is <strong>'{leadToConvert.status}'</strong>.
-            </span>
-          </div>
-        ) : null}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div className="modal-body custom-scrollbar" style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+            {/* Status validation notices */}
+            {isAlreadyConverted ? (
+              <div className="alert alert-warning" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309' }}>
+                <Lock size={18} />
+                <span>
+                  <strong>Duplicate Conversion Notice:</strong> This Lead has already been converted to Opportunity{' '}
+                  <strong>{leadToConvert.opportunityId || 'OP-001'}</strong>. Duplicate conversion is prohibited.
+                </span>
+              </div>
+            ) : !isEligibleStatus ? (
+              <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={18} />
+                <span>
+                  A Lead can be converted into an Opportunity only when its status is <strong>Qualified</strong> or <strong>Interested</strong>. Current status is <strong>'{leadToConvert.status}'</strong>.
+                </span>
+              </div>
+            ) : null}
 
-        {serverError && (
-          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>{serverError}</span>
-          </div>
-        )}
+            {serverError && (
+              <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                <AlertCircle size={18} />
+                <span>{serverError}</span>
+              </div>
+            )}
 
-        {/* Lead Summary Info Card */}
-        <div
-          style={{
-            margin: '16px 24px 0',
-            padding: '12px 16px',
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Source Lead:</div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
-              {leadToConvert.name || leadToConvert.contactPerson} {leadToConvert.company ? `(${leadToConvert.company})` : ''}
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
+            {/* Lead Summary Info Card showing retained fields */}
+            <div
               style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                padding: '3px 10px',
-                borderRadius: '999px',
-                background: leadToConvert.status === 'Qualified' ? '#ecfdf5' : '#f0fdf4',
-                color: leadToConvert.status === 'Qualified' ? '#059669' : '#16a34a',
-                border: '1px solid #bbf7d0',
+                marginBottom: '16px',
+                padding: '12px 16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
+                flexDirection: 'column',
+                gap: '8px',
               }}
             >
-              <CheckCircle2 size={12} />
-              Status: {leadToConvert.status}
-            </span>
-          </div>
-        </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', fontWeight: 600 }}>Source Lead:</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }}>
+                    {leadToConvert.name || leadToConvert.contactPerson} {leadToConvert.company ? `• ${leadToConvert.company}` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: '999px',
+                      background: leadToConvert.status === 'Qualified' ? '#ecfdf5' : '#f0fdf4',
+                      color: leadToConvert.status === 'Qualified' ? '#059669' : '#16a34a',
+                      border: '1px solid #bbf7d0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <CheckCircle2 size={12} />
+                    Status: {leadToConvert.status}
+                  </span>
+                </div>
+              </div>
 
-        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '20px 24px' }}>
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Quick metadata pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingTop: '4px', borderTop: '1px dashed #e2e8f0', fontSize: '0.78rem', color: '#475569' }}>
+                {leadToConvert.phone && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Phone size={12} color="#64748b" /> {leadToConvert.phone}
+                  </span>
+                )}
+                {leadToConvert.email && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Mail size={12} color="#64748b" /> {leadToConvert.email}
+                  </span>
+                )}
+                {(leadToConvert.source || leadToConvert.campaign_source) && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Share2 size={12} color="#64748b" /> Source: {leadToConvert.source || leadToConvert.campaign_source}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Opportunity Name */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -268,18 +308,20 @@ export const ConvertLeadModal = () => {
               </label>
               <input
                 type="date"
-                className="form-control"
+                min={new Date().toISOString().split('T')[0]}
+                className={`form-control ${errors.expectedCloseDate ? 'is-invalid' : ''}`}
                 value={expectedCloseDate}
                 disabled={isAlreadyConverted || !isEligibleStatus}
                 onChange={(e) => setExpectedCloseDate(e.target.value)}
               />
+              {errors.expectedCloseDate && <span className="form-error-msg">{errors.expectedCloseDate}</span>}
             </div>
 
-            {/* Opportunity Stage (Default Qualification) */}
+            {/* Opportunity Stage (Default New Opportunity) */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <Flag size={14} color="#059669" />
-                <span>Opportunity Stage</span>
+                <span>Opportunity Initial Stage</span>
               </label>
               <select
                 className="form-control select-filter"
@@ -287,12 +329,13 @@ export const ConvertLeadModal = () => {
                 disabled={isAlreadyConverted || !isEligibleStatus}
                 onChange={(e) => setStage(e.target.value)}
               >
-                <option value="Qualification">Qualification (Default)</option>
-                <option value="Needs Analysis">Needs Analysis</option>
-                <option value="Proposal">Proposal</option>
+                <option value="New Opportunity">New Opportunity (Default)</option>
+                <option value="Contacted">Contacted</option>
+                <option value="Requirement Understanding">Requirement Understanding</option>
+                <option value="Proposal / Quotation">Proposal / Quotation</option>
                 <option value="Negotiation">Negotiation</option>
-                <option value="Closed Won">Closed Won</option>
-                <option value="Closed Lost">Closed Lost</option>
+                <option value="Won">Won</option>
+                <option value="Lost">Lost</option>
               </select>
             </div>
 
@@ -300,7 +343,7 @@ export const ConvertLeadModal = () => {
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <UserIcon size={14} color="#059669" />
-                <span>Assigned Representative</span>
+                <span>Assigned Sales Representative</span>
               </label>
               <select
                 className="form-control select-filter"
@@ -332,8 +375,9 @@ export const ConvertLeadModal = () => {
               />
             </div>
           </div>
+        </div>
 
-          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
+        <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" onClick={closeConvertModal} disabled={isSubmitting}>
               Cancel
             </button>
@@ -364,3 +408,4 @@ export const ConvertLeadModal = () => {
     </div>
   );
 };
+

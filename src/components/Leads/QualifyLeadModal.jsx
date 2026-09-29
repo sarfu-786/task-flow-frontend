@@ -47,6 +47,11 @@ export const QualifyLeadModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (expectedCloseDate && expectedCloseDate < new Date().toISOString().split('T')[0]) {
+      setServerError('Expected closing date cannot be in the past');
+      return;
+    }
+
     setIsSubmitting(true);
     setServerError('');
 
@@ -73,10 +78,10 @@ export const QualifyLeadModal = () => {
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '580px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
+        style={{ maxWidth: '580px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Header */}
-        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -111,83 +116,86 @@ export const QualifyLeadModal = () => {
           </button>
         </div>
 
-        {serverError && (
-          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>{serverError}</span>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div className="modal-body custom-scrollbar" style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+            {serverError && (
+              <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                <AlertCircle size={18} />
+                <span>{serverError}</span>
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '20px 24px' }}>
-          <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.82rem', color: '#475569' }}>
-            Verify client intent and requirement details to advance this lead to <strong>Qualified</strong> status for opportunity conversion.
-          </div>
+            <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.82rem', color: '#475569' }}>
+              Verify client intent and requirement details to advance this lead to <strong>Qualified</strong> status for opportunity conversion.
+            </div>
 
-          {/* Customer Requirement */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-              <FileText size={14} color="#059669" />
-              <span>Customer Requirement / Needs</span>
-            </label>
-            <textarea
-              className="form-control"
-              rows={3}
-              placeholder="e.g. Enterprise CRM migration, 50 user licenses, Q3 deployment target..."
-              value={requirement}
-              onChange={(e) => setRequirement(e.target.value)}
-            />
-          </div>
-
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            {/* Estimated Deal Value */}
-            <div className="form-group">
+            {/* Customer Requirement */}
+            <div className="form-group" style={{ marginBottom: '16px' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <DollarSign size={14} color="#059669" />
-                <span>Estimated Deal Value (₹)</span>
+                <FileText size={14} color="#059669" />
+                <span>Customer Requirement / Needs</span>
               </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
+              <textarea
                 className="form-control"
-                placeholder="e.g. 250000"
-                value={dealValue}
-                onChange={(e) => setDealValue(e.target.value)}
+                rows={3}
+                placeholder="e.g. Enterprise CRM migration, 50 user licenses, Q3 deployment target..."
+                value={requirement}
+                onChange={(e) => setRequirement(e.target.value)}
               />
             </div>
 
-            {/* Expected Closing Date */}
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              {/* Estimated Deal Value */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <DollarSign size={14} color="#059669" />
+                  <span>Estimated Deal Value (₹)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  className="form-control"
+                  placeholder="e.g. 250000"
+                  value={dealValue}
+                  onChange={(e) => setDealValue(e.target.value)}
+                />
+              </div>
+
+              {/* Expected Closing Date */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Calendar size={14} color="#059669" />
+                  <span>Expected Closing Date</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="form-control"
+                  value={expectedCloseDate}
+                  onChange={(e) => setExpectedCloseDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Qualification Remarks */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Calendar size={14} color="#059669" />
-                <span>Expected Closing Date</span>
+                <MessageSquare size={14} color="#059669" />
+                <span>Qualification Remarks</span>
               </label>
-              <input
-                type="date"
+              <textarea
                 className="form-control"
-                value={expectedCloseDate}
-                onChange={(e) => setExpectedCloseDate(e.target.value)}
+                rows={2}
+                placeholder="e.g. Budget approved by decision maker, ready for proposal stage."
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
               />
             </div>
-          </div>
-
-          {/* Qualification Remarks */}
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-              <MessageSquare size={14} color="#059669" />
-              <span>Qualification Remarks</span>
-            </label>
-            <textarea
-              className="form-control"
-              rows={2}
-              placeholder="e.g. Budget approved by decision maker, ready for proposal stage."
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-            />
           </div>
 
           {/* Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button
               type="button"
               className="btn btn-secondary"

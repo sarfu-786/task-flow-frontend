@@ -26,56 +26,88 @@ export const OpportunityTable = () => {
     openEditModal,
     openDeleteModal,
     openCreateModal,
+    openLostReasonModal,
   } = useOpportunities();
 
   const getStageBadge = (opp) => {
-    const stage = opp.stage || 'Qualification';
+    const rawStage = opp.stage || 'New Opportunity';
+    const stage = rawStage === 'Qualification' ? 'New Opportunity' : rawStage === 'Needs Analysis' ? 'Requirement Understanding' : rawStage === 'Proposal' ? 'Proposal / Quotation' : rawStage;
+
     const stageConfig = {
-      Qualification: { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
-      'Needs Analysis': { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd', dot: '#0ea5e9' },
-      Proposal: { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
+      'New Opportunity': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
+      Contacted: { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd', dot: '#0ea5e9' },
+      'Requirement Understanding': { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
+      'Proposal / Quotation': { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe', dot: '#8b5cf6' },
+      'Proposal/Quotation': { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe', dot: '#8b5cf6' },
       Negotiation: { bg: '#fffbeb', color: '#b45309', border: '#fde68a', dot: '#d97706' },
-      'Closed Won': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
       Won: { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
-      'Closed Lost': { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
+      'Closed Won': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
       Lost: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
+      'Closed Lost': { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
+      Qualification: { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
     };
 
     const nextStageMap = {
-      Qualification: 'Needs Analysis',
-      'Needs Analysis': 'Proposal',
+      'New Opportunity': 'Contacted',
+      Contacted: 'Requirement Understanding',
+      'Requirement Understanding': 'Proposal / Quotation',
+      'Proposal / Quotation': 'Negotiation',
+      'Proposal/Quotation': 'Negotiation',
       Proposal: 'Negotiation',
-      Negotiation: 'Closed Won',
-      'Closed Won': 'Qualification',
-      Won: 'Qualification',
-      'Closed Lost': 'Qualification',
-      Lost: 'Qualification',
+      Negotiation: 'Won',
+      Won: 'New Opportunity',
+      'Closed Won': 'New Opportunity',
+      Lost: 'New Opportunity',
+      'Closed Lost': 'New Opportunity',
+      Qualification: 'Contacted',
     };
 
-    const config = stageConfig[stage] || stageConfig.Qualification;
+    const config = stageConfig[stage] || stageConfig['New Opportunity'];
 
     return (
-      <button
-        type="button"
-        onClick={() => updateOpportunityStage(opp._id, nextStageMap[stage] || 'Qualification')}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          borderRadius: '999px',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          background: config.bg,
-          color: config.color,
-          border: `1px solid ${config.border}`,
-          cursor: 'pointer',
-        }}
-        title={`Click to advance stage to ${nextStageMap[stage]}`}
-      >
-        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.dot }} />
-        <span>{stage}</span>
-      </button>
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+        <button
+          type="button"
+          onClick={() => {
+            const next = nextStageMap[stage] || 'Contacted';
+            if (next === 'Lost') {
+              openLostReasonModal(opp);
+            } else {
+              updateOpportunityStage(opp._id, next);
+            }
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 10px',
+            borderRadius: '999px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            background: config.bg,
+            color: config.color,
+            border: `1px solid ${config.border}`,
+            cursor: 'pointer',
+          }}
+          title={`Current: ${stage}. Click to advance to ${nextStageMap[stage]}`}
+        >
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.dot }} />
+          <span>{stage}</span>
+        </button>
+        {(stage === 'Lost' || stage === 'Closed Lost') && opp.lostReason && (
+          <span
+            style={{
+              fontSize: '0.68rem',
+              color: '#b91c1c',
+              fontWeight: 700,
+              paddingLeft: '4px',
+            }}
+            title={opp.lostReasonDetails || opp.lostReason}
+          >
+            Reason: {opp.lostReason}
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -164,6 +196,7 @@ export const OpportunityTable = () => {
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>Sr.</th>
                 <th>Opportunity / Deal</th>
+                <th>Contact & Source</th>
                 <th>Related Lead</th>
                 <th>Amount (₹)</th>
                 <th>Stage</th>
@@ -177,7 +210,7 @@ export const OpportunityTable = () => {
             <tbody>
               {paginatedOpportunities.map((opp, idx) => {
                 const srNo = (currentPage - 1) * itemsPerPage + idx + 1;
-                const prob = opp.probability !== undefined ? opp.probability : 20;
+                const prob = opp.probability !== undefined ? opp.probability : 10;
 
                 return (
                   <tr key={opp._id || idx}>
@@ -208,9 +241,23 @@ export const OpportunityTable = () => {
                       )}
                     </td>
 
+                    {/* Contact & Source */}
+                    <td>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {opp.contactPerson || '—'}
+                      </div>
+                      {(opp.phone || opp.email || opp.leadSource) && (
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {opp.phone ? `${opp.phone} ` : ''}
+                          {opp.email ? `• ${opp.email} ` : ''}
+                          {opp.leadSource && opp.leadSource !== 'Website' ? `• [${opp.leadSource}]` : ''}
+                        </div>
+                      )}
+                    </td>
+
                     {/* Related Lead */}
                     <td>
-                      {opp.relatedLeadName ? (
+                      {opp.relatedLeadName || opp.originalLeadId || opp.leadId ? (
                         <span
                           style={{
                             fontSize: '0.75rem',
@@ -223,9 +270,10 @@ export const OpportunityTable = () => {
                             alignItems: 'center',
                             gap: '4px',
                           }}
+                          title={`Lead ID: ${opp.originalLeadId || opp.leadId || ''}`}
                         >
                           <Link size={11} />
-                          <span>{opp.relatedLeadName}</span>
+                          <span>{opp.originalLeadId || opp.leadId || opp.relatedLeadName}</span>
                         </span>
                       ) : (
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
@@ -235,7 +283,7 @@ export const OpportunityTable = () => {
                     {/* Amount */}
                     <td>
                       <div style={{ fontWeight: 800, color: '#059669', fontSize: '0.95rem' }}>
-                        {formatAmount(opp.amount)}
+                        {formatAmount(opp.amount || opp.dealValue)}
                       </div>
                     </td>
 

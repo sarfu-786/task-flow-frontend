@@ -237,10 +237,10 @@ export const ManagerTasksDrilldownModal = ({
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '960px', width: '95%' }}
+        style={{ maxWidth: '960px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Header */}
-        <div className="modal-header" style={{ padding: '18px 24px' }}>
+        <div className="modal-header" style={{ padding: '18px 24px', flexShrink: 0 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h3 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>
@@ -268,7 +268,7 @@ export const ManagerTasksDrilldownModal = ({
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
+        <div className="modal-body" style={{ padding: '20px 24px', gap: '16px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
           {/* Controls Bar */}
           <div
             style={{

@@ -34,12 +34,12 @@ export const UserProvider = ({ children }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // Fetch pending registration approvals count (for Manager sidebar badge indicator)
+  // Fetch pending registration approvals count (for Super Admin only)
   const fetchPendingApprovalsCount = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
-      if (!isManager) {
+      const isSuperAdmin = user && (user.role === 'Super Admin' || (Array.isArray(user.roles) && user.roles.includes('Super Admin')));
+      if (!isSuperAdmin) {
         setPendingApprovalsCount(0);
         return;
       }
@@ -85,8 +85,8 @@ export const UserProvider = ({ children }) => {
   // Real-time socket events for approvals and user updates
   useEffect(() => {
     if (!isAuthenticated || !user) return;
-    const isManager = ['Manager', 'Executive', 'Administrator'].includes(user.role);
-    if (!isManager) return;
+    const isSuperAdmin = user.role === 'Super Admin' || (Array.isArray(user.roles) && user.roles.includes('Super Admin'));
+    if (!isSuperAdmin) return;
 
     const handleApprovalsUpdated = () => {
       fetchPendingApprovalsCount();

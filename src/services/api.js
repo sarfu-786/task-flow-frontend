@@ -792,6 +792,10 @@ export const api = {
     return data;
   },
 
+  async getOpportunityById(id) {
+    return this.getOpportunity(id);
+  },
+
   async createOpportunity(oppData) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities`, {
       method: 'POST',
@@ -818,11 +822,16 @@ export const api = {
     return data;
   },
 
-  async updateOpportunityStage(id, stage, probability) {
+  async updateOpportunityStage(id, stage, probability, lostReason = '', lostReasonDetails = '') {
+    const payload = { stage };
+    if (probability !== undefined && probability !== null) payload.probability = probability;
+    if (lostReason) payload.lostReason = lostReason;
+    if (lostReasonDetails) payload.lostReasonDetails = lostReasonDetails;
+
     const res = await fetchWithTimeout(`${getBaseUrl()}/opportunities/${id}/stage`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ stage, probability }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok) {

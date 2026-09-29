@@ -26,9 +26,9 @@ export const DeleteLeadModal = () => {
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '440px', width: '92%' }}
+        style={{ maxWidth: '440px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -53,13 +53,13 @@ export const DeleteLeadModal = () => {
           </button>
         </div>
 
-        {serverError && (
-          <div className="alert alert-danger" style={{ margin: '16px 20px 0' }}>
-            {serverError}
-          </div>
-        )}
+        <div className="modal-body custom-scrollbar" style={{ padding: '20px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+          {serverError && (
+            <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
+              {serverError}
+            </div>
+          )}
 
-        <div className="modal-body" style={{ padding: '20px' }}>
           <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             Are you sure you want to delete lead record for <strong>"{leadToDelete.name}"</strong>
             {leadToDelete.company ? ` from ${leadToDelete.company}` : ''}?
@@ -71,7 +71,7 @@ export const DeleteLeadModal = () => {
 
         <div
           className="modal-footer"
-          style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}
+          style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '10px', flexShrink: 0 }}
         >
           <button type="button" className="btn btn-secondary" onClick={closeDeleteModal} disabled={isDeleting}>
             Cancel

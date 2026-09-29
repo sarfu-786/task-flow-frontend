@@ -118,6 +118,7 @@ export const AuditTrailModal = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -167,7 +168,7 @@ export const AuditTrailModal = () => {
         </div>
 
         {/* Search filter */}
-        <div style={{ padding: '14px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ padding: '14px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <Search size={16} color="#64748b" />
           <input
             type="text"
@@ -189,7 +190,7 @@ export const AuditTrailModal = () => {
         </div>
 
         {/* Body Timeline */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {loading ? (
             <div style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
               <RefreshCw size={20} className="spin" style={{ margin: '0 auto 6px' }} />

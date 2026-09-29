@@ -62,6 +62,7 @@ export const LeadProvider = ({ children }) => {
   // Lead Detail View Modal (5 tabs: Lead Info, Call Logs, Follow-Ups, Timeline, Opportunity)
   const [isLeadDetailModalOpen, setIsLeadDetailModalOpen] = useState(false);
   const [leadForDetail, setLeadForDetail] = useState(null);
+  const [leadDetailTab, setLeadDetailTab] = useState('info');
 
   // Add Call Log Modal
   const [isAddCallModalOpen, setIsAddCallModalOpen] = useState(false);
@@ -344,6 +345,21 @@ export const LeadProvider = ({ children }) => {
     }
   };
 
+  // Update Opportunity Stage directly from Converted Lead UI
+  const updateLeadOpportunityStage = async (leadOrOppId, stage, lostReason = '', lostReasonDetails = '') => {
+    try {
+      const res = await api.updateOpportunityStage(leadOrOppId, stage, lostReason, lostReasonDetails);
+      if (res.success) {
+        await fetchLeads(true);
+        await fetchStats();
+      }
+      return res;
+    } catch (err) {
+      console.error('Failed to update lead opportunity stage:', err);
+      throw err;
+    }
+  };
+
   // Delete Lead
   const deleteLead = async (id) => {
     try {
@@ -377,14 +393,16 @@ export const LeadProvider = ({ children }) => {
     setSelectedLead(null);
   };
 
-  const openLeadDetailModal = (lead) => {
+  const openLeadDetailModal = (lead, tab = 'info') => {
     setLeadForDetail(lead);
+    setLeadDetailTab(tab);
     setIsLeadDetailModalOpen(true);
   };
 
   const closeLeadDetailModal = () => {
     setIsLeadDetailModalOpen(false);
     setLeadForDetail(null);
+    setLeadDetailTab('info');
   };
 
   const openAddCallModal = (lead) => {
@@ -639,6 +657,8 @@ export const LeadProvider = ({ children }) => {
         // Lead Detail Modal
         isLeadDetailModalOpen,
         leadForDetail,
+        leadDetailTab,
+        setLeadDetailTab,
         openLeadDetailModal,
         closeLeadDetailModal,
         // Add Call Modal
@@ -661,6 +681,7 @@ export const LeadProvider = ({ children }) => {
         leadToConvert,
         openConvertModal,
         closeConvertModal,
+        updateLeadOpportunityStage,
         // Delete Modal
         isDeleteModalOpen,
         leadToDelete,

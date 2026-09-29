@@ -32,7 +32,7 @@ const UserWorkspace = lazy(() =>
   import('./components/UserWorkspace/UserWorkspace').then((m) => ({ default: m.UserWorkspace }))
 );
 const ApprovalSection = lazy(() =>
-  import('./components/ManagerDashboard/ApprovalSection').then((m) => ({ default: m.ApprovalSection }))
+  import('./components/SuperAdmin/ApprovalSection').then((m) => ({ default: m.ApprovalSection }))
 );
 const LeadSection = lazy(() =>
   import('./components/Leads/LeadSection').then((m) => ({ default: m.LeadSection }))
@@ -304,6 +304,13 @@ const AuthenticatedLayout = ({
           dismissLiveToast();
           if (toastType === 'user_registered' && (isSuperAdmin || isManager)) {
             handleSectionChange('approvals');
+          } else if (
+            toastType === 'lead_assigned' ||
+            toastType === 'new_lead' ||
+            toastType === 'lead_created' ||
+            liveToast?.taskType === 'lead'
+          ) {
+            handleSectionChange('leads');
           } else if (isSuperAdmin) {
             handleSectionChange('superadmin');
           } else if (isManager) {
@@ -359,7 +366,6 @@ const AuthenticatedLayout = ({
                   {activeSection === 'complaints' && <ComplaintSection />}
                   {activeSection === 'projects' && <ProjectSection />}
                   {activeSection === 'subscription' && <SubscriptionManagement />}
-                  {activeSection === 'approvals' && <ApprovalSection />}
                 </>
               ) : (
                 /* User / Coordinator Sections */

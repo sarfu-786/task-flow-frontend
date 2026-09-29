@@ -95,13 +95,13 @@ export const Register = ({ onSwitchToLogin }) => {
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMessage('Registration submitted! Your account is pending manager approval. Redirecting to login...');
+      setSuccessMessage('Registration submitted! Your account is pending Super Admin approval. Redirecting to login...');
       setTimeout(() => {
         if (onSwitchToLogin) {
           onSwitchToLogin({
             prefillEmail: email.trim(),
             initialRole: 'user',
-            successMessage: 'Registration submitted! Your account is pending manager approval before you can login.',
+            successMessage: 'Registration submitted! Your account is pending Super Admin approval before you can login.',
           });
         }
       }, 2000);

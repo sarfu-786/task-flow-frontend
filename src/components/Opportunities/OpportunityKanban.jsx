@@ -20,28 +20,42 @@ import {
 
 export const OpportunityKanban = () => {
   const {
+    opportunities,
     kanbanColumns,
     updateOpportunityStage,
     openEditModal,
     openDeleteModal,
     openCreateModal,
+    openLostReasonModal,
   } = useOpportunities();
 
   const [draggedOppId, setDraggedOppId] = useState(null);
   const [dragOverStage, setDragOverStage] = useState(null);
 
   const stageThemes = {
-    Qualification: {
+    'New Opportunity': {
       color: '#2563eb',
       bgLight: '#eff6ff',
       borderColor: '#bfdbfe',
       barColor: '#3b82f6',
     },
-    Proposal: {
+    Contacted: {
+      color: '#0284c7',
+      bgLight: '#f0f9ff',
+      borderColor: '#bae6fd',
+      barColor: '#0ea5e9',
+    },
+    'Requirement Understanding': {
       color: '#6366f1',
       bgLight: '#eef2ff',
       borderColor: '#c7d2fe',
       barColor: '#6366f1',
+    },
+    'Proposal / Quotation': {
+      color: '#8b5cf6',
+      bgLight: '#f5f3ff',
+      borderColor: '#ddd6fe',
+      barColor: '#8b5cf6',
     },
     Negotiation: {
       color: '#d97706',
@@ -84,7 +98,12 @@ export const OpportunityKanban = () => {
     setDragOverStage(null);
     const oppId = e.dataTransfer.getData('text/plain') || draggedOppId;
     if (oppId && targetStage) {
-      await updateOpportunityStage(oppId, targetStage);
+      const opp = opportunities.find((o) => o._id.toString() === oppId.toString());
+      if (targetStage === 'Lost' && opp) {
+        openLostReasonModal(opp);
+      } else {
+        await updateOpportunityStage(oppId, targetStage);
+      }
     }
     setDraggedOppId(null);
   };
@@ -136,7 +155,7 @@ export const OpportunityKanban = () => {
       >
         {STAGES.map((stageName, stageIdx) => {
           const colData = kanbanColumns[stageName] || { count: 0, totalValue: 0, deals: [] };
-          const theme = stageThemes[stageName] || stageThemes.Qualification;
+          const theme = stageThemes[stageName] || stageThemes['New Opportunity'];
           const isOver = dragOverStage === stageName;
 
           return (
@@ -237,7 +256,8 @@ export const OpportunityKanban = () => {
                 ) : (
                   colData.deals.map((opp) => {
                     const pStyle = getPriorityStyle(opp.priority);
-                    const prob = opp.probability !== undefined ? opp.probability : 20;
+                    const prob = opp.probability !== undefined ? opp.probability : 10;
+                    const isDealLost = opp.stage === 'Lost' || opp.stage === 'Closed Lost';
 
                     return (
                       <div
@@ -247,7 +267,7 @@ export const OpportunityKanban = () => {
                         onDragStart={(e) => handleDragStart(e, opp._id)}
                         style={{
                           background: '#ffffff',
-                          border: '1px solid var(--border-color)',
+                          border: isDealLost ? '1px solid #fecaca' : '1px solid var(--border-color)',
                           borderRadius: '10px',
                           padding: '14px',
                           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -262,7 +282,7 @@ export const OpportunityKanban = () => {
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'none';
                           e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-                          e.currentTarget.style.borderColor = 'var(--border-color)';
+                          e.currentTarget.style.borderColor = isDealLost ? '#fecaca' : 'var(--border-color)';
                         }}
                       >
                         {/* Header: Priority and Value */}
@@ -282,7 +302,7 @@ export const OpportunityKanban = () => {
                           </span>
 
                           <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#059669' }}>
-                            {formatAmount(opp.amount)}
+                            {formatAmount(opp.amount || opp.dealValue)}
                           </div>
                         </div>
 
@@ -299,73 +319,134 @@ export const OpportunityKanban = () => {
                           {opp.name}
                         </div>
 
-                        {/* Company */}
-                        {opp.company && (
+                        {/* Company & Contact Person */}
+                        {(opp.company || opp.contactPerson) && (
                           <div
                             style={{
                               fontSize: '0.78rem',
                               color: 'var(--text-secondary)',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '4px',
+                              gap: '6px',
+                              flexWrap: 'wrap',
                               marginBottom: '6px',
                             }}
                           >
-                            <Building size={12} color="#64748b" />
-                            <span>{opp.company}</span>
+                            {opp.company && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <Building size={12} color="#64748b" />
+                                <span>{opp.company}</span>
+                              </span>
+                            )}
+                            {opp.contactPerson && (
+                              <span style={{ color: '#64748b', fontSize: '0.74rem' }}>
+                                ({opp.contactPerson})
+                              </span>
+                            )}
                           </div>
                         )}
 
-                        {/* Related Lead */}
-                        {opp.relatedLeadName && (
+                        {/* Related Lead Linkage & Source */}
+                        {(opp.relatedLeadName || opp.originalLeadId || opp.leadId || opp.leadSource) && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              flexWrap: 'wrap',
+                              marginBottom: '8px',
+                            }}
+                          >
+                            {(opp.relatedLeadName || opp.originalLeadId || opp.leadId) && (
+                              <div
+                                style={{
+                                  fontSize: '0.72rem',
+                                  color: '#6366f1',
+                                  background: '#eef2ff',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  maxWidth: '100%',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                                title={`Original Lead: ${opp.originalLeadId || opp.leadId || ''} (${opp.relatedLeadName || ''})`}
+                              >
+                                <Link size={10} />
+                                <span>Lead: {opp.originalLeadId || opp.leadId || opp.relatedLeadName}</span>
+                              </div>
+                            )}
+
+                            {opp.leadSource && opp.leadSource !== 'Website' && (
+                              <span
+                                style={{
+                                  fontSize: '0.68rem',
+                                  color: '#0284c7',
+                                  background: '#f0f9ff',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {opp.leadSource}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Lost Reason Badge if Lost */}
+                        {isDealLost && opp.lostReason && (
                           <div
                             style={{
                               fontSize: '0.72rem',
-                              color: '#6366f1',
-                              background: '#eef2ff',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              display: 'inline-flex',
+                              color: '#b91c1c',
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              marginBottom: '8px',
+                              display: 'flex',
                               alignItems: 'center',
                               gap: '4px',
-                              marginBottom: '8px',
-                              maxWidth: '100%',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <Link size={10} />
-                            <span>Lead: {opp.relatedLeadName}</span>
+                            <XCircle size={12} color="#dc2626" />
+                            <span>Lost Reason: {opp.lostReason}</span>
                           </div>
                         )}
 
                         {/* Probability Progress */}
-                        <div style={{ marginBottom: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                            <span>Probability</span>
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{prob}%</span>
-                          </div>
-                          <div
-                            style={{
-                              width: '100%',
-                              height: '4px',
-                              background: '#f1f5f9',
-                              borderRadius: '999px',
-                              overflow: 'hidden',
-                            }}
-                          >
+                        {!isDealLost && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '3px' }}>
+                              <span>Probability</span>
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{prob}%</span>
+                            </div>
                             <div
                               style={{
-                                width: `${prob}%`,
-                                height: '100%',
-                                background: theme.barColor,
+                                width: '100%',
+                                height: '4px',
+                                background: '#f1f5f9',
                                 borderRadius: '999px',
-                                transition: 'width 0.3s ease',
+                                overflow: 'hidden',
                               }}
-                            />
+                            >
+                              <div
+                                style={{
+                                  width: `${prob}%`,
+                                  height: '100%',
+                                  background: theme.barColor,
+                                  borderRadius: '999px',
+                                  transition: 'width 0.3s ease',
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Footer: Assignee & Date & Actions */}
                         <div
@@ -389,7 +470,7 @@ export const OpportunityKanban = () => {
                                 fontWeight: 700,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
+                                justifyCenter: 'center',
                               }}
                               title={`Assigned to ${opp.assignedTo}`}
                             >
@@ -419,7 +500,14 @@ export const OpportunityKanban = () => {
                               <button
                                 type="button"
                                 className="btn-icon btn-sm"
-                                onClick={() => updateOpportunityStage(opp._id, STAGES[stageIdx + 1])}
+                                onClick={() => {
+                                  const nextStage = STAGES[stageIdx + 1];
+                                  if (nextStage === 'Lost') {
+                                    openLostReasonModal(opp);
+                                  } else {
+                                    updateOpportunityStage(opp._id, nextStage);
+                                  }
+                                }}
                                 title={`Advance to ${STAGES[stageIdx + 1]}`}
                                 style={{ padding: '2px 4px' }}
                               >

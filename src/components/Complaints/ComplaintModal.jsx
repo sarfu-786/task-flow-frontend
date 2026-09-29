@@ -233,21 +233,32 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
         <form
           onSubmit={handleSubmit}
           style={{
-            padding: '22px 24px',
-            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflow: 'hidden',
           }}
         >
-          {error && (
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: '#fef2f2',
-                border: '1px solid #fee2e2',
-                color: '#dc2626',
+          <div
+            style={{
+              padding: '22px 24px',
+              overflowY: 'auto',
+              flex: '1 1 auto',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            {error && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: '#fef2f2',
+                  border: '1px solid #fee2e2',
+                  color: '#dc2626',
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 display: 'flex',
@@ -531,6 +542,7 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
                 fontFamily: 'inherit',
               }}
             />
+            </div>
           </div>
 
           {/* Footer */}
@@ -540,9 +552,10 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: '10px',
-              paddingTop: '12px',
+              padding: '16px 24px',
               borderTop: '1px solid #f1f5f9',
-              marginTop: '4px',
+              background: '#f8fafc',
+              flexShrink: 0,
             }}
           >
             <button

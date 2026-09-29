@@ -104,6 +104,7 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #f0fdf4, #ffffff)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -167,32 +168,43 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
         <form
           onSubmit={handleSubmit}
           style={{
-            padding: '24px',
-            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflow: 'hidden',
           }}
         >
-          {error && (
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: '10px',
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fee2e2',
-                color: '#dc2626',
-                fontSize: '0.84rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
+          <div
+            style={{
+              padding: '24px',
+              overflowY: 'auto',
+              flex: '1 1 auto',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            {error && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fee2e2',
+                  color: '#dc2626',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
           {/* Ticket Context Overview */}
           <div
@@ -317,17 +329,19 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
               </span>
             </div>
           </div>
+          </div>
 
           {/* Footer Actions */}
           <div
             style={{
-              paddingTop: '16px',
+              padding: '16px 24px',
               borderTop: '1px solid #f1f5f9',
+              background: '#f8fafc',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: '10px',
-              marginTop: '8px',
+              flexShrink: 0,
             }}
           >
             <button

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOpportunities, STAGES } from '../../context/OpportunityContext';
+import { useOpportunities, STAGES, LOST_REASONS } from '../../context/OpportunityContext';
 import { useLeads } from '../../context/LeadContext';
 import { useUserManagement } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
@@ -17,14 +17,26 @@ import {
   FileText,
   Percent,
   Link,
+  Phone,
+  Mail,
+  Share2,
+  AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 
 const STAGE_DEFAULT_PROBABILITIES = {
-  Qualification: 20,
-  Proposal: 50,
+  'New Opportunity': 10,
+  Contacted: 25,
+  'Requirement Understanding': 40,
+  'Proposal / Quotation': 60,
   Negotiation: 80,
   Won: 100,
   Lost: 0,
+  Qualification: 20,
+  'Needs Analysis': 40,
+  Proposal: 60,
+  'Closed Won': 100,
+  'Closed Lost': 0,
 };
 
 const getSubordinateUserIds = (user, allUsers) => {
@@ -118,15 +130,22 @@ export const OpportunityModal = () => {
   const [formData, setFormData] = useState({
     name: '',
     company: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    leadSource: 'Website',
+    originalLeadId: '',
     relatedLead: '',
     relatedLeadName: '',
     amount: '',
-    stage: 'Qualification',
-    probability: 20,
+    stage: 'New Opportunity',
+    probability: 10,
     expectedCloseDate: '',
     priority: 'Medium',
     assignedTo: '',
     notes: '',
+    lostReason: 'Price too high',
+    lostReasonDetails: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -136,19 +155,26 @@ export const OpportunityModal = () => {
   useEffect(() => {
     if (modalMode === 'edit' && selectedOpportunity) {
       setFormData({
-        name: selectedOpportunity.name || '',
+        name: selectedOpportunity.name || selectedOpportunity.opportunityName || '',
         company: selectedOpportunity.company || '',
+        contactPerson: selectedOpportunity.contactPerson || '',
+        email: selectedOpportunity.email || '',
+        phone: selectedOpportunity.phone || '',
+        leadSource: selectedOpportunity.leadSource || selectedOpportunity.campaign_source || 'Website',
+        originalLeadId: selectedOpportunity.originalLeadId || selectedOpportunity.leadId || '',
         relatedLead: selectedOpportunity.relatedLead || '',
         relatedLeadName: selectedOpportunity.relatedLeadName || '',
-        amount: selectedOpportunity.amount !== undefined ? selectedOpportunity.amount : '',
-        stage: selectedOpportunity.stage || 'Qualification',
-        probability: selectedOpportunity.probability !== undefined ? selectedOpportunity.probability : 20,
+        amount: selectedOpportunity.amount !== undefined ? selectedOpportunity.amount : (selectedOpportunity.dealValue || ''),
+        stage: selectedOpportunity.stage || 'New Opportunity',
+        probability: selectedOpportunity.probability !== undefined ? selectedOpportunity.probability : 10,
         expectedCloseDate: selectedOpportunity.expectedCloseDate
           ? new Date(selectedOpportunity.expectedCloseDate).toISOString().split('T')[0]
           : '',
         priority: selectedOpportunity.priority || 'Medium',
         assignedTo: selectedOpportunity.assignedTo || '',
-        notes: selectedOpportunity.notes || '',
+        notes: selectedOpportunity.notes || selectedOpportunity.remarks || '',
+        lostReason: selectedOpportunity.lostReason || 'Price too high',
+        lostReasonDetails: selectedOpportunity.lostReasonDetails || '',
       });
     } else {
       const defaultDate = new Date();
@@ -156,15 +182,22 @@ export const OpportunityModal = () => {
       setFormData({
         name: '',
         company: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        leadSource: 'Website',
+        originalLeadId: '',
         relatedLead: '',
         relatedLeadName: '',
         amount: '',
-        stage: 'Qualification',
-        probability: 20,
+        stage: 'New Opportunity',
+        probability: 10,
         expectedCloseDate: defaultDate.toISOString().split('T')[0],
         priority: 'Medium',
         assignedTo: currentUser?.name || '',
         notes: '',
+        lostReason: 'Price too high',
+        lostReasonDetails: '',
       });
     }
     setErrors({});
@@ -184,16 +217,22 @@ export const OpportunityModal = () => {
   const handleLeadSelect = (e) => {
     const leadId = e.target.value;
     if (!leadId) {
-      setFormData((prev) => ({ ...prev, relatedLead: '', relatedLeadName: '' }));
+      setFormData((prev) => ({ ...prev, relatedLead: '', relatedLeadName: '', originalLeadId: '' }));
       return;
     }
-    const matchedLead = leads.find((l) => l._id.toString() === leadId);
+    const matchedLead = leads.find((l) => (l._id && l._id.toString() === leadId) || l.leadId === leadId || l.lead_id === leadId);
     if (matchedLead) {
       setFormData((prev) => ({
         ...prev,
         relatedLead: matchedLead._id,
-        relatedLeadName: matchedLead.name,
+        relatedLeadName: matchedLead.name || matchedLead.contactPerson,
         company: prev.company || matchedLead.company || '',
+        contactPerson: prev.contactPerson || matchedLead.contactPerson || matchedLead.name || '',
+        email: prev.email || matchedLead.email || '',
+        phone: prev.phone || matchedLead.phone || matchedLead.mobileNumber || '',
+        leadSource: prev.leadSource || matchedLead.source || matchedLead.campaign_source || 'Website',
+        originalLeadId: matchedLead.leadId || matchedLead.lead_id || '',
+        amount: prev.amount || matchedLead.estimatedValue || matchedLead.dealValue || '',
       }));
     }
   };
@@ -205,6 +244,9 @@ export const OpportunityModal = () => {
     }
     if (formData.amount && isNaN(Number(formData.amount))) {
       errs.amount = 'Amount must be a valid number';
+    }
+    if (formData.expectedCloseDate && formData.expectedCloseDate < new Date().toISOString().split('T')[0]) {
+      errs.expectedCloseDate = 'Expected close date cannot be in the past';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -218,18 +260,29 @@ export const OpportunityModal = () => {
     setServerError('');
 
     try {
+      const isLost = formData.stage === 'Lost' || formData.stage === 'Closed Lost';
       const payload = {
         name: formData.name.trim(),
+        opportunityName: formData.name.trim(),
         company: formData.company.trim(),
+        contactPerson: formData.contactPerson.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        leadSource: formData.leadSource.trim(),
+        originalLeadId: formData.originalLeadId.trim(),
         relatedLead: formData.relatedLead || null,
         relatedLeadName: formData.relatedLeadName.trim(),
         amount: Number(formData.amount) || 0,
+        dealValue: Number(formData.amount) || 0,
         stage: formData.stage,
-        probability: Number(formData.probability) || 20,
+        probability: Number(formData.probability) || 10,
         expectedCloseDate: formData.expectedCloseDate || null,
         priority: formData.priority,
         assignedTo: formData.assignedTo || currentUser?.name || 'Current User',
         notes: formData.notes.trim(),
+        remarks: formData.notes.trim(),
+        lostReason: isLost ? formData.lostReason : '',
+        lostReasonDetails: isLost ? formData.lostReasonDetails.trim() : '',
       };
 
       if (modalMode === 'edit' && selectedOpportunity) {
@@ -244,14 +297,16 @@ export const OpportunityModal = () => {
     }
   };
 
+  const isLostStage = formData.stage === 'Lost' || formData.stage === 'Closed Lost';
+
   return (
-    <div className="modal-backdrop active" onClick={closeOpportunityModal}>
+    <div className="modal-backdrop active" onClick={closeOpportunityModal} style={{ zIndex: 1200 }}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '640px', width: '92%' }}
+        style={{ maxWidth: '680px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
-        <div className="modal-header">
+        <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -268,11 +323,18 @@ export const OpportunityModal = () => {
               {modalMode === 'edit' ? <Save size={18} /> : <PlusCircle size={18} />}
             </div>
             <div>
-              <h3 className="modal-title" style={{ margin: 0, fontSize: '1.2rem' }}>
-                {modalMode === 'edit' ? 'Edit Opportunity' : 'New Sales Opportunity'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  {modalMode === 'edit' ? 'Edit Opportunity' : 'New Sales Opportunity'}
+                </h3>
+                {formData.originalLeadId && (
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                    From Lead: {formData.originalLeadId}
+                  </span>
+                )}
+              </div>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {modalMode === 'edit' ? 'Update sales deal parameters and status' : 'Add a deal to your revenue pipeline'}
+                {modalMode === 'edit' ? 'Update sales deal parameters, pipeline stage and status' : 'Add a deal to your revenue pipeline'}
               </p>
             </div>
           </div>
@@ -281,15 +343,15 @@ export const OpportunityModal = () => {
           </button>
         </div>
 
-        {serverError && (
-          <div className="alert alert-danger" style={{ margin: '16px 24px 0', display: 'flex', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>{serverError}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '20px 24px' }}>
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div className="modal-body custom-scrollbar" style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+            {serverError && (
+              <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                <AlertCircle size={18} />
+                <span>{serverError}</span>
+              </div>
+            )}
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Opportunity Name */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -299,7 +361,7 @@ export const OpportunityModal = () => {
               <input
                 type="text"
                 className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                placeholder="e.g. CloudScale Enterprise Rollout"
+                placeholder="e.g. Acme Enterprise Rollout"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 autoFocus
@@ -311,22 +373,91 @@ export const OpportunityModal = () => {
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <Building size={14} color="#059669" />
-                <span>Company</span>
+                <span>Company Name</span>
               </label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. CloudScale Infotech"
+                placeholder="e.g. Acme Corp"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               />
+            </div>
+
+            {/* Contact Person */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <UserIcon size={14} color="#059669" />
+                <span>Contact Person</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Rahul Sharma"
+                value={formData.contactPerson}
+                onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+              />
+            </div>
+
+            {/* Phone */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Phone size={14} color="#059669" />
+                <span>Phone Number</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. +91 98765 43210"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+
+            {/* Email */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Mail size={14} color="#059669" />
+                <span>Email Address</span>
+              </label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. rahul@acme.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+
+            {/* Lead Source */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Share2 size={14} color="#059669" />
+                <span>Lead Source</span>
+              </label>
+              <select
+                className="form-control select-filter"
+                value={formData.leadSource}
+                onChange={(e) => setFormData({ ...formData, leadSource: e.target.value })}
+              >
+                <option value="Website">Website</option>
+                <option value="Inbound Call">Inbound Call</option>
+                <option value="Outbound Call">Outbound Call</option>
+                <option value="Referral">Referral</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Meta Ads">Meta Ads</option>
+                <option value="Google Ads">Google Ads</option>
+                <option value="Organic Search">Organic Search</option>
+                <option value="Event/Exhibition">Event/Exhibition</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             {/* Related Lead */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <Link size={14} color="#059669" />
-                <span>Related Lead</span>
+                <span>Linked Lead Record</span>
               </label>
               <select
                 className="form-control select-filter"
@@ -362,7 +493,10 @@ export const OpportunityModal = () => {
 
             {/* Stage */}
             <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 600, fontSize: '0.85rem' }}>Pipeline Stage</label>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <Flag size={14} color="#059669" />
+                <span>Pipeline Stage</span>
+              </label>
               <select
                 className="form-control select-filter"
                 value={formData.stage}
@@ -370,7 +504,7 @@ export const OpportunityModal = () => {
               >
                 {STAGES.map((s) => (
                   <option key={s} value={s}>
-                    {s} ({STAGE_DEFAULT_PROBABILITIES[s]}%)
+                    {s} ({STAGE_DEFAULT_PROBABILITIES[s] !== undefined ? `${STAGE_DEFAULT_PROBABILITIES[s]}%` : ''})
                   </option>
                 ))}
               </select>
@@ -400,10 +534,12 @@ export const OpportunityModal = () => {
               </label>
               <input
                 type="date"
-                className="form-control"
+                min={new Date().toISOString().split('T')[0]}
+                className={`form-control ${errors.expectedCloseDate ? 'is-invalid' : ''}`}
                 value={formData.expectedCloseDate}
                 onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
               />
+              {errors.expectedCloseDate && <span className="form-error-msg">{errors.expectedCloseDate}</span>}
             </div>
 
             {/* Priority */}
@@ -442,6 +578,59 @@ export const OpportunityModal = () => {
               </select>
             </div>
 
+            {/* Conditional Lost Reason Section if stage is Lost */}
+            {isLostStage && (
+              <div
+                style={{
+                  gridColumn: 'span 2',
+                  padding: '14px 16px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 700, fontSize: '0.9rem' }}>
+                  <AlertTriangle size={16} />
+                  <span>Lost Deal Details & Reason</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
+                      Primary Lost Reason <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      className="form-control"
+                      value={formData.lostReason}
+                      onChange={(e) => setFormData({ ...formData, lostReason: e.target.value })}
+                      style={{ background: '#fff', borderColor: '#fca5a5' }}
+                    >
+                      {LOST_REASONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
+                      Lost Reason Details / Feedback
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Budget slashed by 40% / Competitor offered ₹3.2L"
+                      value={formData.lostReasonDetails}
+                      onChange={(e) => setFormData({ ...formData, lostReasonDetails: e.target.value })}
+                      style={{ background: '#fff', borderColor: '#fca5a5' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Notes */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -457,8 +646,9 @@ export const OpportunityModal = () => {
               />
             </div>
           </div>
+        </div>
 
-          <div className="modal-footer" style={{ padding: '16px 0 0', marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" onClick={closeOpportunityModal} disabled={isSubmitting}>
               Cancel
             </button>
@@ -489,3 +679,4 @@ export const OpportunityModal = () => {
     </div>
   );
 };
+

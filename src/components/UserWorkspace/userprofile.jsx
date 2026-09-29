@@ -797,8 +797,8 @@ export const UserProfile = () => {
             </div>
 
             {/* Modal Body Form */}
-            <form onSubmit={handleSubmitProfile} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div className="modal-body" style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 140px)', padding: '24px' }}>
+            <form onSubmit={handleSubmitProfile} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+              <div className="modal-body" style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0, padding: '24px' }}>
                 {modalError && (
                   <div className="alert alert-danger" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <AlertCircle size={18} />
@@ -1102,7 +1102,7 @@ export const UserProfile = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px' }}>
+              <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px 24px', flexShrink: 0 }}>
                 <button
                   type="button"
                   className="btn btn-secondary"

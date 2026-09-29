@@ -109,6 +109,7 @@ export const UserDetailModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
             background: isSuperAdmin
               ? 'linear-gradient(135deg, #fffbeb, #fef3c7)'
               : isManager
@@ -159,7 +160,7 @@ export const UserDetailModal = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* User Bio Card */}
           <div
             style={{
@@ -389,6 +390,7 @@ export const UserDetailModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#ffffff',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', gap: '8px' }}>

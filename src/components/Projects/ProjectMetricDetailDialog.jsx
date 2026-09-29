@@ -230,6 +230,7 @@ export const ProjectMetricDetailDialog = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #ffffff, #f8fafc)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -336,6 +337,7 @@ export const ProjectMetricDetailDialog = ({
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
+            flexShrink: 0,
           }}
         >
           {/* Search Box */}
@@ -404,7 +406,7 @@ export const ProjectMetricDetailDialog = ({
         </div>
 
         {/* Table Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0' }}>
           {paginatedProjects.length === 0 ? (
             <div style={{ padding: '60px 24px', textAlign: 'center' }}>
               <div
@@ -664,6 +666,7 @@ export const ProjectMetricDetailDialog = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
           }}
         >
           <div style={{ fontSize: '0.82rem', color: '#64748b' }}>

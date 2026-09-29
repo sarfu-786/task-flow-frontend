@@ -266,7 +266,8 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
           style={{
             padding: '28px 24px',
             overflowY: 'auto',
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             gap: '18px',

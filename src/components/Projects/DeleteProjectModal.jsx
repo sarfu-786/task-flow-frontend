@@ -81,6 +81,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #fff5f5, #ffffff)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -141,7 +142,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {error && (
             <div
               style={{
@@ -231,6 +232,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
             alignItems: 'center',
             justifyContent: 'flex-end',
             gap: '10px',
+            flexShrink: 0,
           }}
         >
           <button

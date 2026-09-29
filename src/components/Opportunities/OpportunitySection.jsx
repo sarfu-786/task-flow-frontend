@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useOpportunities } from '../../context/OpportunityContext';
+import { useOpportunities, STAGES } from '../../context/OpportunityContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
 import { OpportunityMetricDetailDialog } from './OpportunityMetricDetailDialog';
 import { OpportunityKanban } from './OpportunityKanban';
 import { OpportunityTable } from './OpportunityTable';
+import { LostReasonModal } from './LostReasonModal';
 import {
   TrendingUp,
   Plus,
@@ -45,8 +46,8 @@ export const OpportunitySection = () => {
   const [viewMode, setViewMode] = useState('kanban');
 
   const formatAmount = (num) => {
-    if (!num && num !== 0) return '$0';
-    return `$${Number(num).toLocaleString()}`;
+    if (!num && num !== 0) return '₹0';
+    return `₹${Number(num).toLocaleString('en-IN')}`;
   };
 
   return (
@@ -218,11 +219,11 @@ export const OpportunitySection = () => {
             }}
           >
             <option value="all">All Stages</option>
-            <option value="Qualification">Qualification</option>
-            <option value="Proposal">Proposal</option>
-            <option value="Negotiation">Negotiation</option>
-            <option value="Won">Won</option>
-            <option value="Lost">Lost</option>
+            {STAGES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
 
           <select
@@ -294,6 +295,9 @@ export const OpportunitySection = () => {
 
       {/* Render Kanban or Table */}
       {viewMode === 'kanban' ? <OpportunityKanban /> : <OpportunityTable />}
+
+      {/* Lost Reason Dialog */}
+      <LostReasonModal />
 
       {/* Dedicated Opportunity Metric Detail Scrollable Pop-up Dialog */}
       <OpportunityMetricDetailDialog

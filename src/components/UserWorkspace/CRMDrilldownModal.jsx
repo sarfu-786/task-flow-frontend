@@ -165,6 +165,7 @@ export const CRMDrilldownModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#ffffff',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -239,6 +240,7 @@ export const CRMDrilldownModal = ({
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
+            flexShrink: 0,
           }}
         >
           <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
@@ -422,7 +424,8 @@ export const CRMDrilldownModal = ({
           style={{
             padding: '16px 24px',
             overflowY: 'auto',
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
@@ -604,6 +607,7 @@ export const CRMDrilldownModal = ({
             background: '#ffffff',
             display: 'flex',
             justifyContent: 'flex-end',
+            flexShrink: 0,
           }}
         >
           <button

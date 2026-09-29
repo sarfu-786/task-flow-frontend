@@ -107,6 +107,11 @@ export const DispositionModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (selectedCode === 'CALL_BACK' && callbackDateTime && callbackDateTime < new Date().toISOString().slice(0, 16)) {
+      setError('Call back date and time cannot be in the past');
+      return;
+    }
+
     setError('');
     setIsSubmitting(true);
 
@@ -174,6 +179,7 @@ export const DispositionModal = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -222,25 +228,26 @@ export const DispositionModal = () => {
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {error && (
-            <div
-              style={{
-                padding: '12px 16px',
-                borderRadius: '10px',
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#991b1b',
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {error && (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
           {/* Disposition Code Selection Matrix */}
           <div>
@@ -331,6 +338,7 @@ export const DispositionModal = () => {
               </label>
               <input
                 type="datetime-local"
+                min={new Date().toISOString().slice(0, 16)}
                 value={callbackDateTime}
                 onChange={(e) => setCallbackDateTime(e.target.value)}
                 required
@@ -414,6 +422,7 @@ export const DispositionModal = () => {
               />
             </div>
           </div>
+          </div>
 
           {/* Modal Footer Buttons */}
           <div
@@ -422,8 +431,10 @@ export const DispositionModal = () => {
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: '12px',
-              paddingTop: '16px',
+              padding: '16px 24px',
               borderTop: '1px solid #f1f5f9',
+              background: '#f8fafc',
+              flexShrink: 0,
             }}
           >
             <button

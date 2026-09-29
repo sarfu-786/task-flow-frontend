@@ -177,25 +177,23 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                 </button>
               )}
 
-              {/* Pending Approvals */}
-              {pendingApprovalsCount > 0 && (
-                <>
-                  {!isCollapsed && <div className="sidebar-group-label">SYSTEM & ACCESS</div>}
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('approvals')}
-                    id="nav-super-approvals"
-                    title={`User Approvals (${pendingApprovalsCount} pending)`}
-                  >
-                    <UserCheck className="nav-icon" />
-                    <div className="nav-label-wrapper">
-                      <span className="nav-label">Approvals</span>
-                      <span className="nav-badge-count">{pendingApprovalsCount}</span>
-                    </div>
-                  </button>
-                </>
-              )}
+              {/* Approvals (Super Admin Only) */}
+              <div className="sidebar-group-label">SYSTEM & ACCESS</div>
+              <button
+                type="button"
+                className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
+                onClick={() => handleNavClick('approvals')}
+                id="nav-super-approvals"
+                title={pendingApprovalsCount > 0 ? `Registration Approvals (${pendingApprovalsCount} pending)` : 'Registration Approvals'}
+              >
+                <UserCheck className="nav-icon" />
+                <div className="nav-label-wrapper">
+                  <span className="nav-label">Approvals</span>
+                  {pendingApprovalsCount > 0 && (
+                    <span className="nav-badge-count">{pendingApprovalsCount}</span>
+                  )}
+                </div>
+              </button>
             </>
           ) : isManager ? (
             /* ========================================================
@@ -295,26 +293,6 @@ export const Sidebar = ({ activeSection, setActiveSection, isMobileMenuOpen, set
                   <FolderKanban className="nav-icon" />
                   <span className="nav-label">Projects Management</span>
                 </button>
-              )}
-
-              {/* Pending Approvals */}
-              {pendingApprovalsCount > 0 && (
-                <>
-                  <div className="sidebar-group-label">APPROVALS</div>
-                  <button
-                    type="button"
-                    className={`nav-item-btn ${activeSection === 'approvals' ? 'active' : ''}`}
-                    onClick={() => handleNavClick('approvals')}
-                    id="nav-manager-approvals"
-                    title={`Pending Registrations (${pendingApprovalsCount})`}
-                  >
-                    <UserCheck className="nav-icon" />
-                    <div className="nav-label-wrapper">
-                      <span className="nav-label">Approvals</span>
-                      <span className="nav-badge-count">{pendingApprovalsCount}</span>
-                    </div>
-                  </button>
-                </>
               )}
             </>
           ) : (

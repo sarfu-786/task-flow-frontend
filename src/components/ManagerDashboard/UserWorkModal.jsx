@@ -134,10 +134,10 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '820px', width: '95%' }}
+        style={{ maxWidth: '820px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Modal Header with User Bio */}
-        <div className="modal-header" style={{ padding: '18px 24px' }}>
+        <div className="modal-header" style={{ padding: '18px 24px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {user.avatar ? (
               <img
@@ -199,7 +199,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
         </div>
 
         {/* Modal Body with 1-Click Filter Tabs and Task List */}
-        <div className="modal-body" style={{ padding: '20px 24px' }}>
+        <div className="modal-body" style={{ padding: '20px 24px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
           {/* Quick 1-Click Status Filter Tabs */}
           <div
             style={{

@@ -28,6 +28,7 @@ export const LeadKanbanBoard = () => {
     openEditModal,
     openConvertModal,
     openDeleteModal,
+    openLeadDetailModal,
   } = useLeads();
 
   const [draggedLeadId, setDraggedLeadId] = useState(null);
@@ -396,7 +397,29 @@ export const LeadKanbanBoard = () => {
                             <Sparkles size={11} />
                             <span>Convert</span>
                           </button>
-                        ) : col.id !== 'Converted' && col.id !== 'Lost' ? (
+                        ) : col.id === 'Converted' ? (
+                          <button
+                            type="button"
+                            onClick={() => openLeadDetailModal(lead)}
+                            style={{
+                              background: '#f5f3ff',
+                              border: '1px solid #ddd6fe',
+                              color: '#7c3aed',
+                              borderRadius: '6px',
+                              padding: '3px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            title="View Opportunity details and stage lifecycle"
+                          >
+                            <Sparkles size={11} />
+                            <span>Opportunity</span>
+                          </button>
+                        ) : col.id !== 'Lost' ? (
                           <button
                             type="button"
                             onClick={() => {

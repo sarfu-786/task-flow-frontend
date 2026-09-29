@@ -268,10 +268,10 @@ export const EmployeeDrilldownModal = ({
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '960px', width: '95%' }}
+        style={{ maxWidth: '960px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Header */}
-        <div className="modal-header" style={{ padding: '18px 24px' }}>
+        <div className="modal-header" style={{ padding: '18px 24px', flexShrink: 0 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h3 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>
@@ -299,7 +299,7 @@ export const EmployeeDrilldownModal = ({
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ padding: '20px 24px', gap: '16px' }}>
+        <div className="modal-body" style={{ padding: '20px 24px', gap: '16px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
           {/* Controls Bar */}
           <div
             style={{
@@ -565,9 +565,9 @@ export const EmployeeDrilldownModal = ({
             <div
               className="modal-content"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: '520px', width: '90%' }}
+              style={{ maxWidth: '520px', width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             >
-              <div className="modal-header">
+              <div className="modal-header" style={{ flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Edit2 size={18} color="#2563eb" />
                   <h3 className="modal-title">Edit User Details</h3>
@@ -577,8 +577,8 @@ export const EmployeeDrilldownModal = ({
                 </button>
               </div>
 
-              <form onSubmit={handleSaveEdit}>
-                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+                <div className="modal-body custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
                   <div className="form-group">
                     <label className="form-label">Full Name <span style={{ color: '#ef4444' }}>*</span></label>
                     <input
@@ -687,7 +687,7 @@ export const EmployeeDrilldownModal = ({
                   </div>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ flexShrink: 0 }}>
                   <button
                     type="button"
                     className="btn btn-secondary"

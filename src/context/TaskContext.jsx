@@ -141,20 +141,21 @@ export const TaskProvider = ({ children }) => {
 
       // Filter relevance for this client
       let isRelevant = false;
-      if (isManager && (notif.forRole === 'Manager' || notif.forRole === 'All')) {
+      const rName = (notif.recipientName || '').toLowerCase().trim();
+      const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
+
+      const isDirectRecipient =
+        (rUser && rUser === myId) ||
+        (rName && (rName === myName || rName === myUsername || myName.includes(rName) || rName.includes(myName)));
+
+      if (isDirectRecipient) {
         isRelevant = true;
-      } else if (!isManager) {
-        const rName = (notif.recipientName || '').toLowerCase().trim();
-        const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
-        if (
-          rUser === myId ||
-          rName === myName ||
-          rName === myUsername ||
-          notif.forRole === 'User' ||
-          notif.forRole === 'All'
-        ) {
-          isRelevant = true;
-        }
+      } else if (notif.forRole === 'All') {
+        isRelevant = true;
+      } else if (isManager && (notif.forRole === 'Manager' || !notif.forRole)) {
+        isRelevant = true;
+      } else if (!isManager && (notif.forRole === 'User' || !notif.forRole)) {
+        isRelevant = true;
       }
 
       if (isRelevant) {
@@ -165,14 +166,26 @@ export const TaskProvider = ({ children }) => {
         });
         setUnreadCount((prev) => prev + 1);
 
+        const isLeadNotif =
+          notif.type === 'lead_assigned' ||
+          notif.type === 'new_lead' ||
+          notif.type === 'lead_created' ||
+          notif.taskType === 'lead' ||
+          data.type === 'lead_assigned';
+
         // Trigger Instant Live Toast Banner
         showLiveToast({
-          title: data.title || notif.title || (isManager ? 'Task Completed Alert' : 'New Task Assigned'),
+          title:
+            data.title ||
+            notif.title ||
+            (isLeadNotif ? '🎯 New Lead Received' : isManager ? 'Task Completed Alert' : 'New Task Assigned'),
           message: data.message || notif.message || notif.taskDescription,
           remark: data.remark || notif.remark || notif.completionRemark,
           type: data.type || notif.type,
           forRole: notif.forRole,
           assignedBy: notif.assignedBy,
+          leadId: notif.leadId || data.leadId,
+          leadReadableId: notif.leadReadableId || data.leadReadableId,
         });
 
         // Instant silent background data update
@@ -194,12 +207,14 @@ export const TaskProvider = ({ children }) => {
     };
 
     const cleanupNotif = socketService.on('notification:new', handleNewNotification);
+    const cleanupLeadAssigned = socketService.on('lead:assigned', handleNewNotification);
     const cleanupTasks = socketService.on('tasks:updated', handleTasksUpdated);
     const cleanupStats = socketService.on('stats:updated', () => fetchStats());
     const cleanupNotifUpdate = socketService.on('notification:updated', handleNotificationUpdated);
 
     return () => {
       cleanupNotif();
+      cleanupLeadAssigned();
       cleanupTasks();
       cleanupStats();
       cleanupNotifUpdate();

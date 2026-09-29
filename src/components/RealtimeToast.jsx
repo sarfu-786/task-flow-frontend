@@ -1,11 +1,12 @@
 import React from 'react';
-import { Bell, CheckCircle2, Shield, X, ArrowRight, UserCheck } from 'lucide-react';
+import { Bell, CheckCircle2, Shield, X, ArrowRight, UserCheck, Target, Sparkles } from 'lucide-react';
 
 export const RealtimeToast = ({ toast, onClose, onAction }) => {
   if (!toast) return null;
 
+  const isLead = toast.type === 'lead_assigned' || toast.type === 'new_lead' || toast.type === 'lead_created' || toast.taskType === 'lead';
   const isRegistration = toast.type === 'user_registered';
-  const isAssignment = !isRegistration && (toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager'));
+  const isAssignment = !isRegistration && !isLead && (toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager'));
 
   let primaryColor = '#059669';
   let badgeBg = '#ecfdf5';
@@ -14,7 +15,14 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
   let defaultTitle = 'Task Completed';
   let icon = <CheckCircle2 size={20} />;
 
-  if (isRegistration) {
+  if (isLead) {
+    primaryColor = '#6366f1';
+    badgeBg = '#eef2ff';
+    borderColor = '#818cf8';
+    badgeTitle = '🎯 Instant Lead Alert';
+    defaultTitle = 'New Lead Assigned to You';
+    icon = <Target size={20} />;
+  } else if (isRegistration) {
     primaryColor = '#d97706';
     badgeBg = '#fffbeb';
     borderColor = '#f59e0b';
@@ -149,10 +157,10 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: `0 4px 10px ${isRegistration ? 'rgba(217, 119, 6, 0.25)' : isAssignment ? 'rgba(37, 99, 235, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`,
+              boxShadow: `0 4px 10px ${isLead ? 'rgba(99, 102, 241, 0.25)' : isRegistration ? 'rgba(217, 119, 6, 0.25)' : isAssignment ? 'rgba(37, 99, 235, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`,
             }}
           >
-            <span>{isRegistration ? 'Review & Approve' : 'View Details'}</span>
+            <span>{isLead ? 'View Lead in CRM' : isRegistration ? 'Review & Approve' : 'View Details'}</span>
             <ArrowRight size={13} />
           </button>
         </div>

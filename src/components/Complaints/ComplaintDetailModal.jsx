@@ -133,11 +133,11 @@ export const ComplaintDetailModal = ({
           width: '100%',
           maxWidth: '680px',
           maxHeight: '90vh',
-          overflowY: 'auto',
           boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid #e2e8f0',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
         {/* Modal Header */}
@@ -150,6 +150,7 @@ export const ComplaintDetailModal = ({
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #f8fafc, #ffffff)',
             borderRadius: '20px 20px 0 0',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -164,6 +165,7 @@ export const ComplaintDetailModal = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 4px 12px rgba(220, 38, 38, 0.15)',
+                flexShrink: 0,
               }}
             >
               <AlertCircle size={22} />
@@ -238,7 +240,7 @@ export const ComplaintDetailModal = ({
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* SLA Live Banner */}
           <div
             style={{
@@ -427,6 +429,7 @@ export const ComplaintDetailModal = ({
             borderRadius: '0 0 20px 20px',
             flexWrap: 'wrap',
             gap: '10px',
+            flexShrink: 0,
           }}
         >
           <div>

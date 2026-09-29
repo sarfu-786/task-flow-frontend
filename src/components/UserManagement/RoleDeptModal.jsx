@@ -109,6 +109,7 @@ export const RoleDeptModal = ({
               : isManager
               ? '#eff6ff'
               : '#f8fafc',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -154,7 +155,7 @@ export const RoleDeptModal = ({
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {/* Role Card */}
           <div
             style={{
@@ -262,6 +263,7 @@ export const RoleDeptModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#ffffff',
+            flexShrink: 0,
           }}
         >
           {onFilterRole && (

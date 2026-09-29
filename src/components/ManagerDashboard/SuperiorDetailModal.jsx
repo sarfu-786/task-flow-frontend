@@ -123,6 +123,7 @@ export const SuperiorDetailModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
             background: isSuperAdmin ? '#fffbeb' : '#eff6ff',
           }}
         >
@@ -169,7 +170,7 @@ export const SuperiorDetailModal = ({
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {/* Superior Info Card */}
           <div
             style={{
@@ -344,6 +345,7 @@ export const SuperiorDetailModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#ffffff',
+            flexShrink: 0,
           }}
         >
           {matchedUser && onOpenWork && (

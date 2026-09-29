@@ -16,6 +16,7 @@ import {
   Calendar,
   UserCheck,
   ArrowRight,
+  Target,
 } from 'lucide-react';
 
 export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
@@ -31,7 +32,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
 
   if (!isOpen) return null;
 
-  const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
+  const isManager = user && ['Manager', 'Executive', 'Administrator', 'Super Admin'].includes(user.role);
 
   return (
     <div className="modal-backdrop" style={{ zIndex: 1200 }} onClick={onClose}>
@@ -48,7 +49,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
         }}
       >
         {/* Header */}
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
@@ -66,7 +67,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 className="modal-title" style={{ margin: 0 }}>
-                  {isManager ? 'Manager Inbox & Activity Feed' : 'My Task Inbox & Assignment Alerts'}
+                  {isManager ? 'Manager Inbox & Activity Feed' : 'My Notification Center & Alerts'}
                 </h3>
                 {unreadCount > 0 && (
                   <span
@@ -101,6 +102,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexShrink: 0,
             }}
           >
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -155,6 +157,8 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
+            flex: '1 1 auto',
+            minHeight: 0,
           }}
         >
           {notifications.length === 0 ? (
@@ -171,8 +175,8 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
               </h4>
               <p style={{ fontSize: '0.82rem', margin: 0 }}>
                 {isManager
-                  ? 'When users register or complete assigned tasks with remarks, you will receive real-time notifications here.'
-                  : 'When managers assign you a new task with instructions, you will receive notifications here.'}
+                  ? 'When users register, receive new leads, or complete assigned tasks with remarks, you will receive real-time notifications here.'
+                  : 'When new leads or tasks are assigned to you with instructions, you will receive instant notifications here.'}
               </p>
             </div>
           ) : (
@@ -186,8 +190,13 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                   })
                 : 'Just now';
 
+              const isLead =
+                notif.type === 'lead_assigned' ||
+                notif.type === 'new_lead' ||
+                notif.type === 'lead_created' ||
+                notif.taskType === 'lead';
               const isRegistration = notif.type === 'user_registered';
-              const isAssignment = notif.type === 'task_assigned' || (!isManager && !isRegistration);
+              const isAssignment = notif.type === 'task_assigned' || (!isManager && !isRegistration && !isLead && notif.type !== 'task_completed');
               const isCompletion = notif.type === 'task_completed';
 
               // Visual styling theme based on notification type
@@ -200,7 +209,16 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
               let iconBg = '#64748b';
               let iconComponent = <User size={16} />;
 
-              if (isRegistration) {
+              if (isLead) {
+                badgeText = '🎯 New Lead Assigned';
+                badgeBg = '#eef2ff';
+                badgeColor = '#4338ca';
+                badgeBorder = '#c7d2fe';
+                cardBg = notif.isRead ? '#ffffff' : '#faf5ff';
+                cardBorder = notif.isRead ? '#e2e8f0' : '#c7d2fe';
+                iconBg = '#6366f1';
+                iconComponent = <Target size={16} />;
+              } else if (isRegistration) {
                 badgeText = 'Registration Approval Needed';
                 badgeBg = '#fef3c7';
                 badgeColor = '#92400e';
@@ -331,6 +349,58 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                       {notif.taskDescription || notif.message}
                     </div>
 
+                    {/* Lead Action Banner */}
+                    {isLead && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          background: '#faf5ff',
+                          border: '1px solid #e9d5ff',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Target size={16} color="#6366f1" />
+                          <span style={{ fontSize: '0.82rem', color: '#4338ca', fontWeight: 600 }}>
+                            New Lead in Pipeline
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onNavigateSection) {
+                              onNavigateSection('leads');
+                            }
+                            if (onClose) onClose();
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(99, 102, 241, 0.25)',
+                          }}
+                        >
+                          <span>Open in Leads CRM</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    )}
+
                     {/* Registration Request Action Banner */}
                     {isRegistration && isManager && (
                       <div
@@ -398,7 +468,11 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                         }}
                       >
                         <span style={{ fontWeight: 600, color: badgeColor, display: 'block', fontSize: '0.75rem' }}>
-                          {isAssignment ? 'Manager Instructions / What To Do:' : 'User Remark:'}
+                          {isLead
+                            ? 'Lead Details / Overview:'
+                            : isAssignment
+                            ? 'Manager Instructions / What To Do:'
+                            : 'User Remark:'}
                         </span>
                         "{notif.remark}"
                       </div>

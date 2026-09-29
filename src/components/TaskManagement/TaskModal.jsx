@@ -172,7 +172,11 @@ export const TaskModal = () => {
     const errs = {};
     if (!taskType) errs.taskType = 'Task type is required';
     if (!description.trim()) errs.description = 'Task description is required';
-    if (!expectedDate) errs.expectedDate = 'Expected completion date is required';
+    if (!expectedDate) {
+      errs.expectedDate = 'Expected completion date is required';
+    } else if (expectedDate < new Date().toISOString().split('T')[0]) {
+      errs.expectedDate = 'Completion date cannot be in the past';
+    }
     if (!assignedTo.trim()) {
       errs.assignedTo = 'Please select an assignee (you can assign to yourself or a subordinate)';
     }
@@ -218,8 +222,8 @@ export const TaskModal = () => {
 
   return (
     <div className="modal-backdrop" onClick={closeTaskModal}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px' }}>
-        <div className="modal-header">
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div>
             <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isSuperAdmin ? (
@@ -257,8 +261,8 @@ export const TaskModal = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+          <div className="modal-body" style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
             {serverError && (
               <div className="alert alert-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlertCircle size={18} />
@@ -376,6 +380,7 @@ export const TaskModal = () => {
                 <input
                   id="expectedDate"
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   className="form-control"
                   value={expectedDate}
                   onChange={(e) => {
@@ -418,7 +423,7 @@ export const TaskModal = () => {
             </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ flexShrink: 0 }}>
             <button
               type="button"
               className="btn btn-secondary"

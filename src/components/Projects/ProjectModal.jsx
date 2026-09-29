@@ -91,6 +91,10 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
       setError('Target completion date is required');
       return;
     }
+    if (formData.targetDate < new Date().toISOString().split('T')[0]) {
+      setError('Target completion date cannot be in the past');
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -165,6 +169,7 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #ffffff, #f8fafc)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -221,32 +226,43 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
         <form
           onSubmit={handleSubmit}
           style={{
-            padding: '22px 24px',
-            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflow: 'hidden',
           }}
         >
-          {error && (
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: '#fef2f2',
-                border: '1px solid #fee2e2',
-                color: '#dc2626',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
+          <div
+            style={{
+              padding: '22px 24px',
+              overflowY: 'auto',
+              flex: '1 1 auto',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            {error && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: '#fef2f2',
+                  border: '1px solid #fee2e2',
+                  color: '#dc2626',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
           {/* Row 1: Project Name & Client Name */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
@@ -422,6 +438,7 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
               <input
                 type="date"
                 name="targetDate"
+                min={new Date().toISOString().split('T')[0]}
                 value={formData.targetDate}
                 onChange={handleChange}
                 required
@@ -494,6 +511,7 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
                 fontFamily: 'inherit',
               }}
             />
+            </div>
           </div>
 
           {/* Footer */}
@@ -503,9 +521,10 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
               alignItems: 'center',
               justifyContent: 'flex-end',
               gap: '10px',
-              paddingTop: '12px',
+              padding: '16px 24px',
               borderTop: '1px solid #f1f5f9',
-              marginTop: '4px',
+              background: '#f8fafc',
+              flexShrink: 0,
             }}
           >
             <button

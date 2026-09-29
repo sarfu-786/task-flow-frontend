@@ -17,12 +17,8 @@ import {
   Target,
   Plus,
   TrendingUp,
-  Crown,
-  ShieldCheck,
-  Briefcase,
   Layers,
   FileSpreadsheet,
-  Zap,
   PhoneOutgoing,
   Sparkles,
   ArrowUpRight,
@@ -118,49 +114,6 @@ export const LeadSection = () => {
             >
               Lead Management & Lead to Opportunity
             </h1>
-
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '999px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
-                color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
-                border: `1px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
-              }}
-            >
-              {isSuperAdmin ? <Crown size={12} /> : isManager ? <ShieldCheck size={12} /> : <Briefcase size={12} />}
-              {isSuperAdmin
-                ? 'Super Admin (Full Access)'
-                : isManager
-                  ? 'Manager & Subordinates Scope'
-                  : 'Sales User Scope'}
-            </span>
-
-            {overdueCount > 0 && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '4px 10px',
-                  borderRadius: '999px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  background: '#fee2e2',
-                  color: '#dc2626',
-                  border: '1px solid #fecaca',
-                }}
-                title="Number of overdue scheduled follow-ups and SLA items"
-              >
-                <Zap size={12} />
-                <span>{overdueCount} Overdue Follow-ups</span>
-              </span>
-            )}
           </div>
 
           <p
@@ -209,27 +162,21 @@ export const LeadSection = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             marginBottom: '12px',
             gap: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BarChart3 size={16} color="#475569" />
-            <span
-              style={{
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: '#475569',
-              }}
-            >
-              Pipeline Metrics & Activity
-            </span>
-          </div>
-          <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
-            Click any metric for detailed drill-down
+          <BarChart3 size={16} color="#475569" />
+          <span
+            style={{
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#475569',
+            }}
+          >
+            Pipeline Metrics & Activity
           </span>
         </div>
 
@@ -616,7 +563,7 @@ export const LeadSection = () => {
                     gap: '4px',
                   }}
                 >
-                  <span>Won Deals</span>
+                  <span>Converted</span>
                   <ArrowUpRight size={12} />
                 </span>
               </div>
@@ -680,27 +627,21 @@ export const LeadSection = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             marginBottom: '12px',
             gap: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers size={16} color="#475569" />
-            <span
-              style={{
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: '#475569',
-              }}
-            >
-              Operations & Executive Reports
-            </span>
-          </div>
-          <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
-            Management workspaces & analytical reporting
+          <Layers size={16} color="#475569" />
+          <span
+            style={{
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#475569',
+            }}
+          >
+            Operations & Executive Reports
           </span>
         </div>
 

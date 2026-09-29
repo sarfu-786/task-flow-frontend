@@ -328,6 +328,7 @@ export const ComplaintMetricDetailDialog = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #ffffff, #f8fafc)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -423,6 +424,7 @@ export const ComplaintMetricDetailDialog = ({
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
+            flexShrink: 0,
           }}
         >
           {/* Search Box */}
@@ -570,7 +572,8 @@ export const ComplaintMetricDetailDialog = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
           }}
         >
           <div
@@ -979,6 +982,7 @@ export const ComplaintMetricDetailDialog = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

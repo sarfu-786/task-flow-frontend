@@ -22,7 +22,7 @@ import {
   AlertCircle,
   Tag,
 } from 'lucide-react';
-import { useOpportunities, STAGES } from '../../context/OpportunityContext';
+import { useOpportunities, STAGES, normalizeStage } from '../../context/OpportunityContext';
 import { useAuth } from '../../context/AuthContext';
 
 export const OpportunityMetricDetailDialog = ({
@@ -37,6 +37,7 @@ export const OpportunityMetricDetailDialog = ({
     opportunities,
     stats,
     updateOpportunityStage,
+    openLostReasonModal,
     openCreateModal,
     openEditModal,
     openDeleteModal,
@@ -145,15 +146,16 @@ export const OpportunityMetricDetailDialog = ({
   // Filter opportunities
   const filteredDeals = useMemo(() => {
     return (opportunities || []).filter((opp) => {
+      const oppStage = normalizeStage ? normalizeStage(opp.stage) : opp.stage;
       // 1. Metric Type base filter
       if (metricType === 'won' && stageFilter === 'all') {
-        if (opp.stage !== 'Won') return false;
+        if (oppStage !== 'Won') return false;
       } else if (metricType === 'negotiation' && stageFilter === 'all') {
-        if (opp.stage !== 'Negotiation') return false;
+        if (oppStage !== 'Negotiation') return false;
       }
 
       // 2. Stage Filter
-      if (stageFilter !== 'all' && opp.stage !== stageFilter) {
+      if (stageFilter !== 'all' && oppStage !== stageFilter) {
         return false;
       }
 
@@ -167,16 +169,18 @@ export const OpportunityMetricDetailDialog = ({
         const q = searchTerm.toLowerCase().trim();
         const name = (opp.name || '').toLowerCase();
         const company = (opp.company || '').toLowerCase();
-        const leadName = (opp.relatedLeadName || '').toLowerCase();
+        const leadName = (opp.relatedLeadName || opp.contactPerson || '').toLowerCase();
         const assignedTo = (opp.assignedTo || '').toLowerCase();
         const notes = (opp.notes || '').toLowerCase();
+        const lostReason = (opp.lostReason || '').toLowerCase();
 
         return (
           name.includes(q) ||
           company.includes(q) ||
           leadName.includes(q) ||
           assignedTo.includes(q) ||
-          notes.includes(q)
+          notes.includes(q) ||
+          lostReason.includes(q)
         );
       }
 
@@ -192,9 +196,9 @@ export const OpportunityMetricDetailDialog = ({
       totalCount > 0
         ? Math.round(filteredDeals.reduce((sum, o) => sum + (Number(o.probability) || 0), 0) / totalCount)
         : 0;
-    const wonCount = filteredDeals.filter((o) => o.stage === 'Won').length;
+    const wonCount = filteredDeals.filter((o) => (normalizeStage ? normalizeStage(o.stage) : o.stage) === 'Won').length;
     const wonVal = filteredDeals
-      .filter((o) => o.stage === 'Won')
+      .filter((o) => (normalizeStage ? normalizeStage(o.stage) : o.stage) === 'Won')
       .reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
 
     return { totalCount, totalValue, avgProb, wonCount, wonVal };
@@ -227,58 +231,83 @@ export const OpportunityMetricDetailDialog = ({
   };
 
   const getStageBadge = (opp) => {
-    const stage = opp.stage || 'Qualification';
+    const rawStage = opp.stage || 'New Opportunity';
+    const stage = normalizeStage ? normalizeStage(rawStage) : rawStage;
     const stageConfig = {
-      Qualification: { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
-      Proposal: { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
+      'New Opportunity': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
+      Contacted: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', dot: '#16a34a' },
+      'Requirement Understanding': { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff', dot: '#9333ea' },
+      'Proposal / Quotation': { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
       Negotiation: { bg: '#fffbeb', color: '#b45309', border: '#fde68a', dot: '#d97706' },
       Won: { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#059669' },
       Lost: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#dc2626' },
+      Qualification: { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#2563eb' },
+      Proposal: { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', dot: '#6366f1' },
     };
 
     const nextStageMap = {
-      Qualification: 'Proposal',
-      Proposal: 'Negotiation',
+      'New Opportunity': 'Contacted',
+      Contacted: 'Requirement Understanding',
+      'Requirement Understanding': 'Proposal / Quotation',
+      'Proposal / Quotation': 'Negotiation',
       Negotiation: 'Won',
-      Won: 'Qualification',
-      Lost: 'Qualification',
+      Won: 'New Opportunity',
+      Lost: 'New Opportunity',
     };
 
-    const c = stageConfig[stage] || stageConfig.Qualification;
+    const c = stageConfig[stage] || stageConfig['New Opportunity'];
 
     return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          updateOpportunityStage(opp._id, nextStageMap[stage] || 'Qualification');
-        }}
-        title={`Current Stage: ${stage}. Click to advance.`}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          borderRadius: '999px',
-          fontSize: '0.74rem',
-          fontWeight: 700,
-          background: c.bg,
-          color: c.color,
-          border: `1px solid ${c.border}`,
-          cursor: 'pointer',
-          transition: 'all 0.15s ease',
-        }}
-      >
-        <span
-          style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: c.dot,
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '3px' }}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const nextStage = nextStageMap[stage] || 'New Opportunity';
+            updateOpportunityStage(opp._id, nextStage);
           }}
-        />
-        <span>{stage}</span>
-      </button>
+          title={`Current Stage: ${stage}. Click to advance.`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 10px',
+            borderRadius: '999px',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            background: c.bg,
+            color: c.color,
+            border: `1px solid ${c.border}`,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: c.dot,
+            }}
+          />
+          <span>{stage}</span>
+        </button>
+        {stage === 'Lost' && opp.lostReason && (
+          <span
+            style={{
+              fontSize: '0.68rem',
+              color: '#b91c1c',
+              fontWeight: 600,
+              padding: '1px 6px',
+              borderRadius: '4px',
+              background: '#fee2e2',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Reason: {opp.lostReason}
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -740,7 +769,7 @@ export const OpportunityMetricDetailDialog = ({
         </div>
 
         {/* Main Deals Scrollable Table Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 16px 28px' }}>
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0 28px 16px 28px' }}>
           {filteredDeals.length === 0 ? (
             <div
               style={{

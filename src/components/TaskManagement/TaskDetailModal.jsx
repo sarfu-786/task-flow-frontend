@@ -162,6 +162,7 @@ export const TaskDetailModal = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #f8fafc, #ffffff)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -226,6 +227,8 @@ export const TaskDetailModal = () => {
           style={{
             padding: '24px',
             overflowY: 'auto',
+            flex: '1 1 auto',
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             gap: '18px',
@@ -429,6 +432,7 @@ export const TaskDetailModal = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexShrink: 0,
           }}
         >
           {/* Quick Action Signs (Edit, Delete) */}

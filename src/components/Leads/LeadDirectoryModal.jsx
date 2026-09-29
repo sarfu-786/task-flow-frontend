@@ -77,6 +77,7 @@ export const LeadDirectoryModal = ({ isOpen, onClose }) => {
             background: 'linear-gradient(to right, #ffffff, #f8fafc)',
             flexWrap: 'wrap',
             gap: '12px',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -229,7 +230,8 @@ export const LeadDirectoryModal = ({ isOpen, onClose }) => {
             padding: '24px 28px',
             backgroundColor: '#f8fafc',
             overflowY: 'auto',
-            flex: 1,
+            flex: '1 1 auto',
+            minHeight: 0,
           }}
         >
           {viewMode === 'table' ? <EnhancedLeadTable /> : <LeadKanbanBoard />}

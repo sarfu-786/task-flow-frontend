@@ -78,6 +78,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, #f0fdf4, #ffffff)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -138,7 +139,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Progress Bar Card */}
           <div
             style={{
@@ -276,6 +277,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
+            flexShrink: 0,
           }}
         >
           <button
