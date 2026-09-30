@@ -7,6 +7,7 @@ import { UserWorkModal } from './UserWorkModal';
 import { EmployeeDrilldownModal } from './EmployeeDrilldownModal';
 import { ManagerTasksDrilldownModal } from './ManagerTasksDrilldownModal';
 import { SuperiorDetailModal } from './SuperiorDetailModal';
+import { WorkProgressCharts } from '../common/WorkProgressCharts';
 import {
   Users,
   CheckCircle2,
@@ -250,6 +251,11 @@ export const ManagerDashboard = ({ setActiveSection }) => {
           isClickable={true}
           onClick={() => openTasksDrilldown('To Do', 'Team Pending Queue')}
         />
+      </div>
+
+      {/* Team Work Progress & Completion Visualizations (Hierarchy-Scoped) */}
+      <div style={{ marginTop: '20px' }}>
+        <WorkProgressCharts tasks={teamTasks} openTasksDrilldown={openTasksDrilldown} />
       </div>
 
       {/* Enterprise LMS & Sales Funnel Summary for Manager */}

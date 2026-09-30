@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider, useTasks } from './context/TaskContext';
 import { UserProvider } from './context/UserContext';
@@ -396,10 +396,16 @@ const MainApplication = () => {
   const [loginInitialEmail, setLoginInitialEmail] = useState('');
   const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
 
-  // Reset to login view if user logs out
+  // Reset to login view and preload dashboard code-chunks in the background when on unauthenticated screen
   useEffect(() => {
     if (!isAuthenticated) {
       setAuthView('login');
+      const timer = setTimeout(() => {
+        import('./components/SuperAdmin/SuperAdminDashboard');
+        import('./components/ManagerDashboard/ManagerDashboard');
+        import('./components/UserWorkspace/UserWorkspace');
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
@@ -418,39 +424,53 @@ const MainApplication = () => {
     'approvals',
   ];
 
-  // Set active section depending on role and persisted preference
+  // Set active section directly to respective role's dashboard
   const [activeSection, setActiveSection] = useState(() => {
-    try {
-      const savedSection =
-        localStorage.getItem('taskflow_active_section') || sessionStorage.getItem('taskflow_active_section');
-      if (savedSection && validSections.includes(savedSection)) {
-        return savedSection;
-      }
-    } catch {
-      // ignore storage access error
-    }
     if (isSuperAdmin) return 'superadmin';
     if (isManager) return 'manager';
     return 'user-workspace';
   });
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const prevUserIdRef = useRef(null);
 
+  // Directly display dashboard when user/manager/super admin logs in
   useEffect(() => {
     if (user) {
-      setActiveSection((prev) => {
-        let next = prev;
-        if (!validSections.includes(prev)) {
-          if (isSuperAdmin) next = 'superadmin';
-          else if (isManager) next = 'manager';
-          else next = 'user-workspace';
-        }
+      const currentUserId = (user._id || user.id || '').toString();
+      // On fresh login or user switch -> direct display to role's dashboard
+      if (prevUserIdRef.current !== currentUserId) {
+        prevUserIdRef.current = currentUserId;
+        const targetDashboard = isSuperAdmin
+          ? 'superadmin'
+          : isManager
+          ? 'manager'
+          : 'user-workspace';
+        setActiveSection(targetDashboard);
         try {
-          localStorage.setItem('taskflow_active_section', next);
-          sessionStorage.setItem('taskflow_active_section', next);
+          localStorage.setItem('taskflow_active_section', targetDashboard);
+          sessionStorage.setItem('taskflow_active_section', targetDashboard);
         } catch {}
-        return next;
-      });
+      } else {
+        // Enforce role-based access on existing active section
+        setActiveSection((prev) => {
+          let next = prev;
+          if (
+            (prev === 'superadmin' && !isSuperAdmin) ||
+            (prev === 'manager' && !isManager) ||
+            !validSections.includes(prev)
+          ) {
+            next = isSuperAdmin ? 'superadmin' : isManager ? 'manager' : 'user-workspace';
+          }
+          try {
+            localStorage.setItem('taskflow_active_section', next);
+            sessionStorage.setItem('taskflow_active_section', next);
+          } catch {}
+          return next;
+        });
+      }
+    } else {
+      prevUserIdRef.current = null;
     }
   }, [user, isSuperAdmin, isManager]);
 

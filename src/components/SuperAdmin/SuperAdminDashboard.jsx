@@ -6,6 +6,7 @@ import { MetricCard } from '../ManagerDashboard/MetricCard';
 import { UserWorkModal } from '../ManagerDashboard/UserWorkModal';
 import { EmployeeDrilldownModal } from '../ManagerDashboard/EmployeeDrilldownModal';
 import { ManagerTasksDrilldownModal } from '../ManagerDashboard/ManagerTasksDrilldownModal';
+import { WorkProgressCharts } from '../common/WorkProgressCharts';
 import {
   Users,
   CheckCircle2,
@@ -216,25 +217,25 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
 
 
   return (
-    <div className="super-admin-dashboard fade-in" style={{ padding: '6px 0 32px 0' }}>
+    <div className="super-admin-dashboard fade-in" style={{ padding: '2px 0 20px 0' }}>
       {/* 1. Header Command Banner with Timeframe Filter */}
       <div
         style={{
-          marginBottom: '20px',
-          padding: '16px 20px',
+          marginBottom: '12px',
+          padding: '12px 18px',
           background: '#ffffff',
-          borderRadius: '20px',
+          borderRadius: '16px',
           border: '1px solid var(--border-color)',
           boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '14px',
+          gap: '12px',
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
             <span
               className="badge-official"
               style={{
@@ -242,39 +243,39 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
                 color: '#b45309',
                 borderColor: '#fde68a',
                 borderRadius: '999px',
-                padding: '3px 10px',
-                fontSize: '0.74rem',
+                padding: '2px 8px',
+                fontSize: '0.72rem',
                 fontWeight: 700,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
             >
-              <Crown size={12} />
+              <Crown size={11} />
               <span>Super Admin Console</span>
             </span>
             <span
               className="badge-official badge-blue"
-              style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '0.74rem', fontWeight: 700 }}
+              style={{ borderRadius: '999px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700 }}
             >
               {activeUsers.length} Active Personnel
             </span>
           </div>
-          <h1 style={{ fontSize: '1.38rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
             Organization Command Center
           </h1>
         </div>
 
         {/* Action Toolbar with Period Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Non-destructive Timeframe Toggle */}
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               background: '#f1f5f9',
-              padding: '3px',
-              borderRadius: '12px',
+              padding: '2px',
+              borderRadius: '10px',
               border: '1px solid #e2e8f0',
               gap: '2px',
             }}
@@ -290,9 +291,9 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
                 type="button"
                 onClick={() => setTimeFilter(tab.id)}
                 style={{
-                  padding: '5px 12px',
-                  borderRadius: '9px',
-                  fontSize: '0.78rem',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
                   fontWeight: timeFilter === tab.id ? 700 : 600,
                   color: timeFilter === tab.id ? '#2563eb' : '#64748b',
                   background: timeFilter === tab.id ? '#ffffff' : 'transparent',
@@ -312,16 +313,16 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 14px',
+              padding: '5px 12px',
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: '999px',
-              fontSize: '0.8rem',
+              fontSize: '0.76rem',
               fontWeight: 700,
               color: '#334155',
             }}
           >
-            <CheckSquare size={14} color="#2563eb" />
+            <CheckSquare size={13} color="#2563eb" />
             <span>{totalTasksCount} Total Tasks</span>
           </span>
         </div>
@@ -331,42 +332,42 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
       {pendingApprovalsCount > 0 && (
         <div
           style={{
-            marginBottom: '20px',
-            padding: '16px 20px',
-            borderRadius: '16px',
+            marginBottom: '12px',
+            padding: '12px 18px',
+            borderRadius: '14px',
             background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
             border: '1.5px solid #fde68a',
-            boxShadow: '0 4px 14px rgba(217, 119, 6, 0.12)',
+            boxShadow: '0 3px 10px rgba(217, 119, 6, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '14px',
+            gap: '12px',
             animation: 'fadeIn 0.25s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '12px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
                 background: '#d97706',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)',
+                boxShadow: '0 2px 6px rgba(217, 119, 6, 0.25)',
               }}
             >
-              <UserCheck size={22} />
+              <UserCheck size={18} />
             </div>
             <div>
-              <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#78350f' }}>
+              <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: '#78350f' }}>
                 {pendingApprovalsCount} Registration {pendingApprovalsCount === 1 ? 'Request' : 'Requests'} Awaiting Approval
               </h4>
-              <p style={{ margin: '2px 0 0', fontSize: '0.84rem', color: '#92400e' }}>
+              <p style={{ margin: '1px 0 0', fontSize: '0.78rem', color: '#92400e' }}>
                 New employee sign-ups are waiting in queue. As Super Admin, review applicant credentials and grant system access.
               </p>
             </div>
@@ -376,34 +377,34 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
             type="button"
             onClick={() => setActiveSection && setActiveSection('approvals')}
             style={{
-              padding: '9px 18px',
-              borderRadius: '10px',
+              padding: '7px 14px',
+              borderRadius: '8px',
               background: '#d97706',
               color: '#ffffff',
               border: 'none',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.25)',
+              gap: '5px',
+              boxShadow: '0 2px 6px rgba(217, 119, 6, 0.2)',
               transition: 'all 0.15s ease',
             }}
           >
-            <UserCheck size={16} />
+            <UserCheck size={14} />
             <span>Review & Approve ({pendingApprovalsCount})</span>
           </button>
         </div>
       )}
 
-      {/* 3. Existing 9 KPI Metric Cards (Preserved 100% Functionality & Click Handlers) */}
+      {/* 3. Existing 8 KPI Metric Cards (Preserved 100% Functionality & Click Handlers) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '12px',
+          marginBottom: '14px',
         }}
       >
         {/* Card 1: Total Personnel */}
@@ -415,6 +416,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#0f172a"
           bgLight="#f8fafc"
           isClickable={true}
+          compact={true}
           onClick={() => openEmployeeDrilldown('all', 'All Organization Personnel', 'all')}
         />
 
@@ -427,19 +429,21 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#2563eb"
           bgLight="#eff6ff"
           isClickable={true}
+          compact={true}
           onClick={() => openEmployeeDrilldown('all', 'Managers & Leadership Roster', 'managers')}
         />
 
-        {/* Card 3: Sales Coordinators */}
+        {/* Card 3: Regular Staff */}
         <MetricCard
-          title="Sales Coordinators"
-          value={salesCoordinators.length}
-          subtitle="CRM Pipeline Assigned"
-          icon={Target}
-          color="#0284c7"
-          bgLight="#f0f9ff"
+          title="Regular Staff"
+          value={regularUsers.length}
+          subtitle="Core Operations Team"
+          icon={Briefcase}
+          color="#7c3aed"
+          bgLight="#f5f3ff"
           isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Sales Coordinators Directory', 'sales')}
+          compact={true}
+          onClick={() => openEmployeeDrilldown('all', 'Regular Staff Directory', 'regular')}
         />
 
         {/* Card 4: Service Coordinators */}
@@ -451,22 +455,11 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#dc2626"
           bgLight="#fef2f2"
           isClickable={true}
+          compact={true}
           onClick={() => openEmployeeDrilldown('all', 'Service Coordinators Directory', 'service')}
         />
 
-        {/* Card 5: Regular Staff */}
-        <MetricCard
-          title="Regular Staff"
-          value={regularUsers.length}
-          subtitle="Core Operations Team"
-          icon={Briefcase}
-          color="#7c3aed"
-          bgLight="#f5f3ff"
-          isClickable={true}
-          onClick={() => openEmployeeDrilldown('all', 'Regular Staff Directory', 'regular')}
-        />
-
-        {/* Card 6: Total Assigned Tasks */}
+        {/* Card 5: Total Assigned Tasks */}
         <MetricCard
           title="Total Assigned Tasks"
           value={totalTasksCount}
@@ -475,10 +468,11 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#4f46e5"
           bgLight="#eef2ff"
           isClickable={true}
+          compact={true}
           onClick={() => openTasksDrilldown('all', 'Organization Tasks Overview')}
         />
 
-        {/* Card 7: In Progress Work */}
+        {/* Card 6: In Progress Work */}
         <MetricCard
           title="In Progress Work"
           value={inProgressTasksCount}
@@ -487,10 +481,11 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#d97706"
           bgLight="#fffbeb"
           isClickable={true}
+          compact={true}
           onClick={() => openTasksDrilldown('In Progress', 'In Progress Workflows')}
         />
 
-        {/* Card 8: Completed Tasks */}
+        {/* Card 7: Completed Tasks */}
         <MetricCard
           title="Completed Tasks"
           value={completedTasksCount}
@@ -499,10 +494,11 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#059669"
           bgLight="#ecfdf5"
           isClickable={true}
+          compact={true}
           onClick={() => openTasksDrilldown('Completed', 'Completed Workflows')}
         />
 
-        {/* Card 9: Pending Queue */}
+        {/* Card 8: Pending Queue */}
         <MetricCard
           title="Pending Queue"
           value={todoTasksCount}
@@ -511,11 +507,15 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           color="#6366f1"
           bgLight="#f5f3ff"
           isClickable={true}
+          compact={true}
           onClick={() => openTasksDrilldown('To Do', 'Pending Queue Tasks')}
         />
       </div>
 
-      {/* 4. TODAY'S WORK SECTION */}
+      {/* 4. WORK PROGRESS & COMPLETION VISUALIZATIONS */}
+      <WorkProgressCharts tasks={filteredTasks} openTasksDrilldown={openTasksDrilldown} />
+
+      {/* 5. TODAY'S WORK SECTION */}
       <div
         style={{
           background: '#ffffff',

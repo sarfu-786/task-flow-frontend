@@ -9,6 +9,7 @@ import { UserWorkModal } from '../ManagerDashboard/UserWorkModal';
 import { SuperiorDetailModal } from '../ManagerDashboard/SuperiorDetailModal';
 import { RoleDeptModal } from '../UserManagement/RoleDeptModal';
 import { UserDetailModal } from '../UserManagement/UserDetailModal';
+import { WorkProgressCharts } from '../common/WorkProgressCharts';
 import {
   Users,
   CheckCircle2,
@@ -489,6 +490,11 @@ export const UserWorkspace = ({ setActiveSection }) => {
           isClickable={true}
           onClick={() => openTasksDrilldown('To Do', 'Pending Tasks Queue')}
         />
+      </div>
+
+      {/* User Work Progress & Completion Visualizations (Own-Data-Only) */}
+      <div style={{ marginTop: '20px' }}>
+        <WorkProgressCharts tasks={myTasks} openTasksDrilldown={openTasksDrilldown} />
       </div>
 
       {/* Enterprise LMS & Sales Funnel Summary for User */}
