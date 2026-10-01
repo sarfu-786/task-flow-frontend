@@ -83,7 +83,7 @@ export const SLAMonitorTab = () => {
       </div>
 
       {/* 3 Tier Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
         {/* Tier 1 Card */}
         <div
           style={{
@@ -173,7 +173,7 @@ export const SLAMonitorTab = () => {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '12px' }}>
             {tier3Leads.map((lead) => (
               <div
                 key={lead._id || lead.lead_id}

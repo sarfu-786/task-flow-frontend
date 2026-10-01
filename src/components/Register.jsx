@@ -173,7 +173,7 @@ export const Register = ({ onSwitchToLogin }) => {
         {/* Registration Form */}
         <form onSubmit={handleSubmit} noValidate>
           {/* Row 1: Full Name & Email */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px', marginBottom: '14px' }}>
             {/* Full Name */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="register-name">
@@ -291,7 +291,7 @@ export const Register = ({ onSwitchToLogin }) => {
           </div>
 
           {/* Row 2: Password & Confirm Password */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px', marginBottom: '22px' }}>
             {/* Password */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="register-password">

@@ -12,6 +12,7 @@ export const MetricCard = ({
   isClickable = true,
   isActive = false,
   compact = false,
+  showBadge = true,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -87,21 +88,20 @@ export const MetricCard = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? '2px' : '6px', gap: '6px' }}>
           <span
             style={{
-              fontSize: compact ? '0.72rem' : '0.78rem',
+              fontSize: compact ? '0.74rem' : '0.82rem',
               fontWeight: 700,
               color: 'var(--text-muted, #64748b)',
               textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-              lineHeight: 1.3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              letterSpacing: '0.025em',
+              lineHeight: 1.25,
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
             }}
             title={title}
           >
             {title}
           </span>
-          {isClickable && (
+          {isClickable && showBadge && (
             <span
               style={{
                 fontSize: compact ? '0.66rem' : '0.7rem',

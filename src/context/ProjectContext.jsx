@@ -192,6 +192,42 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [projectForDetail, setProjectForDetail] = useState(null);
+  const [projectToEdit, setProjectToEdit] = useState(null);
+  const [projectForMilestones, setProjectForMilestones] = useState(null);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [dateFilter, setDateFilter] = useState('all');
+
+  const openCreateModal = () => {
+    setProjectToEdit(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (p) => {
+    setProjectToEdit(p);
+    setSelectedProject(p);
+    setIsEditModalOpen(true);
+  };
+
+  const openMilestonesModal = (p) => {
+    setProjectForMilestones(p);
+    setSelectedProject(p);
+    setIsMilestonesModalOpen(true);
+  };
+
+  const openDeleteModal = (p) => {
+    setProjectToDelete(p);
+    setSelectedProject(p);
+    setIsDeleteModalOpen(true);
+  };
+
+  const openDetailModal = (p) => {
+    setProjectForDetail(p);
+    setSelectedProject(p);
+    setIsDetailModalOpen(true);
+  };
+
   return (
     <ProjectContext.Provider
       value={{
@@ -210,6 +246,8 @@ export const ProjectProvider = ({ children }) => {
         setCategoryFilter,
         managerFilter,
         setManagerFilter,
+        dateFilter,
+        setDateFilter,
         currentPage,
         setCurrentPage,
         totalPages,
@@ -223,8 +261,23 @@ export const ProjectProvider = ({ children }) => {
         setIsMilestonesModalOpen,
         isDeleteModalOpen,
         setIsDeleteModalOpen,
+        isDetailModalOpen,
+        setIsDetailModalOpen,
         selectedProject,
         setSelectedProject,
+        projectForDetail,
+        setProjectForDetail,
+        projectToEdit,
+        setProjectToEdit,
+        projectForMilestones,
+        setProjectForMilestones,
+        projectToDelete,
+        setProjectToDelete,
+        openCreateModal,
+        openEditModal,
+        openMilestonesModal,
+        openDeleteModal,
+        openDetailModal,
         fetchProjects,
         createProject,
         updateProject,

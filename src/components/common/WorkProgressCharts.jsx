@@ -219,9 +219,10 @@ export const WorkProgressCharts = ({ tasks = [], openTasksDrilldown }) => {
 
       {/* 2-Column Responsive Visual Charts Grid */}
       <div
+        className="work-progress-charts-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: '14px',
           alignItems: 'stretch',
         }}

@@ -222,9 +222,10 @@ export const MISReportsDashboard = () => {
 
       {/* 5 Clean MIS Report Selector Cards */}
       <div
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
           gap: '10px',
         }}
       >
@@ -354,7 +355,7 @@ export const MISReportsDashboard = () => {
         ) : selectedReportId === 'MIS-01' ? (
           /* MIS-01: Funnel & Cycle Time */
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px', marginBottom: '16px' }}>
               <div style={{ padding: '12px 16px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                 <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
                   Total Cycle Velocity
@@ -456,7 +457,7 @@ export const MISReportsDashboard = () => {
         ) : selectedReportId === 'MIS-04' ? (
           /* MIS-04: Pipeline Aging & Risk */
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px', marginBottom: '16px' }}>
               <div style={{ padding: '12px 16px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca' }}>
                 <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#991b1b', textTransform: 'uppercase' }}>
                   Total Pipeline at Risk

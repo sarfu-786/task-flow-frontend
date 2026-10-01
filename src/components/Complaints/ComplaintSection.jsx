@@ -148,9 +148,10 @@ export const ComplaintSection = () => {
 
       {/* Top 4 Interactive Curved Metrics Cards (Clicking a card opens the table popup dialog) */}
       <div
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '16px',
           marginBottom: '20px',
         }}

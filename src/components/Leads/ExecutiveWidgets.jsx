@@ -83,9 +83,10 @@ export const ExecutiveWidgets = ({ isCompact = false }) => {
 
       {/* Grid containing the 4 Major Graphical Widgets */}
       <div
+        className="executive-widgets-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: isCompact ? '1fr' : 'repeat(auto-fit, minmax(440px, 1fr))',
+          gridTemplateColumns: isCompact ? '1fr' : 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))',
           gap: '20px',
         }}
       >

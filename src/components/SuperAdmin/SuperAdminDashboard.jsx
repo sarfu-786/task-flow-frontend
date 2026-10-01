@@ -400,9 +400,10 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
 
       {/* 3. Existing 8 KPI Metric Cards (Preserved 100% Functionality & Click Handlers) */}
       <div
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
           gap: '12px',
           marginBottom: '14px',
         }}
@@ -562,7 +563,7 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: '12px',
           }}
         >

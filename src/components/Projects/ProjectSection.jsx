@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
+import { ProjectTable } from './ProjectTable';
+import { ProjectDetailModal } from './ProjectDetailModal';
 import { ProjectModal } from './ProjectModal';
 import { MilestonesModal } from './MilestonesModal';
 import { DeleteProjectModal } from './DeleteProjectModal';
@@ -18,17 +20,38 @@ import {
 } from 'lucide-react';
 
 export const ProjectSection = () => {
-  const { projects, stats } = useProjects();
+  const {
+    projects,
+    stats,
+    isCreateModalOpen,
+    setIsCreateModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    isMilestonesModalOpen,
+    setIsMilestonesModalOpen,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    isDetailModalOpen,
+    setIsDetailModalOpen,
+    projectForDetail,
+    setProjectForDetail,
+    projectToEdit,
+    setProjectToEdit,
+    projectForMilestones,
+    setProjectForMilestones,
+    projectToDelete,
+    setProjectToDelete,
+    openCreateModal,
+    openEditModal,
+    openMilestonesModal,
+    openDeleteModal,
+    openDetailModal,
+  } = useProjects();
+
   const { isSuperAdmin, isManager } = useAuth();
 
   // Active Metric Dialog: 'total' | 'in_progress' | 'completed' | 'budget' | null
   const [activeMetricDialog, setActiveMetricDialog] = useState(null);
-
-  // Modals for CRUD and detailed operations
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [projectToEdit, setProjectToEdit] = useState(null);
-  const [projectForMilestones, setProjectForMilestones] = useState(null);
-  const [projectToDelete, setProjectToDelete] = useState(null);
 
   return (
     <div className="page-container fade-in" style={{ paddingBottom: '32px' }}>
@@ -129,7 +152,10 @@ export const ProjectSection = () => {
               border: 'none',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
-            onClick={() => setIsCreateOpen(true)}
+            onClick={() => {
+              if (openCreateModal) openCreateModal();
+              else setIsCreateModalOpen(true);
+            }}
             id="btn-create-project"
           >
             <Plus size={16} />
@@ -140,11 +166,12 @@ export const ProjectSection = () => {
 
       {/* Top 4 Interactive Curved Metrics Cards (Clicking opens dedicated popup dialog) */}
       <div
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '16px',
-          marginBottom: '20px',
+          marginBottom: '24px',
         }}
       >
         <MetricCard
@@ -155,6 +182,7 @@ export const ProjectSection = () => {
           color="#2563eb"
           bgLight="#eff6ff"
           isClickable={true}
+          showBadge={false}
           onClick={() => setActiveMetricDialog('total')}
         />
 
@@ -166,29 +194,67 @@ export const ProjectSection = () => {
           color="#0284c7"
           bgLight="#f0f9ff"
           isClickable={true}
+          showBadge={false}
           onClick={() => setActiveMetricDialog('in_progress')}
         />
 
         <MetricCard
-          title="Delivered & Completed"
+          title="Delivered"
           value={stats.completed}
           subtitle="100% milestone sign-off (Click for details)"
           icon={CheckCircle2}
           color="#059669"
           bgLight="#ecfdf5"
           isClickable={true}
+          showBadge={false}
           onClick={() => setActiveMetricDialog('completed')}
         />
 
         <MetricCard
-          title="Portfolio Budget"
+          title="Portfolio Value"
           value={stats.totalBudget ? `$${stats.totalBudget.toLocaleString()}` : '$0'}
           subtitle={`Average Progress: ${stats.avgProgress || 0}% (Click for details)`}
           icon={DollarSign}
           color="#7c3aed"
           bgLight="#f5f3ff"
           isClickable={true}
+          showBadge={false}
           onClick={() => setActiveMetricDialog('budget')}
+        />
+      </div>
+
+      {/* Projects Directory & Management Section (Table + Search/Filters + Pagination) */}
+      <div style={{ marginBottom: '24px' }}>
+        <ProjectTable
+          onViewProject={(p) => {
+            if (openDetailModal) openDetailModal(p);
+            else {
+              setProjectForDetail(p);
+              setIsDetailModalOpen(true);
+            }
+          }}
+          onEditProject={(p) => {
+            if (openEditModal) openEditModal(p);
+            else {
+              setProjectToEdit(p);
+              setIsEditModalOpen(true);
+            }
+          }}
+          onOpenMilestones={(p) => {
+            if (openMilestonesModal) openMilestonesModal(p);
+            else {
+              setProjectForMilestones(p);
+              setIsMilestonesModalOpen(true);
+            }
+          }}
+          onDeleteProject={(p) => {
+            if (openDeleteModal) openDeleteModal(p);
+            else {
+              setProjectToDelete(p);
+              setIsDeleteModalOpen(true);
+            }
+          }}
+          canDelete={isSuperAdmin || isManager}
         />
       </div>
 
@@ -197,34 +263,101 @@ export const ProjectSection = () => {
         open={!!activeMetricDialog}
         onClose={() => setActiveMetricDialog(null)}
         metricType={activeMetricDialog || 'total'}
-        onEditProject={(p) => setProjectToEdit(p)}
-        onOpenMilestones={(p) => setProjectForMilestones(p)}
-        onDeleteProject={(p) => setProjectToDelete(p)}
+        onEditProject={(p) => {
+          if (openEditModal) openEditModal(p);
+          else {
+            setProjectToEdit(p);
+            setIsEditModalOpen(true);
+          }
+        }}
+        onOpenMilestones={(p) => {
+          if (openMilestonesModal) openMilestonesModal(p);
+          else {
+            setProjectForMilestones(p);
+            setIsMilestonesModalOpen(true);
+          }
+        }}
+        onDeleteProject={(p) => {
+          if (openDeleteModal) openDeleteModal(p);
+          else {
+            setProjectToDelete(p);
+            setIsDeleteModalOpen(true);
+          }
+        }}
         canDelete={isSuperAdmin || isManager}
-        onCreateProject={() => setIsCreateOpen(true)}
+        onCreateProject={() => {
+          if (openCreateModal) openCreateModal();
+          else setIsCreateModalOpen(true);
+        }}
       />
 
-      {/* CRUD & Milestone Popups */}
+      {/* Complete Project Detail View Modal */}
+      <ProjectDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setProjectForDetail(null);
+        }}
+        project={projectForDetail}
+        onEdit={(p) => {
+          if (openEditModal) openEditModal(p);
+          else {
+            setProjectToEdit(p);
+            setIsEditModalOpen(true);
+          }
+        }}
+        onOpenMilestones={(p) => {
+          if (openMilestonesModal) openMilestonesModal(p);
+          else {
+            setProjectForMilestones(p);
+            setIsMilestonesModalOpen(true);
+          }
+        }}
+        onDelete={(p) => {
+          if (openDeleteModal) openDeleteModal(p);
+          else {
+            setProjectToDelete(p);
+            setIsDeleteModalOpen(true);
+          }
+        }}
+      />
+
+      {/* Project Create & Edit Modal */}
       <ProjectModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         projectToEdit={null}
       />
       <ProjectModal
-        isOpen={!!projectToEdit}
-        onClose={() => setProjectToEdit(null)}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setProjectToEdit(null);
+        }}
         projectToEdit={projectToEdit}
       />
+
+      {/* Milestones Modal */}
       <MilestonesModal
-        isOpen={!!projectForMilestones}
-        onClose={() => setProjectForMilestones(null)}
+        isOpen={isMilestonesModalOpen}
+        onClose={() => {
+          setIsMilestonesModalOpen(false);
+          setProjectForMilestones(null);
+        }}
         project={projectForMilestones}
       />
+
+      {/* Delete Project Modal */}
       <DeleteProjectModal
-        isOpen={!!projectToDelete}
-        onClose={() => setProjectToDelete(null)}
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setProjectToDelete(null);
+        }}
         project={projectToDelete}
       />
     </div>
   );
 };
+
+export default ProjectSection;

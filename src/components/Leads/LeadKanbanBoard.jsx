@@ -151,7 +151,7 @@ export const LeadKanbanBoard = () => {
       className="lead-kanban-board-container"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
         gap: '16px',
         alignItems: 'start',
         marginTop: '16px',

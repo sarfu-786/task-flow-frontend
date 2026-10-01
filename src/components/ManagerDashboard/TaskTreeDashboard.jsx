@@ -457,6 +457,7 @@ export const TaskTreeDashboard = ({
 
       {/* Main Hierarchy Content Area */}
       <div
+        className="task-tree-dashboard-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) 340px',
@@ -843,7 +844,7 @@ export const TaskTreeDashboard = ({
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
                         gap: '14px',
                       }}
                     >

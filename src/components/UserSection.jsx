@@ -522,9 +522,10 @@ export const UserSection = () => {
 
       {/* 4 Interactive Curved Metric Cards - Click any card for instant Pop-Up Reference */}
       <div
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '16px',
           marginBottom: '20px',
         }}

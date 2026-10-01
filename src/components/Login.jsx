@@ -113,24 +113,88 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
 
   return (
     <div
+      className="tfp-login-wrapper"
       style={{
-        height: '100vh',
-        maxHeight: '100vh',
-        width: '100vw',
         backgroundImage: `linear-gradient(135deg, rgba(238, 245, 254, 0.76) 0%, rgba(249, 251, 255, 0.65) 40%, rgba(237, 244, 254, 0.72) 75%, rgba(220, 236, 254, 0.80) 100%), url(${officeBgImg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center bottom',
         backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px 32px',
         fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        position: 'relative',
-        overflow: 'hidden',
-        boxSizing: 'border-box',
       }}
     >
+      <style>{`
+        .tfp-login-wrapper {
+          min-height: 100vh;
+          min-height: 100dvh;
+          width: 100vw;
+          max-width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px 20px;
+          position: relative;
+          overflow-y: auto;
+          overflow-x: hidden;
+          box-sizing: border-box;
+        }
+        .tfp-login-grid {
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          grid-template-columns: minmax(360px, 465px) minmax(440px, 1fr);
+          gap: 54px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+        }
+        .tfp-login-card {
+          background: #ffffff;
+          border-radius: 32px;
+          padding: 36px 36px 26px;
+          box-shadow: 0 30px 80px -15px rgba(29, 104, 247, 0.20), 0 4px 25px rgba(0, 0, 0, 0.06);
+          border: 1px solid rgba(226, 232, 240, 0.9);
+          width: 100%;
+          max-width: 465px;
+          margin: 0 auto;
+          box-sizing: border-box;
+          position: relative;
+        }
+        .tfp-login-hero {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 4px 0;
+          position: relative;
+        }
+        @media (max-width: 980px) {
+          .tfp-login-grid {
+            grid-template-columns: 1fr;
+            max-width: 500px;
+            gap: 24px;
+          }
+          .tfp-login-hero {
+            display: none;
+          }
+        }
+        @media (max-width: 480px) {
+          .tfp-login-wrapper {
+            padding: 16px 12px;
+          }
+          .tfp-login-card {
+            border-radius: 22px;
+            padding: 24px 18px 20px;
+          }
+        }
+        @media (max-width: 360px) {
+          .tfp-login-wrapper {
+            padding: 10px 8px;
+          }
+          .tfp-login-card {
+            border-radius: 18px;
+            padding: 20px 14px 16px;
+          }
+        }
+      `}</style>
       {/* Seamless Ambient Background Office Lighting */}
       <div
         style={{
@@ -158,36 +222,11 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
       />
 
       {/* Main Two-Column Container */}
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '1280px',
-          maxHeight: 'calc(100vh - 32px)',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(400px, 465px) minmax(520px, 1fr)',
-          gap: '54px',
-          alignItems: 'center',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
+      <div className="tfp-login-grid">
         {/* ============================================================ */}
         {/* COLUMN 1 (LEFT): Prominent, Large Hero Login Card            */}
         {/* ============================================================ */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '32px',
-            padding: '36px 36px 26px',
-            boxShadow: '0 30px 80px -15px rgba(29, 104, 247, 0.20), 0 4px 25px rgba(0, 0, 0, 0.06)',
-            border: '1px solid rgba(226, 232, 240, 0.9)',
-            width: '100%',
-            maxWidth: '465px',
-            margin: '0 auto',
-            boxSizing: 'border-box',
-            position: 'relative',
-          }}
-        >
+        <div className="tfp-login-card">
           {/* Top Brand Logo & Tagline */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
             <div
@@ -666,6 +705,7 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
         {/* COLUMN 2 (RIGHT): Cohesive Hero Scene (No Boxy Boundaries)   */}
         {/* ============================================================ */}
         <div
+          className="tfp-login-hero"
           style={{
             display: 'flex',
             flexDirection: 'column',
