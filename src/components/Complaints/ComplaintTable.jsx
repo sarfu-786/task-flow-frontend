@@ -305,21 +305,27 @@ export const ComplaintTable = ({
       style={{
         padding: '0',
         background: '#ffffff',
-        borderRadius: '20px',
+        borderRadius: '16px',
         border: '1px solid #e2e8f0',
         overflow: 'hidden',
-        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        height: '100%',
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Table Toolbar Header & Filters */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '10px 16px',
           borderBottom: '1px solid #e2e8f0',
           background: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          gap: '14px',
+          gap: '8px',
+          flexShrink: 0,
         }}
       >
         {/* Active Metric / Div Info Banner */}
@@ -329,36 +335,37 @@ export const ComplaintTable = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '12px',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '12px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
                 background: metricInfo.bg,
                 border: `1px solid ${metricInfo.border}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               {metricInfo.icon}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                <h2 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
                   {metricInfo.title}
                 </h2>
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    padding: '2px 9px',
+                    padding: '1px 8px',
                     borderRadius: '999px',
-                    fontSize: '0.74rem',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     background: metricInfo.bg,
                     color: metricInfo.color,
@@ -368,14 +375,14 @@ export const ComplaintTable = ({
                   {totalItems} {totalItems === 1 ? 'ticket' : 'tickets'}
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+              <p style={{ margin: '1px 0 0', fontSize: '0.74rem', color: '#64748b' }}>
                 {metricInfo.subtitle}
               </p>
             </div>
           </div>
 
           {/* Quick Action / Reset */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {isAnyFilterActive && (
               <button
                 type="button"
@@ -384,19 +391,19 @@ export const ComplaintTable = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '5px',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
+                  padding: '5px 10px',
+                  borderRadius: '7px',
                   border: '1px solid #cbd5e1',
                   background: '#f8fafc',
                   color: '#475569',
-                  fontSize: '0.78rem',
+                  fontSize: '0.76rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
                 title="Reset all filters and search"
               >
-                <RotateCcw size={13} />
+                <RotateCcw size={12} />
                 <span>Show All Records</span>
               </button>
             )}
@@ -410,23 +417,23 @@ export const ComplaintTable = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '10px',
+            gap: '8px',
           }}
         >
           {/* Search Input */}
           <div
             style={{
               position: 'relative',
-              flex: '1 1 240px',
-              maxWidth: '380px',
-              minWidth: '200px',
+              flex: '1 1 220px',
+              maxWidth: '360px',
+              minWidth: '180px',
             }}
           >
             <Search
-              size={15}
+              size={14}
               style={{
                 position: 'absolute',
-                left: '12px',
+                left: '10px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: '#94a3b8',
@@ -443,10 +450,10 @@ export const ComplaintTable = ({
               }}
               style={{
                 width: '100%',
-                padding: '8px 32px 8px 34px',
-                borderRadius: '10px',
+                padding: '6px 28px 6px 30px',
+                borderRadius: '8px',
                 border: '1px solid #cbd5e1',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 color: '#0f172a',
                 outline: 'none',
                 background: '#f8fafc',
@@ -470,13 +477,13 @@ export const ComplaintTable = ({
                   display: 'flex',
                 }}
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             )}
           </div>
 
           {/* Filter Dropdowns */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             {/* Category Filter */}
             <select
               value={categoryFilter}
@@ -485,12 +492,12 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '7px 12px',
-                borderRadius: '10px',
+                padding: '5px 10px',
+                borderRadius: '8px',
                 border: categoryFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
                 background: categoryFilter !== 'all' ? '#eff6ff' : '#ffffff',
                 color: categoryFilter !== 'all' ? '#1d4ed8' : '#334155',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer',
@@ -513,12 +520,12 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '7px 12px',
-                borderRadius: '10px',
+                padding: '5px 10px',
+                borderRadius: '8px',
                 border: priorityFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
                 background: priorityFilter !== 'all' ? '#eff6ff' : '#ffffff',
                 color: priorityFilter !== 'all' ? '#1d4ed8' : '#334155',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer',
@@ -539,12 +546,12 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '7px 12px',
-                borderRadius: '10px',
+                padding: '5px 10px',
+                borderRadius: '8px',
                 border: statusFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
                 background: statusFilter !== 'all' ? '#eff6ff' : '#ffffff',
                 color: statusFilter !== 'all' ? '#1d4ed8' : '#334155',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer',
@@ -567,12 +574,12 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '7px 12px',
-                borderRadius: '10px',
+                padding: '5px 10px',
+                borderRadius: '8px',
                 border: slaFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
                 background: slaFilter !== 'all' ? '#eff6ff' : '#ffffff',
                 color: slaFilter !== 'all' ? '#1d4ed8' : '#334155',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer',
@@ -590,56 +597,61 @@ export const ComplaintTable = ({
 
       {/* Loading state */}
       {loading && complaints.length === 0 ? (
-        <div className="crm-loading-container" style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <div className="spinner-official" style={{ margin: '0 auto 16px' }} />
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Loading Complaint Registry...</h3>
-          <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Synchronizing real-time SLA metrics & customer tickets.</p>
+        <div className="crm-loading-container" style={{ padding: '40px 20px', textAlign: 'center', flex: 1 }}>
+          <div className="spinner-official" style={{ margin: '0 auto 12px' }} />
+          <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#1e293b' }}>Loading Complaint Registry...</h3>
+          <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Synchronizing real-time SLA metrics & customer tickets.</p>
         </div>
       ) : complaints.length === 0 ? (
         /* Empty State */
         <div
           style={{
-            padding: '54px 24px',
+            padding: '40px 20px',
             textAlign: 'center',
             background: '#ffffff',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <div
             style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '20px',
+              width: '54px',
+              height: '54px',
+              borderRadius: '16px',
               background: '#fef2f2',
               color: '#dc2626',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 16px',
-              boxShadow: '0 8px 16px rgba(220, 38, 38, 0.1)',
+              margin: '0 auto 12px',
+              boxShadow: '0 6px 14px rgba(220, 38, 38, 0.08)',
             }}
           >
-            <AlertCircle size={32} />
+            <AlertCircle size={28} />
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
             No Complaints Found
           </h3>
-          <p style={{ fontSize: '0.88rem', color: '#64748b', maxWidth: '440px', margin: '0 auto 20px' }}>
+          <p style={{ fontSize: '0.84rem', color: '#64748b', maxWidth: '420px', margin: '0 auto 16px' }}>
             {isAnyFilterActive
               ? `No complaints match the selected "${metricInfo.title}" filter or current search criteria.`
               : 'No customer complaints have been logged in the system yet.'}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             {isAnyFilterActive && (
               <button
                 type="button"
                 onClick={resetFilters}
                 style={{
-                  padding: '9px 18px',
-                  borderRadius: '10px',
+                  padding: '7px 15px',
+                  borderRadius: '8px',
                   border: '1px solid #cbd5e1',
                   background: '#ffffff',
                   color: '#334155',
-                  fontSize: '0.84rem',
+                  fontSize: '0.8rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -647,7 +659,7 @@ export const ComplaintTable = ({
                   gap: '6px',
                 }}
               >
-                <RotateCcw size={15} />
+                <RotateCcw size={14} />
                 <span>Reset Filters</span>
               </button>
             )}
@@ -657,27 +669,36 @@ export const ComplaintTable = ({
               onClick={onCreate}
               style={{
                 background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.22)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '9px 18px',
-                borderRadius: '10px',
+                padding: '7px 15px',
+                borderRadius: '8px',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,
-                fontSize: '0.84rem',
+                fontSize: '0.8rem',
                 cursor: 'pointer',
               }}
             >
-              <Sparkles size={16} />
+              <Sparkles size={15} />
               <span>Log New Complaint Ticket</span>
             </button>
           </div>
         </div>
       ) : (
-        /* Actual Table Data */
-        <div style={{ overflowX: 'auto', width: '100%' }}>
+        /* Actual Table Data with Internal Scrolling */
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'auto',
+            width: '100%',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           <table
             className="table-official"
             style={{
@@ -691,39 +712,46 @@ export const ComplaintTable = ({
               <tr
                 style={{
                   background: '#f8fafc',
-                  borderBottom: '1px solid #e2e8f0',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
+                  boxShadow: '0 1px 0 #e2e8f0',
                 }}
               >
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Ticket ID
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Customer & Org
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Subject & Category
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Priority
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Live SLA Countdown
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Assignee
                 </th>
-                <th style={{ padding: '14px 18px', fontSize: '0.74rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ position: 'sticky', top: 0, background: '#f8fafc', padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', zIndex: 10 }}>
                   Status
                 </th>
                 <th
                   style={{
-                    padding: '14px 18px',
-                    fontSize: '0.74rem',
+                    position: 'sticky',
+                    top: 0,
+                    background: '#f8fafc',
+                    padding: '10px 14px',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     color: '#64748b',
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                     textAlign: 'right',
+                    zIndex: 10,
                   }}
                 >
                   Actions
@@ -751,17 +779,17 @@ export const ComplaintTable = ({
                     onClick={() => onView(item)}
                   >
                     {/* Ticket Number */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span
                           style={{
                             fontFamily: 'monospace',
-                            fontSize: '0.82rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
                             color: '#0f172a',
                             background: '#f1f5f9',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
+                            padding: '2px 7px',
+                            borderRadius: '5px',
                             border: '1px solid #e2e8f0',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -779,44 +807,44 @@ export const ComplaintTable = ({
                             border: 'none',
                             color: copiedId === item.ticketNumber ? '#16a34a' : '#94a3b8',
                             cursor: 'pointer',
-                            padding: '3px',
+                            padding: '2px',
                             borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
                           }}
                         >
-                          {copiedId === item.ticketNumber ? <Check size={13} /> : <Copy size={13} />}
+                          {copiedId === item.ticketNumber ? <Check size={12} /> : <Copy size={12} />}
                         </button>
                       </div>
                     </td>
 
                     {/* Customer & Organization */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div
                           style={{
-                            width: '34px',
-                            height: '34px',
-                            borderRadius: '10px',
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '8px',
                             background: avatar.bg,
                             color: '#ffffff',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 700,
-                            fontSize: '0.78rem',
+                            fontSize: '0.74rem',
                             flexShrink: 0,
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.08)',
                           }}
                         >
                           {avatar.initials}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.88rem' }}>
+                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.84rem' }}>
                             {item.customerName}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
-                            <Building size={11} />
+                          <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+                            <Building size={10} />
                             <span>{item.organization || 'Direct Customer'}</span>
                           </div>
                         </div>
@@ -824,13 +852,13 @@ export const ComplaintTable = ({
                     </td>
 
                     {/* Subject & Category */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle', maxWidth: '280px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle', maxWidth: '260px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
                         <span
                           style={{
-                            fontSize: '0.7rem',
+                            fontSize: '0.68rem',
                             fontWeight: 700,
-                            padding: '1px 6px',
+                            padding: '1px 5px',
                             borderRadius: '4px',
                             background: cBadge.bg,
                             color: cBadge.color,
@@ -844,7 +872,7 @@ export const ComplaintTable = ({
                         style={{
                           fontWeight: 700,
                           color: '#1e293b',
-                          fontSize: '0.86rem',
+                          fontSize: '0.82rem',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -856,15 +884,15 @@ export const ComplaintTable = ({
                     </td>
 
                     {/* Priority */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
                       <span
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '5px',
-                          fontSize: '0.75rem',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '3px 9px',
+                          padding: '2px 8px',
                           borderRadius: '999px',
                           background: pBadge.bg,
                           color: pBadge.color,
@@ -874,8 +902,8 @@ export const ComplaintTable = ({
                       >
                         <span
                           style={{
-                            width: '6px',
-                            height: '6px',
+                            width: '5px',
+                            height: '5px',
                             borderRadius: '50%',
                             background: pBadge.dot,
                           }}
@@ -885,58 +913,58 @@ export const ComplaintTable = ({
                     </td>
 
                     {/* Live SLA Countdown */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
                       <div
                         style={{
                           display: 'inline-flex',
                           flexDirection: 'column',
-                          gap: '2px',
+                          gap: '1px',
                         }}
                       >
                         <span
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '5px',
-                            fontSize: '0.76rem',
+                            gap: '4px',
+                            fontSize: '0.74rem',
                             fontWeight: 700,
                             color: sla.color,
                             background: sla.bgColor,
                             border: `1px solid ${sla.borderColor}`,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
+                            padding: '2px 7px',
+                            borderRadius: '5px',
                           }}
                         >
                           {sla.icon}
                           <span>{sla.text}</span>
                         </span>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{sla.subtext}</span>
+                        <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{sla.subtext}</span>
                       </div>
                     </td>
 
                     {/* Assignee */}
-                    <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <td style={{ padding: '10px 14px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <div
                           style={{
-                            width: '24px',
-                            height: '24px',
+                            width: '22px',
+                            height: '22px',
                             borderRadius: '50%',
                             background: item.assignedToName && item.assignedToName !== 'Unassigned' ? '#eff6ff' : '#f1f5f9',
                             color: item.assignedToName && item.assignedToName !== 'Unassigned' ? '#2563eb' : '#94a3b8',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '0.7rem',
+                            fontSize: '0.68rem',
                             fontWeight: 700,
                             border: '1px solid #e2e8f0',
                           }}
                         >
-                          <User size={12} />
+                          <User size={11} />
                         </div>
                         <span
                           style={{
-                            fontSize: '0.82rem',
+                            fontSize: '0.8rem',
                             fontWeight: 600,
                             color: item.assignedToName && item.assignedToName !== 'Unassigned' ? '#334155' : '#94a3b8',
                           }}
@@ -948,7 +976,7 @@ export const ComplaintTable = ({
 
                     {/* Status Dropdown / Badge */}
                     <td
-                      style={{ padding: '16px 18px', verticalAlign: 'middle', position: 'relative' }}
+                      style={{ padding: '10px 14px', verticalAlign: 'middle', position: 'relative' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -962,10 +990,10 @@ export const ComplaintTable = ({
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '0.76rem',
+                            gap: '5px',
+                            fontSize: '0.74rem',
                             fontWeight: 700,
-                            padding: '4px 10px',
+                            padding: '3px 8px',
                             borderRadius: '999px',
                             background: sBadge.bg,
                             color: sBadge.color,
@@ -977,8 +1005,8 @@ export const ComplaintTable = ({
                         >
                           <span
                             style={{
-                              width: '6px',
-                              height: '6px',
+                              width: '5px',
+                              height: '5px',
                               borderRadius: '50%',
                               background: sBadge.dot,
                             }}
@@ -998,9 +1026,9 @@ export const ComplaintTable = ({
                               borderRadius: '12px',
                               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                               border: '1px solid #e2e8f0',
-                              padding: '6px',
+                              padding: '5px',
                               zIndex: 50,
-                              minWidth: '160px',
+                              minWidth: '150px',
                             }}
                           >
                             {[
@@ -1025,14 +1053,14 @@ export const ComplaintTable = ({
                                 style={{
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '8px',
+                                  gap: '6px',
                                   width: '100%',
-                                  padding: '6px 10px',
+                                  padding: '5px 8px',
                                   border: 'none',
                                   background: item.status === st ? '#f1f5f9' : 'transparent',
                                   color: item.status === st ? '#2563eb' : '#334155',
                                   fontWeight: item.status === st ? 700 : 500,
-                                  fontSize: '0.78rem',
+                                  fontSize: '0.76rem',
                                   borderRadius: '6px',
                                   cursor: 'pointer',
                                   textAlign: 'left',
@@ -1048,14 +1076,14 @@ export const ComplaintTable = ({
 
                     {/* Actions Column */}
                     <td
-                      style={{ padding: '16px 18px', verticalAlign: 'middle', textAlign: 'right' }}
+                      style={{ padding: '10px 14px', verticalAlign: 'middle', textAlign: 'right' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '5px',
                           justifyContent: 'flex-end',
                         }}
                       >
@@ -1066,9 +1094,9 @@ export const ComplaintTable = ({
                           className="btn-icon-action"
                           title="View Full Ticket Details"
                           style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: '8px',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '7px',
                             border: '1px solid #e2e8f0',
                             background: '#ffffff',
                             color: '#2563eb',
@@ -1079,7 +1107,7 @@ export const ComplaintTable = ({
                             transition: 'all 0.15s ease',
                           }}
                         >
-                          <Eye size={14} />
+                          <Eye size={13} />
                         </button>
 
                         {/* Edit Ticket */}
@@ -1089,9 +1117,9 @@ export const ComplaintTable = ({
                           className="btn-icon-action"
                           title="Edit Complaint"
                           style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: '8px',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '7px',
                             border: '1px solid #e2e8f0',
                             background: '#ffffff',
                             color: '#475569',
@@ -1102,7 +1130,7 @@ export const ComplaintTable = ({
                             transition: 'all 0.15s ease',
                           }}
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={13} />
                         </button>
 
                         {/* Quick Resolve Button if not yet resolved */}
@@ -1113,9 +1141,9 @@ export const ComplaintTable = ({
                             className="btn-icon-action"
                             title="Resolve & Log RCA"
                             style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '8px',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '7px',
                               border: '1px solid #a7f3d0',
                               background: '#ecfdf5',
                               color: '#059669',
@@ -1126,7 +1154,7 @@ export const ComplaintTable = ({
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            <CheckCircle2 size={14} />
+                            <CheckCircle2 size={13} />
                           </button>
                         )}
 
@@ -1138,9 +1166,9 @@ export const ComplaintTable = ({
                             className="btn-icon-action"
                             title="Delete Ticket"
                             style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '8px',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '7px',
                               border: '1px solid #fee2e2',
                               background: '#fef2f2',
                               color: '#dc2626',
@@ -1151,7 +1179,7 @@ export const ComplaintTable = ({
                               transition: 'all 0.15s ease',
                             }}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         )}
                       </div>
@@ -1167,25 +1195,26 @@ export const ComplaintTable = ({
       {/* Pagination Footer */}
       <div
         style={{
-          padding: '14px 20px',
+          padding: '8px 16px',
           background: '#f8fafc',
           borderTop: '1px solid #e2e8f0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '8px',
+          flexShrink: 0,
         }}
       >
-        <div style={{ fontSize: '0.82rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span>
             Showing <strong>{complaints.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</strong> to{' '}
             <strong>{Math.min(currentPage * itemsPerPage, totalItems || complaints.length)}</strong> of{' '}
             <strong>{totalItems || complaints.length}</strong> Complaints
           </span>
 
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Per page:</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>Per page:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => {
@@ -1193,11 +1222,11 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '3px 6px',
-                borderRadius: '6px',
+                padding: '2px 5px',
+                borderRadius: '5px',
                 border: '1px solid #cbd5e1',
                 background: '#ffffff',
-                fontSize: '0.78rem',
+                fontSize: '0.74rem',
                 color: '#334155',
                 outline: 'none',
                 cursor: 'pointer',
@@ -1212,15 +1241,15 @@ export const ComplaintTable = ({
         </div>
 
         {totalPages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <button
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
                 border: '1px solid #e2e8f0',
                 background: '#ffffff',
                 color: currentPage <= 1 ? '#cbd5e1' : '#334155',
@@ -1230,7 +1259,7 @@ export const ComplaintTable = ({
                 cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
               }}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} />
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
@@ -1239,15 +1268,15 @@ export const ComplaintTable = ({
                 type="button"
                 onClick={() => setCurrentPage(num)}
                 style={{
-                  minWidth: '32px',
-                  height: '32px',
-                  padding: '0 8px',
-                  borderRadius: '8px',
+                  minWidth: '28px',
+                  height: '28px',
+                  padding: '0 6px',
+                  borderRadius: '6px',
                   border: num === currentPage ? '1px solid #2563eb' : '1px solid #e2e8f0',
                   background: num === currentPage ? '#2563eb' : '#ffffff',
                   color: num === currentPage ? '#ffffff' : '#334155',
                   fontWeight: num === currentPage ? 700 : 500,
-                  fontSize: '0.82rem',
+                  fontSize: '0.78rem',
                   cursor: 'pointer',
                 }}
               >
@@ -1260,9 +1289,9 @@ export const ComplaintTable = ({
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
                 border: '1px solid #e2e8f0',
                 background: '#ffffff',
                 color: currentPage >= totalPages ? '#cbd5e1' : '#334155',
@@ -1272,7 +1301,7 @@ export const ComplaintTable = ({
                 cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
               }}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} />
             </button>
           </div>
         )}

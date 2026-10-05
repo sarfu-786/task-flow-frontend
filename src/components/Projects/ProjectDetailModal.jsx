@@ -20,6 +20,18 @@ import {
   AlertTriangle,
   Layers,
   ArrowRight,
+  ShieldAlert,
+  Bug,
+  Plus,
+  MessageSquare,
+  History,
+  Send,
+  Download,
+  CheckSquare,
+  Sparkles,
+  Paperclip,
+  ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 
 export const ProjectDetailModal = ({
@@ -27,25 +39,37 @@ export const ProjectDetailModal = ({
   onClose,
   project,
   onEdit,
-  onOpenMilestones,
+  onOpenTaskModal,
+  onOpenIssueModal,
+  onOpenRiskModal,
+  onOpenTimesheetModal,
   onDelete,
 }) => {
-  const { toggleMilestone } = useProjects();
-  const { isSuperAdmin, isManager } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'milestones' | 'team'
+  const {
+    updateProjectStatus,
+    toggleMilestone,
+    addComment,
+    approveTimesheet,
+    rejectTimesheet,
+    selectedProject,
+  } = useProjects();
+  const { isSuperAdmin, isManager, user: currentUser } = useAuth();
 
-  // Lock body scroll when modal is open
+  const [activeTab, setActiveTab] = useState('overview');
+  const [newComment, setNewComment] = useState('');
+  const [commenting, setCommenting] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const currentProj = (selectedProject && selectedProject._id === project?._id) ? selectedProject : project;
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      document.body.classList.add('modal-open');
     } else {
       document.body.style.overflow = 'unset';
-      document.body.classList.remove('modal-open');
     }
     return () => {
       document.body.style.overflow = 'unset';
-      document.body.classList.remove('modal-open');
     };
   }, [isOpen]);
 
@@ -55,824 +79,1092 @@ export const ProjectDetailModal = ({
     }
   }, [isOpen, project?._id]);
 
-  if (!isOpen || !project) return null;
+  if (!isOpen || !currentProj) return null;
 
-  const milestones = Array.isArray(project.milestones) ? project.milestones : [];
-  const completedMilestones = milestones.filter((m) => m.isCompleted).length;
+  const milestones = Array.isArray(currentProj.milestones) ? currentProj.milestones : [];
+  const completedMilestones = milestones.filter((m) => m.status === 'Completed' || m.isCompleted).length;
   const progressPercent =
     milestones.length > 0
       ? Math.round((completedMilestones / milestones.length) * 100)
-      : project.progress || 0;
+      : currentProj.progress || 0;
 
-  const teamMembers = Array.isArray(project.teamMembers) ? project.teamMembers : [];
+  const tasks = Array.isArray(currentProj.tasks) ? currentProj.tasks : [];
+  const issues = Array.isArray(currentProj.issues) ? currentProj.issues : [];
+  const risks = Array.isArray(currentProj.risks) ? currentProj.risks : [];
+  const timesheets = Array.isArray(currentProj.timesheets) ? currentProj.timesheets : [];
+  const comments = Array.isArray(currentProj.comments) ? currentProj.comments : [];
+  const activityHistory = Array.isArray(currentProj.activityHistory) ? currentProj.activityHistory : [];
+  const teamMembers = Array.isArray(currentProj.teamMembers) ? currentProj.teamMembers : [];
+  const phases = Array.isArray(currentProj.phases) ? currentProj.phases : [];
 
-  const getStatusBadge = (status) => {
+  const handleStatusChange = async (newStatus) => {
+    try {
+      setStatusUpdating(true);
+      await updateProjectStatus(currentProj._id, newStatus);
+    } catch (err) {
+      console.error('Status update failed:', err);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handlePostComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    try {
+      setCommenting(true);
+      await addComment(currentProj._id, newComment.trim());
+      setNewComment('');
+    } catch (err) {
+      console.error('Comment posting failed:', err);
+    } finally {
+      setCommenting(false);
+    }
+  };
+
+  const getStatusStyle = (status) => {
     switch (status) {
       case 'Completed':
-        return { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', dot: '#10b981' };
+      case 'Closed':
+        return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' };
+      case 'Active / In Progress':
+      case 'Active':
       case 'In Progress':
-        return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' };
-      case 'Under Review':
-        return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe', dot: '#8b5cf6' };
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' };
+      case 'Approved':
+        return { bg: '#eef2ff', color: '#4f46e5', border: '#c7d2fe' };
       case 'Planning':
-        return { bg: '#fffbeb', color: '#b45309', border: '#fde68a', dot: '#f59e0b' };
+        return { bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
       case 'On Hold':
-        return { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', dot: '#ef4444' };
+        return { bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' };
+      case 'Cancelled':
+        return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
       default:
-        return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0', dot: '#94a3b8' };
+        return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' };
     }
   };
 
-  const getPriorityBadge = (priority) => {
+  const getPriorityStyle = (priority) => {
     switch (priority) {
       case 'Urgent':
-        return { bg: '#fef2f2', color: '#dc2626', border: '#fee2e2' };
       case 'High':
-        return { bg: '#fff7ed', color: '#ea580c', border: '#ffedd5' };
+        return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
       case 'Medium':
-        return { bg: '#fffbeb', color: '#d97706', border: '#fef3c7' };
+        return { bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
       default:
-        return { bg: '#f0fdf4', color: '#16a34a', border: '#dcfce7' };
+        return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' };
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const getDeadlineStatus = (targetDateStr, status) => {
-    if (status === 'Completed') {
-      return { text: 'Delivered', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' };
-    }
-    if (!targetDateStr) return null;
-    const target = new Date(targetDateStr);
-    const now = new Date();
-    const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return {
-        text: `Overdue by ${Math.abs(diffDays)}d`,
-        color: '#dc2626',
-        bg: '#fef2f2',
-        border: '#fee2e2',
-      };
-    } else if (diffDays === 0) {
-      return { text: 'Due Today', color: '#d97706', bg: '#fffbeb', border: '#fef3c7' };
-    } else if (diffDays <= 7) {
-      return {
-        text: `${diffDays}d remaining`,
-        color: '#d97706',
-        bg: '#fffbeb',
-        border: '#fef3c7',
-      };
-    } else {
-      return {
-        text: `${diffDays}d remaining`,
-        color: '#475569',
-        bg: '#f1f5f9',
-        border: '#e2e8f0',
-      };
-    }
-  };
-
-  const sBadge = getStatusBadge(project.status);
-  const pBadge = getPriorityBadge(project.priority);
-  const deadlineInfo = getDeadlineStatus(project.targetDate, project.status);
+  const statusStyle = getStatusStyle(currentProj.status);
+  const priorityStyle = getPriorityStyle(currentProj.priority);
 
   return (
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.68)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
+        inset: 0,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
         padding: '16px',
-        animation: 'fadeIn 0.2s ease',
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(4px)',
+        overflowY: 'auto',
       }}
-      onClick={onClose}
     >
       <div
         style={{
           backgroundColor: '#ffffff',
           borderRadius: '24px',
+          maxWidth: '960px',
           width: '100%',
-          maxWidth: '820px',
-          maxHeight: '92vh',
-          boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.35)',
-          border: '1px solid #e2e8f0',
+          border: '1.5px solid #e2e8f0',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
-          animation: 'slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
           display: 'flex',
           flexDirection: 'column',
+          maxHeight: '92vh',
+          margin: '24px 0',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Top Header */}
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1.5px solid #e2e8f0',
+            backgroundColor: '#f8fafc',
             display: 'flex',
+            flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #ffffff, #f8fafc)',
+            gap: '16px',
             flexShrink: 0,
-            gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div
               style={{
                 width: '46px',
                 height: '46px',
                 borderRadius: '14px',
-                backgroundColor: '#f0fdf4',
-                color: '#059669',
-                border: '1.5px solid #dcfce7',
+                background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.12)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
                 flexShrink: 0,
               }}
             >
-              <FolderKanban size={22} />
+              <FolderKanban size={24} />
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: '0.78rem',
+                    fontSize: '11px',
                     fontWeight: 700,
-                    color: '#0f172a',
-                    backgroundColor: '#f1f5f9',
-                    border: '1px solid #e2e8f0',
                     padding: '2px 8px',
                     borderRadius: '6px',
-                  }}
-                >
-                  {project.projectCode || 'PRJ-000'}
-                </span>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    backgroundColor: sBadge.bg,
-                    color: sBadge.color,
-                    border: `1px solid ${sBadge.border}`,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: sBadge.dot,
-                    }}
-                  />
-                  {project.status || 'Planning'}
-                </span>
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    backgroundColor: pBadge.bg,
-                    color: pBadge.color,
-                    border: `1px solid ${pBadge.border}`,
-                  }}
-                >
-                  {project.priority || 'Medium'}
-                </span>
-                <span
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    backgroundColor: '#f8fafc',
-                    color: '#64748b',
-                    border: '1px solid #e2e8f0',
-                  }}
-                >
-                  {project.category || 'Web Application'}
-                </span>
-              </div>
-              <h2
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  margin: '4px 0 0 0',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {project.name}
-              </h2>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#e2e8f0';
-                e.currentTarget.style.color = '#0f172a';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                e.currentTarget.style.color = '#64748b';
-              }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 24px',
-            borderBottom: '1px solid #e2e8f0',
-            backgroundColor: '#ffffff',
-            gap: '8px',
-            flexShrink: 0,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveTab('overview')}
-            style={{
-              padding: '12px 14px',
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'overview' ? '2.5px solid #2563eb' : '2.5px solid transparent',
-              color: activeTab === 'overview' ? '#2563eb' : '#64748b',
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <FolderKanban size={14} />
-            <span>Overview & Specifications</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('milestones')}
-            style={{
-              padding: '12px 14px',
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'milestones' ? '2.5px solid #059669' : '2.5px solid transparent',
-              color: activeTab === 'milestones' ? '#059669' : '#64748b',
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <ListTodo size={14} />
-            <span>Milestones & Deliverables ({completedMilestones}/{milestones.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('team')}
-            style={{
-              padding: '12px 14px',
-              border: 'none',
-              background: 'none',
-              borderBottom: activeTab === 'team' ? '2.5px solid #7c3aed' : '2.5px solid transparent',
-              color: activeTab === 'team' ? '#7c3aed' : '#64748b',
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Users size={14} />
-            <span>Assigned Team ({teamMembers.length})</span>
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div
-          style={{
-            padding: '24px',
-            overflowY: 'auto',
-            flex: '1 1 auto',
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-          }}
-        >
-          {/* Top Key Metrics Strip */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: '12px',
-            }}
-          >
-            {/* Client */}
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.74rem', fontWeight: 600 }}>
-                <Building size={13} color="#2563eb" />
-                <span>Client / Account</span>
-              </div>
-              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                {project.clientName || 'N/A'}
-              </div>
-            </div>
-
-            {/* Manager */}
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.74rem', fontWeight: 600 }}>
-                <User size={13} color="#059669" />
-                <span>Project Manager</span>
-              </div>
-              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                {project.managerName || 'Unassigned'}
-              </div>
-            </div>
-
-            {/* Expected Completion / Deadline */}
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#64748b', fontSize: '0.74rem', fontWeight: 600 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Calendar size={13} color="#d97706" />
-                  <span>Target Deadline</span>
-                </div>
-                {deadlineInfo && (
-                  <span
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      color: deadlineInfo.color,
-                      backgroundColor: deadlineInfo.bg,
-                      border: `1px solid ${deadlineInfo.border}`,
-                      padding: '1px 6px',
-                      borderRadius: '999px',
-                    }}
-                  >
-                    {deadlineInfo.text}
-                  </span>
-                )}
-              </div>
-              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                {formatDate(project.targetDate)}
-              </div>
-            </div>
-
-            {/* Budget */}
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.74rem', fontWeight: 600 }}>
-                <DollarSign size={13} color="#7c3aed" />
-                <span>Total Budget</span>
-              </div>
-              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                {project.currency === 'INR' ? '₹' : '$'}
-                {Number(project.budget || 0).toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Bar Card */}
-          <div
-            style={{
-              padding: '16px 18px',
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>
-                  Deliverables Completion Status
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    backgroundColor: progressPercent === 100 ? '#ecfdf5' : '#eff6ff',
-                    color: progressPercent === 100 ? '#059669' : '#2563eb',
-                  }}
-                >
-                  {completedMilestones} of {milestones.length} Milestones Complete
-                </span>
-              </div>
-              <span style={{ fontSize: '1rem', fontWeight: 800, color: progressPercent === 100 ? '#059669' : '#2563eb' }}>
-                {progressPercent}%
-              </span>
-            </div>
-
-            <div
-              style={{
-                width: '100%',
-                height: '10px',
-                borderRadius: '999px',
-                backgroundColor: '#f1f5f9',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  width: `${progressPercent}%`,
-                  height: '100%',
-                  background:
-                    progressPercent === 100
-                      ? 'linear-gradient(90deg, #059669, #10b981)'
-                      : 'linear-gradient(90deg, #2563eb, #3b82f6)',
-                  borderRadius: '999px',
-                  transition: 'width 0.3s ease',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === 'overview' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {/* Scope & Description */}
-              <div
-                style={{
-                  padding: '18px',
-                  borderRadius: '16px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <FileText size={16} color="#475569" />
-                  <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
-                    Project Scope & Description
-                  </h4>
-                </div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: '0.88rem',
-                    color: project.description ? '#334155' : '#94a3b8',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {project.description || 'No detailed scope description provided for this project.'}
-                </p>
-              </div>
-
-              {/* Schedule & Metadata Details */}
-              <div
-                style={{
-                  padding: '18px',
-                  borderRadius: '16px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '16px',
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#64748b' }}>Start Date:</span>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
-                    {formatDate(project.startDate)}
-                  </div>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#64748b' }}>Expected Completion Date:</span>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
-                    {formatDate(project.targetDate)}
-                  </div>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#64748b' }}>Category & Delivery Domain:</span>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
-                    {project.category || 'Web Application'}
-                  </div>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#64748b' }}>Registered On:</span>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
-                    {formatDate(project.createdAt)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: MILESTONES & DELIVERABLES */}
-          {activeTab === 'milestones' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569' }}>
-                  Project Milestones & Deliverable Checklist:
-                </span>
-                <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                  Click any milestone to toggle completion status
-                </span>
-              </div>
-
-              {milestones.length === 0 ? (
-                <div
-                  style={{
-                    padding: '36px 20px',
-                    textAlign: 'center',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '16px',
-                    border: '1px solid #e2e8f0',
-                  }}
-                >
-                  <ListTodo size={28} color="#94a3b8" style={{ margin: '0 auto 8px' }} />
-                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#64748b' }}>
-                    No milestones defined for this project.
-                  </p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {milestones.map((m, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => toggleMilestone(project._id, idx)}
-                      style={{
-                        padding: '14px 16px',
-                        borderRadius: '12px',
-                        border: `1.5px solid ${m.isCompleted ? '#a7f3d0' : '#e2e8f0'}`,
-                        backgroundColor: m.isCompleted ? '#f0fdf4' : '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        gap: '12px',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#059669';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = m.isCompleted ? '#a7f3d0' : '#e2e8f0';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '6px',
-                            border: `2px solid ${m.isCompleted ? '#16a34a' : '#cbd5e1'}`,
-                            backgroundColor: m.isCompleted ? '#16a34a' : '#ffffff',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {m.isCompleted && <Check size={16} strokeWidth={3} />}
-                        </div>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: '0.88rem',
-                              fontWeight: 600,
-                              color: m.isCompleted ? '#059669' : '#0f172a',
-                              textDecoration: m.isCompleted ? 'line-through' : 'none',
-                            }}
-                          >
-                            {m.title}
-                          </div>
-                          {m.completedAt && (
-                            <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '2px' }}>
-                              Completed on {new Date(m.completedAt).toLocaleDateString()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 10px',
-                          borderRadius: '999px',
-                          backgroundColor: m.isCompleted ? '#dcfce7' : '#f1f5f9',
-                          color: m.isCompleted ? '#15803d' : '#64748b',
-                        }}
-                      >
-                        {m.isCompleted ? 'Completed' : 'Pending'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: ASSIGNED TEAM */}
-          {activeTab === 'team' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
-                  Project Lead & Team Roster
-                </h4>
-              </div>
-
-              {/* Manager Card */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '14px',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      backgroundColor: '#eff6ff',
-                      color: '#2563eb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      fontSize: '0.88rem',
-                    }}
-                  >
-                    {project.managerName ? project.managerName.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>
-                      {project.managerName || 'Unassigned'}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      Project Manager / Owner
-                    </div>
-                  </div>
-                </div>
-
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: '999px',
                     backgroundColor: '#eff6ff',
                     color: '#2563eb',
                     border: '1px solid #bfdbfe',
                   }}
                 >
-                  Lead Manager
+                  {currentProj.projectId || currentProj.projectCode || 'PRJ'}
                 </span>
-              </div>
-
-              {/* Team Members List */}
-              {teamMembers.length === 0 ? (
-                <div
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+                  {currentProj.name || currentProj.title}
+                </h2>
+                <span
                   style={{
-                    padding: '28px 16px',
-                    textAlign: 'center',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '14px',
-                    border: '1px dashed #cbd5e1',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    borderRadius: '12px',
+                    backgroundColor: statusStyle.bg,
+                    color: statusStyle.color,
+                    border: `1px solid ${statusStyle.border}`,
                   }}
                 >
-                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748b' }}>
-                    No additional team members assigned. Deliverables are directly managed by{' '}
-                    <strong>{project.managerName || 'the assigned manager'}</strong>.
+                  {currentProj.status || 'Draft'}
+                </span>
+                <span
+                  style={{
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    borderRadius: '12px',
+                    backgroundColor: priorityStyle.bg,
+                    color: priorityStyle.color,
+                    border: `1px solid ${priorityStyle.border}`,
+                  }}
+                >
+                  {currentProj.priority || 'Medium'}
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span>Client: <strong style={{ color: '#1e293b' }}>{currentProj.client || currentProj.clientName || 'Internal'}</strong></span>
+                <span>•</span>
+                <span>Manager: <strong style={{ color: '#1e293b' }}>{currentProj.managerName || currentProj.projectManager || (typeof currentProj.manager === 'object' ? currentProj.manager?.name : '') || 'Unassigned'}</strong></span>
+                <span>•</span>
+                <span>Target: <strong style={{ color: '#dc2626' }}>{currentProj.targetDate ? new Date(currentProj.targetDate).toLocaleDateString() : '—'}</strong></span>
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Quick Status Selector */}
+            <div style={{ position: 'relative' }}>
+              <select
+                value={currentProj.status}
+                disabled={statusUpdating}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                style={{
+                  height: '38px',
+                  padding: '0 32px 0 12px',
+                  backgroundColor: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#1e293b',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  outline: 'none',
+                }}
+              >
+                <option value="Draft">Draft</option>
+                <option value="Planning">Planning</option>
+                <option value="Approved">Approved</option>
+                <option value="Active / In Progress">Active / In Progress</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Completed">Completed</option>
+                <option value="Closed">Closed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+            </div>
+
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onEdit(currentProj);
+                }}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                }}
+                title="Edit Project"
+              >
+                <Edit2 size={16} />
+              </button>
+            )}
+
+            {onDelete && (isSuperAdmin || isManager) && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete project ${currentProj.name}?`)) {
+                    onDelete(currentProj);
+                    onClose();
+                  }
+                }}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#ffffff',
+                  color: '#dc2626',
+                  border: '1.5px solid #fecaca',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                }}
+                title="Delete Project"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              style={{
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'transparent',
+                color: '#94a3b8',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Header Bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 24px',
+            borderBottom: '1.5px solid #e2e8f0',
+            backgroundColor: '#f8fafc',
+            overflowX: 'auto',
+            flexShrink: 0,
+          }}
+        >
+          {[
+            { id: 'overview', label: '360° Overview', icon: FolderKanban },
+            { id: 'phases', label: `Phases & Gates (${phases.length})`, icon: Layers },
+            { id: 'tasks', label: `Deliverable Tasks (${tasks.length})`, icon: CheckSquare },
+            { id: 'issues', label: `Issues & Bugs (${issues.length})`, icon: Bug },
+            { id: 'risks', label: `Risks (${risks.length})`, icon: ShieldAlert },
+            { id: 'timesheets', label: `Timesheets (${timesheets.length})`, icon: Clock },
+            { id: 'comments', label: `Discussions (${comments.length})`, icon: MessageSquare },
+            { id: 'activity', label: 'Audit Trail', icon: History },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '12px 16px',
+                  borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
+                  backgroundColor: 'transparent',
+                  color: isActive ? '#2563eb' : '#64748b',
+                  fontWeight: isActive ? 800 : 600,
+                  fontSize: '13px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  borderTop: 'none',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Icon size={15} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab Content Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+          {/* TAB: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Progress & Quick Stats */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)',
+                  borderRadius: '16px',
+                  padding: '20px 24px',
+                  border: '1.5px solid #bfdbfe',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ flex: '1 1 260px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', color: '#1e3a8a', marginBottom: '8px' }}>
+                    <span>Overall Milestone Progress</span>
+                    <span style={{ color: '#2563eb', fontSize: '14px' }}>{progressPercent}%</span>
+                  </div>
+                  <div style={{ width: '100%', backgroundColor: '#cbd5e1', height: '10px', borderRadius: '5px', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        backgroundColor: '#2563eb',
+                        height: '100%',
+                        borderRadius: '5px',
+                        width: `${progressPercent}%`,
+                        transition: 'width 0.5s ease',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', borderLeft: '1.5px solid #bfdbfe', paddingLeft: '24px' }}>
+                  <div>
+                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Budget</span>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+                      ${(currentProj.budget || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Actual Cost</span>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '18px', fontWeight: 800, color: '#2563eb' }}>
+                      ${(currentProj.actualCost || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {currentProj.description && (
+                <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '16px 20px', border: '1.5px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                    Project Scope & Objectives
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: 1.5 }}>
+                    {currentProj.description}
                   </p>
                 </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px' }}>
-                  {teamMembers.map((member, idx) => (
+              )}
+
+              {/* Grid of Key Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+                {/* Team Roster */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 14px 0', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Users size={16} style={{ color: '#2563eb' }} /> Team & Governance
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Project Manager:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.managerName || currentProj.projectManager || (typeof currentProj.manager === 'object' ? currentProj.manager?.name : '') || 'Unassigned'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Project Owner:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.ownerName || currentProj.projectOwner || (typeof currentProj.owner === 'object' ? currentProj.owner?.name : '') || 'Unassigned'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Department:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.department || 'Engineering'}</span>
+                    </div>
+                    <div style={{ paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '8px', fontWeight: 800, textTransform: 'uppercase' }}>
+                        Assigned Roster ({teamMembers.length})
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {teamMembers.map((m, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              backgroundColor: '#f1f5f9',
+                              color: '#334155',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {m.name || m.user} ({m.role || 'Member'})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Summary */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 14px 0', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <DollarSign size={16} style={{ color: '#059669' }} /> Commercial & Billing Details
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Billing Type:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.billingType || 'Fixed Cost'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Billing Method:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.billingMethod || 'Milestone Based'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Budgeted Hours:</span>
+                      <span style={{ fontWeight: 800, color: '#0f172a' }}>{currentProj.budgetedHours || 0} hrs</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Actual Logged Hours:</span>
+                      <span style={{ fontWeight: 800, color: '#2563eb' }}>{currentProj.actualHours || 0} hrs</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                      <span style={{ color: '#64748b' }}>Remaining Budget:</span>
+                      <span style={{ fontWeight: 800, color: '#059669' }}>
+                        ${((currentProj.budget || 0) - (currentProj.actualCost || 0)).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: PHASES & MILESTONES */}
+          {activeTab === 'phases' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={16} style={{ color: '#2563eb' }} /> Delivery Lifecycle Phases
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  {phases.map((ph, idx) => (
                     <div
                       key={idx}
                       style={{
-                        padding: '12px 14px',
+                        padding: '14px',
+                        backgroundColor: '#f8fafc',
                         borderRadius: '12px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
+                        border: '1.5px solid #e2e8f0',
                       }}
                     >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase' }}>
+                          Phase {ph.order || idx + 1}
+                        </span>
+                        <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                          {ph.status || 'Pending'}
+                        </span>
+                      </div>
+                      <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                        {ph.name}
+                      </h5>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1.5px solid #e2e8f0', paddingTop: '20px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} style={{ color: '#059669' }} /> Gate Milestones & Sign-offs
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {milestones.map((m, idx) => {
+                    const isDone = m.status === 'Completed' || m.isCompleted;
+                    return (
                       <div
+                        key={idx}
                         style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: '#f1f5f9',
-                          color: '#475569',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '0.8rem',
-                          flexShrink: 0,
+                          justifyContent: 'space-between',
+                          padding: '14px 16px',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '12px',
+                          border: '1.5px solid #e2e8f0',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                         }}
                       >
-                        {member.name ? member.name.charAt(0).toUpperCase() : 'U'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <button
+                            type="button"
+                            onClick={() => toggleMilestone(currentProj._id, m._id || idx)}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              border: isDone ? 'none' : '2px solid #cbd5e1',
+                              backgroundColor: isDone ? '#059669' : '#ffffff',
+                              color: '#ffffff',
+                            }}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <div>
+                            <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 700, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#94a3b8' : '#0f172a' }}>
+                              {m.name || m.title}
+                            </h5>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748b' }}>
+                              Phase: {m.phase || 'General'} • Due: {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : 'TBD'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{
+                            padding: '2px 10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            borderRadius: '12px',
+                            backgroundColor: isDone ? '#ecfdf5' : '#fffbeb',
+                            color: isDone ? '#059669' : '#d97706',
+                            border: `1px solid ${isDone ? '#a7f3d0' : '#fde68a'}`,
+                          }}
+                        >
+                          {m.status || (isDone ? 'Completed' : 'In Progress')}
+                        </span>
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {member.name || 'Team Member'}
-                        </div>
-                        <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                          {member.role || 'Contributor'}
-                        </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: TASKS */}
+          {activeTab === 'tasks' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                  Deliverable Task List ({tasks.length})
+                </h4>
+                {onOpenTaskModal && (
+                  <button
+                    onClick={() => onOpenTaskModal(currentProj)}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      backgroundColor: '#2563eb',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>Add Task</span>
+                  </button>
+                )}
+              </div>
+
+              {tasks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1.5px solid #e2e8f0' }}>
+                  <CheckSquare size={36} style={{ margin: '0 auto 8px auto', color: '#cbd5e1' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No deliverable tasks added yet.</p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1.5px solid #e2e8f0', borderRadius: '14px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', textTransform: 'uppercase', fontWeight: 800, fontSize: '11px' }}>
+                      <tr>
+                        <th style={{ padding: '10px 14px' }}>Task Name</th>
+                        <th style={{ padding: '10px 14px' }}>Assignee</th>
+                        <th style={{ padding: '10px 14px' }}>Priority</th>
+                        <th style={{ padding: '10px 14px' }}>Status</th>
+                        <th style={{ padding: '10px 14px' }}>Due Date</th>
+                        <th style={{ padding: '10px 14px' }}>Est/Act Hours</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks.map((task, idx) => {
+                        const prio = getPriorityStyle(task.priority);
+                        const stat = getStatusStyle(task.status);
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0f172a' }}>
+                              {task.taskName || task.title}
+                              {task.subtasks && task.subtasks.length > 0 && (
+                                <span style={{ marginLeft: '8px', padding: '2px 6px', borderRadius: '6px', backgroundColor: '#f1f5f9', fontSize: '11px', color: '#64748b' }}>
+                                  {task.subtasks.filter((s) => s.status === 'Done' || s.status === 'Completed').length}/{task.subtasks.length} subtasks
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 14px', color: '#334155', fontWeight: 600 }}>
+                              {task.assignedTo || task.assignee || 'Unassigned'}
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: prio.bg, color: prio.color, border: `1px solid ${prio.border}` }}>
+                                {task.priority || 'Medium'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: stat.bg, color: stat.color, border: `1px solid ${stat.border}` }}>
+                                {task.status || 'To Do'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px', color: '#64748b' }}>
+                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '—'}
+                            </td>
+                            <td style={{ padding: '12px 14px', color: '#334155', fontWeight: 600 }}>
+                              {task.estimatedHours || 0}h / {task.actualHours || 0}h
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: ISSUES */}
+          {activeTab === 'issues' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                  Project Defect & Bug Register ({issues.length})
+                </h4>
+                {onOpenIssueModal && (
+                  <button
+                    onClick={() => onOpenIssueModal(currentProj)}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>Log Issue</span>
+                  </button>
+                )}
+              </div>
+
+              {issues.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1.5px solid #e2e8f0' }}>
+                  <CheckCircle2 size={36} style={{ margin: '0 auto 8px auto', color: '#10b981' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No open defects or issues reported.</p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1.5px solid #e2e8f0', borderRadius: '14px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', textTransform: 'uppercase', fontWeight: 800, fontSize: '11px' }}>
+                      <tr>
+                        <th style={{ padding: '10px 14px' }}>Title</th>
+                        <th style={{ padding: '10px 14px' }}>Severity</th>
+                        <th style={{ padding: '10px 14px' }}>Priority</th>
+                        <th style={{ padding: '10px 14px' }}>Status</th>
+                        <th style={{ padding: '10px 14px' }}>Assigned To</th>
+                        <th style={{ padding: '10px 14px' }}>Due Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {issues.map((issue, idx) => {
+                        const prio = getPriorityStyle(issue.priority);
+                        const stat = getStatusStyle(issue.status);
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0f172a' }}>{issue.title}</td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                                {issue.severity || 'Medium'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: prio.bg, color: prio.color, border: `1px solid ${prio.border}` }}>
+                                {issue.priority || 'Medium'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: stat.bg, color: stat.color, border: `1px solid ${stat.border}` }}>
+                                {issue.status || 'Open'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px', color: '#334155', fontWeight: 600 }}>{issue.assignedTo || 'Unassigned'}</td>
+                            <td style={{ padding: '12px 14px', color: '#64748b' }}>{issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: RISKS */}
+          {activeTab === 'risks' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                  Risk Assessment & Mitigation ({risks.length})
+                </h4>
+                {onOpenRiskModal && (
+                  <button
+                    onClick={() => onOpenRiskModal(currentProj)}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      backgroundColor: '#d97706',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>Register Risk</span>
+                  </button>
+                )}
+              </div>
+
+              {risks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1.5px solid #e2e8f0' }}>
+                  <ShieldAlert size={36} style={{ margin: '0 auto 8px auto', color: '#cbd5e1' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No project risk threats identified.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {risks.map((risk, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '14px',
+                        border: '1.5px solid #e2e8f0',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>{risk.title}</h5>
+                        <span
+                          style={{
+                            padding: '2px 10px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            backgroundColor: risk.riskLevel === 'Critical' ? '#fef2f2' : '#fffbeb',
+                            color: risk.riskLevel === 'Critical' ? '#dc2626' : '#d97706',
+                            border: `1px solid ${risk.riskLevel === 'Critical' ? '#fecaca' : '#fde68a'}`,
+                          }}
+                        >
+                          Level: {risk.riskLevel}
+                        </span>
+                      </div>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#334155' }}>
+                        <strong style={{ color: '#0f172a' }}>Mitigation Strategy:</strong> {risk.mitigationPlan || 'None specified'}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px', color: '#64748b' }}>
+                        <span>Prob: {risk.probability}</span>
+                        <span>•</span>
+                        <span>Impact: {risk.impact}</span>
+                        <span>•</span>
+                        <span>Owner: {risk.owner || 'Unassigned'}</span>
+                        <span>•</span>
+                        <span>Status: {risk.status || 'Identified'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: TIMESHEETS */}
+          {activeTab === 'timesheets' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                  Timesheet Logs & Work Records ({timesheets.length})
+                </h4>
+                {onOpenTimesheetModal && (
+                  <button
+                    onClick={() => onOpenTimesheetModal(currentProj)}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      backgroundColor: '#2563eb',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>Log Time</span>
+                  </button>
+                )}
+              </div>
+
+              {timesheets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1.5px solid #e2e8f0' }}>
+                  <Clock size={36} style={{ margin: '0 auto 8px auto', color: '#cbd5e1' }} />
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>No time entries recorded for this project yet.</p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1.5px solid #e2e8f0', borderRadius: '14px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#475569', textTransform: 'uppercase', fontWeight: 800, fontSize: '11px' }}>
+                      <tr>
+                        <th style={{ padding: '10px 14px' }}>Date</th>
+                        <th style={{ padding: '10px 14px' }}>Team Member</th>
+                        <th style={{ padding: '10px 14px' }}>Task / Note</th>
+                        <th style={{ padding: '10px 14px' }}>Hours</th>
+                        <th style={{ padding: '10px 14px' }}>Billing</th>
+                        <th style={{ padding: '10px 14px' }}>Status</th>
+                        {(isSuperAdmin || isManager) && <th style={{ padding: '10px 14px', textAlign: 'right' }}>Approvals</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timesheets.map((ts, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0f172a' }}>{ts.date ? new Date(ts.date).toLocaleDateString() : '—'}</td>
+                          <td style={{ padding: '12px 14px', color: '#334155', fontWeight: 600 }}>{ts.user}</td>
+                          <td style={{ padding: '12px 14px', color: '#64748b', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ts.task || ts.notes || 'General Work'}</td>
+                          <td style={{ padding: '12px 14px', fontWeight: 800, color: '#2563eb' }}>{ts.hours} hrs</td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+                              {ts.isBillable !== false ? 'Billable' : 'Non-Billable'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 14px' }}>
+                            <span
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                backgroundColor: ts.status === 'Approved' ? '#ecfdf5' : ts.status === 'Rejected' ? '#fef2f2' : '#fffbeb',
+                                color: ts.status === 'Approved' ? '#059669' : ts.status === 'Rejected' ? '#dc2626' : '#d97706',
+                                border: `1px solid ${ts.status === 'Approved' ? '#a7f3d0' : ts.status === 'Rejected' ? '#fecaca' : '#fde68a'}`,
+                              }}
+                            >
+                              {ts.status || 'Pending'}
+                            </span>
+                          </td>
+                          {(isSuperAdmin || isManager) && (
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                              {ts.status === 'Pending' && (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                  <button
+                                    onClick={() => approveTimesheet(currentProj._id, ts._id || idx)}
+                                    style={{ padding: '4px 10px', backgroundColor: '#059669', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => rejectTimesheet(currentProj._id, ts._id || idx)}
+                                    style={{ padding: '4px 10px', backgroundColor: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: COMMENTS / COLLABORATION */}
+          {activeTab === 'comments' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                Collaboration & Thread Discussions
+              </h4>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+                {comments.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: '#94a3b8', padding: '24px 0', textAlign: 'center', fontStyle: 'italic' }}>No discussion notes yet. Start the conversation!</p>
+                ) : (
+                  comments.map((cm, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '14px 16px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 800, fontSize: '13px', color: '#2563eb' }}>
+                          {cm.user || 'Team Member'}
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                          {cm.createdAt ? new Date(cm.createdAt).toLocaleString() : 'Just now'}
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: 1.4 }}>
+                        {cm.text}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <form onSubmit={handlePostComment} style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                <input
+                  type="text"
+                  placeholder="Type an update or mention a teammate..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  style={{
+                    flex: 1,
+                    height: '40px',
+                    padding: '0 14px',
+                    backgroundColor: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    color: '#0f172a',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={commenting || !newComment.trim()}
+                  style={{
+                    height: '40px',
+                    padding: '0 18px',
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    opacity: commenting || !newComment.trim() ? 0.6 : 1,
+                  }}
+                >
+                  <Send size={15} />
+                  <span>Post</span>
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* TAB: AUDIT & ACTIVITY */}
+          {activeTab === 'activity' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                Chronological Audit Trail & State History
+              </h4>
+
+              {activityHistory.length === 0 ? (
+                <p style={{ fontSize: '13px', color: '#94a3b8', padding: '24px 0', textAlign: 'center', fontStyle: 'italic' }}>No audit log records logged yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {activityHistory.map((act, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        padding: '12px 14px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '13px',
+                      }}
+                    >
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2563eb', marginTop: '6px', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
+                          {act.action || 'Project updated'}
+                        </p>
+                        {act.details && (
+                          <p style={{ margin: '3px 0 0 0', color: '#64748b', fontSize: '12px' }}>
+                            {act.details}
+                          </p>
+                        )}
+                        <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                          By {act.user || 'System'} • {act.timestamp ? new Date(act.timestamp).toLocaleString() : 'Recent'}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -882,94 +1174,36 @@ export const ProjectDetailModal = ({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Modal Footer */}
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #f1f5f9',
+            borderTop: '1.5px solid #e2e8f0',
             backgroundColor: '#f8fafc',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexShrink: 0,
-            gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {onOpenMilestones && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenMilestones(project);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #a7f3d0',
-                  backgroundColor: '#ecfdf5',
-                  color: '#059669',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <ListTodo size={14} />
-                <span>Manage Milestones</span>
-              </button>
-            )}
-
-            {(isSuperAdmin || isManager) && onDelete && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onDelete(project);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #fee2e2',
-                  backgroundColor: '#fef2f2',
-                  color: '#dc2626',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Trash2 size={14} />
-                <span>Delete</span>
-              </button>
-            )}
-          </div>
-
+          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+            Hierarchy Scope Verified • Authorized Workspace Access
+          </span>
           <button
-            type="button"
             onClick={onClose}
             style={{
-              padding: '9px 22px',
+              height: '38px',
+              padding: '0 18px',
+              backgroundColor: '#e2e8f0',
+              color: '#334155',
               borderRadius: '10px',
-              border: 'none',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
+              fontSize: '13px',
               fontWeight: 700,
-              fontSize: '0.86rem',
+              border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-              transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2563eb')}
           >
-            Close Details
+            Close Overview
           </button>
         </div>
       </div>

@@ -441,14 +441,21 @@ export const OpportunityModal = () => {
                 onChange={(e) => setFormData({ ...formData, leadSource: e.target.value })}
               >
                 <option value="Website">Website</option>
+                <option value="Justdial">Justdial</option>
+                <option value="Instamart">Instamart</option>
+                <option value="IndiaMART">IndiaMART</option>
+                <option value="TradeIndia">TradeIndia</option>
+                <option value="Google Ads">Google Ads</option>
+                <option value="Meta Ads">Meta Ads</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Referral">Referral</option>
                 <option value="Inbound Call">Inbound Call</option>
                 <option value="Outbound Call">Outbound Call</option>
-                <option value="Referral">Referral</option>
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="Meta Ads">Meta Ads</option>
-                <option value="Google Ads">Google Ads</option>
                 <option value="Organic Search">Organic Search</option>
                 <option value="Event/Exhibition">Event/Exhibition</option>
+                <option value="Walk-In">Walk-In</option>
+                <option value="Partner / Affiliate">Partner / Affiliate</option>
                 <option value="Other">Other</option>
               </select>
             </div>

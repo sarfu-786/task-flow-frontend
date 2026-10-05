@@ -13,6 +13,8 @@ import { ConvertLeadModal } from './ConvertLeadModal';
 import { DeleteLeadModal } from './DeleteLeadModal';
 import { DispositionModal } from './DispositionModal';
 import { AuditTrailModal } from './AuditTrailModal';
+import { LeadImportModal } from './LeadImportModal';
+import { LeadExportModal } from './LeadExportModal';
 import {
   Target,
   Plus,
@@ -39,6 +41,10 @@ export const LeadSection = () => {
     openEditModal,
     openConvertModal,
     openDeleteModal,
+    isImportModalOpen,
+    closeImportModal,
+    isExportModalOpen,
+    closeExportModal,
   } = useLeads();
 
   // Active Metric Popup Dialog: 'total' | 'qualified' | 'contacted' | 'converted' | null
@@ -51,18 +57,18 @@ export const LeadSection = () => {
   // Hover states for interactive cards
   const [hoveredCard, setHoveredCard] = useState(null);
 
-  // Computed existing metric data
-  const totalLeadsCount = stats?.totalLeads ?? stats?.total ?? leads.length;
-  const qualifiedCount =
-    (stats?.qualifiedLeads ?? leads.filter((l) => l.status === 'Qualified').length) +
-    (stats?.interestedLeads ?? leads.filter((l) => l.status === 'Interested').length);
-  const totalCalls = stats?.totalCallAttempts ?? 0;
-  const connectedCalls = stats?.connectedCalls ?? 0;
-  const callbackCalls = stats?.callbackRequestedCalls ?? 0;
-  const convertedCount =
-    stats?.convertedLeads ?? stats?.converted ?? leads.filter((l) => l.status === 'Converted').length;
+  // Computed metric data calculated dynamically from the actual lead records
+  const totalLeadsCount = leads.length;
+  const qualifiedCount = leads.filter((l) => l.status === 'Qualified').length;
+  const convertedCount = leads.filter((l) => l.status === 'Converted').length;
   const conversionRate =
-    stats?.conversionRate ?? (totalLeadsCount > 0 ? Math.round((convertedCount / totalLeadsCount) * 100) : 0);
+    totalLeadsCount > 0 ? Math.round((convertedCount / totalLeadsCount) * 100) : 0;
+
+  // Dynamic call activity metrics aggregated directly from actual lead call logs
+  const allCallLogs = leads.flatMap((l) => (Array.isArray(l.callLogs) ? l.callLogs : []));
+  const totalCalls = allCallLogs.length;
+  const connectedCalls = allCallLogs.filter((c) => c.callStatus === 'Connected Successfully').length;
+  const callbackCalls = allCallLogs.filter((c) => c.callStatus === 'Call Back Requested').length;
 
   const overdueCount =
     stats?.overdueFollowUps !== undefined
@@ -918,6 +924,8 @@ export const LeadSection = () => {
       <DeleteLeadModal />
       <DispositionModal />
       <AuditTrailModal />
+      <LeadImportModal isOpen={isImportModalOpen} onClose={closeImportModal} />
+      <LeadExportModal isOpen={isExportModalOpen} onClose={closeExportModal} />
     </div>
   );
 };

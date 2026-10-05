@@ -671,7 +671,7 @@ export const LeadMetricDetailDialog = ({
                     Total Leads
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb', lineHeight: 1.1 }}>
-                    {stats?.total ?? allLeads.length}
+                    {allLeads.length}
                   </div>
                 </div>
               </div>
@@ -707,7 +707,7 @@ export const LeadMetricDetailDialog = ({
                     Qualified
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>
-                    {stats?.qualified ?? allLeads.filter((l) => l.status === 'Qualified').length}
+                    {allLeads.filter((l) => l.status === 'Qualified').length}
                   </div>
                 </div>
               </div>
@@ -743,7 +743,7 @@ export const LeadMetricDetailDialog = ({
                     In Contact
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706', lineHeight: 1.1 }}>
-                    {stats?.contacted ?? allLeads.filter((l) => l.status === 'Contacted').length}
+                    {allLeads.filter((l) => l.status === 'Contacted').length}
                   </div>
                 </div>
               </div>
@@ -779,7 +779,7 @@ export const LeadMetricDetailDialog = ({
                     Converted
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed', lineHeight: 1.1 }}>
-                    {stats?.converted ?? allLeads.filter((l) => l.status === 'Converted').length}
+                    {allLeads.filter((l) => l.status === 'Converted').length}
                   </div>
                 </div>
               </div>

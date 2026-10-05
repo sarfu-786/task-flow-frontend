@@ -179,9 +179,13 @@ export const ComplaintKanban = ({
       className="complaint-kanban-board"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '18px',
-        alignItems: 'start',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '14px',
+        alignItems: 'stretch',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        overflowX: 'auto',
       }}
     >
       {COLUMNS.map((col) => {
@@ -192,39 +196,41 @@ export const ComplaintKanban = ({
             key={col.id}
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '14px',
               border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: 'calc(100vh - 280px)',
-              minHeight: '400px',
+              minHeight: '340px',
+              maxHeight: '100%',
+              overflow: 'hidden',
             }}
           >
             {/* Column Header */}
             <div
               style={{
-                padding: '14px 16px',
+                padding: '10px 14px',
                 borderBottom: '1px solid #f1f5f9',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 background: col.bgLight,
-                borderRadius: '16px 16px 0 0',
+                borderRadius: '14px 14px 0 0',
                 borderTop: `3px solid ${col.color}`,
+                flexShrink: 0,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>
+                <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
                   {col.title}
                 </span>
                 <span
                   style={{
                     background: col.badgeBg,
                     color: col.badgeColor,
-                    fontSize: '0.74rem',
+                    fontSize: '0.72rem',
                     fontWeight: 800,
-                    padding: '2px 8px',
+                    padding: '2px 7px',
                     borderRadius: '999px',
                   }}
                 >
@@ -240,18 +246,18 @@ export const ComplaintKanban = ({
                     background: '#ffffff',
                     border: '1px solid #e2e8f0',
                     borderRadius: '6px',
-                    padding: '3px 8px',
-                    fontSize: '0.74rem',
+                    padding: '2px 7px',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     color: '#dc2626',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '3px',
                   }}
                   title="Log Ticket into this stage"
                 >
-                  <Plus size={12} />
+                  <Plus size={11} />
                   <span>Add</span>
                 </button>
               )}
@@ -260,12 +266,13 @@ export const ComplaintKanban = ({
             {/* Cards Scrollable Body */}
             <div
               style={{
-                padding: '12px',
+                padding: '10px',
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
+                gap: '10px',
                 flex: 1,
+                minHeight: 0,
               }}
             >
               {columnTickets.length === 0 ? (

@@ -56,6 +56,15 @@ export const UserProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
+  const [assignableUsers, setAssignableUsers] = useState(() => {
+    try {
+      const cached = localStorage.getItem('taskflow_cached_assignable_users');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // Fetch users (Complete directory for system consistency)
   const fetchUsers = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -75,12 +84,27 @@ export const UserProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  // Fetch all active assignable organization users (including Super Admin, Managers, Employees)
+  const fetchAssignableUsers = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await api.getAssignableUsers();
+      if (res && res.success && Array.isArray(res.users)) {
+        setAssignableUsers(res.users);
+        localStorage.setItem('taskflow_cached_assignable_users', JSON.stringify(res.users));
+      }
+    } catch (err) {
+      console.error('Fetch assignable users error:', err);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchUsers();
+      fetchAssignableUsers();
       fetchPendingApprovalsCount();
     }
-  }, [isAuthenticated, fetchUsers, fetchPendingApprovalsCount]);
+  }, [isAuthenticated, fetchUsers, fetchAssignableUsers, fetchPendingApprovalsCount]);
 
   // Real-time socket events for approvals and user updates
   useEffect(() => {
@@ -225,6 +249,8 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider
       value={{
         users,
+        assignableUsers,
+        fetchAssignableUsers,
         paginatedUsers,
         totalUsers,
         totalPages,

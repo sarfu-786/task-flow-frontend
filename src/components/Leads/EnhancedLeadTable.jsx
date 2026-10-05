@@ -581,3 +581,5 @@ export const EnhancedLeadTable = () => {
     </div>
   );
 };
+
+export default EnhancedLeadTable;

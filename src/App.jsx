@@ -38,63 +38,63 @@ const LeadSection = lazy(() =>
   import('./components/Leads/LeadSection').then((m) => ({ default: m.LeadSection }))
 );
 const ComplaintSection = lazy(() =>
-  import('./components/Complaints/ComplaintSection').then((m) => ({ default: m.ComplaintSection }))
+  import('./components/Complaints/ComplaintSection').then((m) => ({ default: m.ComplaintSection || m.default }))
 );
 const ProjectSection = lazy(() =>
-  import('./components/Projects/ProjectSection').then((m) => ({ default: m.ProjectSection }))
+  import('./components/Projects/ProjectSection').then((m) => ({ default: m.ProjectSection || m.default }))
 );
 const SubscriptionManagement = lazy(() =>
-  import('./components/Subscription/SubscriptionManagement').then((m) => ({ default: m.SubscriptionManagement }))
+  import('./components/Subscription/SubscriptionManagement').then((m) => ({ default: m.SubscriptionManagement || m.default }))
 );
 
 // Lazy-loaded Modals and Secondary Views
 const Register = lazy(() =>
-  import('./components/Register').then((m) => ({ default: m.Register }))
+  import('./components/Register').then((m) => ({ default: m.Register || m.default }))
 );
 const CommandPalette = lazy(() =>
-  import('./components/CommandPalette').then((m) => ({ default: m.CommandPalette }))
+  import('./components/CommandPalette').then((m) => ({ default: m.CommandPalette || m.default }))
 );
 const TaskModal = lazy(() =>
-  import('./components/TaskManagement/TaskModal').then((m) => ({ default: m.TaskModal }))
+  import('./components/TaskManagement/TaskModal').then((m) => ({ default: m.TaskModal || m.default }))
 );
 const DeleteConfirmModal = lazy(() =>
-  import('./components/TaskManagement/DeleteConfirmModal').then((m) => ({ default: m.DeleteConfirmModal }))
+  import('./components/TaskManagement/DeleteConfirmModal').then((m) => ({ default: m.DeleteConfirmModal || m.default }))
 );
 const TaskDetailModal = lazy(() =>
-  import('./components/TaskManagement/TaskDetailModal').then((m) => ({ default: m.TaskDetailModal }))
+  import('./components/TaskManagement/TaskDetailModal').then((m) => ({ default: m.TaskDetailModal || m.default }))
 );
 const LeadModal = lazy(() =>
-  import('./components/Leads/LeadModal').then((m) => ({ default: m.LeadModal }))
+  import('./components/Leads/LeadModal').then((m) => ({ default: m.LeadModal || m.default }))
 );
 const ConvertLeadModal = lazy(() =>
-  import('./components/Leads/ConvertLeadModal').then((m) => ({ default: m.ConvertLeadModal }))
+  import('./components/Leads/ConvertLeadModal').then((m) => ({ default: m.ConvertLeadModal || m.default }))
 );
 const DeleteLeadModal = lazy(() =>
-  import('./components/Leads/DeleteLeadModal').then((m) => ({ default: m.DeleteLeadModal }))
+  import('./components/Leads/DeleteLeadModal').then((m) => ({ default: m.DeleteLeadModal || m.default }))
 );
 const OpportunityModal = lazy(() =>
-  import('./components/Opportunities/OpportunityModal').then((m) => ({ default: m.OpportunityModal }))
+  import('./components/Opportunities/OpportunityModal').then((m) => ({ default: m.OpportunityModal || m.default }))
 );
 const DeleteOpportunityModal = lazy(() =>
-  import('./components/Opportunities/DeleteOpportunityModal').then((m) => ({ default: m.DeleteOpportunityModal }))
+  import('./components/Opportunities/DeleteOpportunityModal').then((m) => ({ default: m.DeleteOpportunityModal || m.default }))
 );
 const ComplaintModal = lazy(() =>
-  import('./components/Complaints/ComplaintModal').then((m) => ({ default: m.ComplaintModal }))
+  import('./components/Complaints/ComplaintModal').then((m) => ({ default: m.ComplaintModal || m.default }))
 );
 const ResolveComplaintModal = lazy(() =>
-  import('./components/Complaints/ResolveComplaintModal').then((m) => ({ default: m.ResolveComplaintModal }))
+  import('./components/Complaints/ResolveComplaintModal').then((m) => ({ default: m.ResolveComplaintModal || m.default }))
 );
 const DeleteComplaintModal = lazy(() =>
-  import('./components/Complaints/DeleteComplaintModal').then((m) => ({ default: m.DeleteComplaintModal }))
+  import('./components/Complaints/DeleteComplaintModal').then((m) => ({ default: m.DeleteComplaintModal || m.default }))
 );
 const ProjectModal = lazy(() =>
-  import('./components/Projects/ProjectModal').then((m) => ({ default: m.ProjectModal }))
+  import('./components/Projects/ProjectModal').then((m) => ({ default: m.ProjectModal || m.default }))
 );
 const MilestonesModal = lazy(() =>
-  import('./components/Projects/MilestonesModal').then((m) => ({ default: m.MilestonesModal }))
+  import('./components/Projects/MilestonesModal').then((m) => ({ default: m.MilestonesModal || m.default }))
 );
 const DeleteProjectModal = lazy(() =>
-  import('./components/Projects/DeleteProjectModal').then((m) => ({ default: m.DeleteProjectModal }))
+  import('./components/Projects/DeleteProjectModal').then((m) => ({ default: m.DeleteProjectModal || m.default }))
 );
 
 // High-speed, micro-shimmer section loading fallback

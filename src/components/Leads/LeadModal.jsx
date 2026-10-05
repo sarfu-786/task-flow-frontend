@@ -15,7 +15,6 @@ import {
   Tag,
   Flag,
   FileText,
-  DollarSign,
   Calendar,
   Clock,
   Briefcase,
@@ -111,7 +110,6 @@ export const LeadModal = () => {
     requirement: '',
     status: 'New',
     priority: 'Medium',
-    estimatedValue: '',
     assignedSalesUser: '',
     assignedManager: '',
     remarks: '',
@@ -161,7 +159,6 @@ export const LeadModal = () => {
         requirement: selectedLead.requirement || '',
         status: selectedLead.status || 'New',
         priority: selectedLead.priority || 'Medium',
-        estimatedValue: selectedLead.estimatedValue || selectedLead.dealValue || '',
         assignedSalesUser: selectedLead.assignedSalesUser || selectedLead.assignedTo || '',
         assignedManager: selectedLead.assignedManagerName || selectedLead.assignedManager || '',
         remarks: selectedLead.remarks || selectedLead.notes || '',
@@ -178,7 +175,6 @@ export const LeadModal = () => {
         requirement: '',
         status: 'New',
         priority: 'Medium',
-        estimatedValue: '',
         assignedSalesUser: currentUser?.name || '',
         assignedManager: currentUser?.reportsToName || 'Executive Leadership',
         remarks: '',
@@ -223,6 +219,11 @@ export const LeadModal = () => {
     setServerError('');
 
     try {
+      const existingVal =
+        modalMode === 'edit' && selectedLead
+          ? selectedLead.estimatedValue || selectedLead.dealValue || 0
+          : 0;
+
       const payload = {
         name: formData.contactPerson.trim(),
         contactPerson: formData.contactPerson.trim(),
@@ -234,8 +235,8 @@ export const LeadModal = () => {
         requirement: formData.requirement.trim(),
         status: formData.status,
         priority: formData.priority,
-        estimatedValue: formData.estimatedValue ? Number(formData.estimatedValue) : 0,
-        dealValue: formData.estimatedValue ? Number(formData.estimatedValue) : 0,
+        estimatedValue: existingVal,
+        dealValue: existingVal,
         assignedTo: formData.assignedSalesUser || currentUser?.name || 'Current User',
         assignedSalesUser: formData.assignedSalesUser || currentUser?.name || 'Current User',
         assignedManager: formData.assignedManager || '',
@@ -430,13 +431,22 @@ export const LeadModal = () => {
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
               >
                 <option value="Website">Website</option>
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="Referral">Referral</option>
+                <option value="Justdial">Justdial</option>
+                <option value="Instamart">Instamart</option>
+                <option value="IndiaMART">IndiaMART</option>
+                <option value="TradeIndia">TradeIndia</option>
                 <option value="Google Search Ads">Google Search Ads</option>
+                <option value="Facebook / Instagram Ads">Facebook / Instagram Ads</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Referral">Referral</option>
                 <option value="Cold Call">Cold Call</option>
-                <option value="Event / Expo">Event / Expo</option>
+                <option value="Inbound Call">Inbound Call</option>
                 <option value="Email Campaign">Email Campaign</option>
+                <option value="Event / Expo">Event / Expo</option>
                 <option value="Direct Outreach">Direct Outreach</option>
+                <option value="Walk-In">Walk-In</option>
+                <option value="Partner / Affiliate">Partner / Affiliate</option>
                 <option value="Other">Other</option>
               </select>
             </div>
@@ -481,22 +491,6 @@ export const LeadModal = () => {
               </select>
             </div>
 
-            {/* Estimated Value */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <DollarSign size={14} color="#2563eb" />
-                <span>Estimated Value (₹)</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                className="form-control"
-                placeholder="e.g. 450000"
-                value={formData.estimatedValue}
-                onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
-              />
-            </div>
-
             {/* Assigned Sales User */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -520,7 +514,7 @@ export const LeadModal = () => {
             </div>
 
             {/* Assigned Manager */}
-            <div className="form-group">
+            <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <Shield size={14} color="#2563eb" />
                 <span>Assigned Manager</span>

@@ -373,11 +373,26 @@ export const api = {
   },
 
   // User Management API
+  async getAssignableUsers() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/users/assignable`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch assignable users');
+    }
+    return data;
+  },
+
   async getUsers(params = {}) {
     const query = new URLSearchParams();
     if (params.search) query.append('search', params.search);
     if (params.role && params.role !== 'all') query.append('role', params.role);
     if (params.department && params.department !== 'all') query.append('department', params.department);
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.scope) query.append('scope', params.scope);
+    if (params.all) query.append('all', 'true');
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
     const res = await fetchWithTimeout(`${getBaseUrl()}/users${queryString}`, {
@@ -689,6 +704,70 @@ export const api = {
     return data;
   },
 
+  // Enterprise Lead Excel & CSV Suite (.xlsx, .xls, .csv)
+  async downloadLeadExcelTemplate(format = 'xlsx') {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/excel/template?format=${format}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to download Lead template');
+    }
+    return await res.blob();
+  },
+
+  async previewLeadExcel(fileData, fileName, mapping = null) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/excel/preview`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ fileData, fileBase64: fileData, fileName, filename: fileName, mapping }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to parse file preview');
+    }
+    return data;
+  },
+
+  async importLeadExcel(payload) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/excel/import`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to import Lead Excel data');
+    }
+    return data;
+  },
+
+  async exportLeadExcel(payload = {}) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/excel/export`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to export Lead Excel data');
+    }
+    return await res.blob();
+  },
+
+  async getLeadExcelHistory() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/excel/history`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch Lead Excel history');
+    }
+    return data;
+  },
+
   // Enterprise LMS: MIS Reports & Analytical Dashboard API
   async getMISAnalytics() {
     const res = await fetchWithTimeout(`${getBaseUrl()}/mis/analytics`, {
@@ -931,11 +1010,17 @@ export const complaintApi = {
     if (params.search) query.append('search', params.search);
     if (params.status && params.status !== 'all') query.append('status', params.status);
     if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.subCategory && params.subCategory !== 'all') query.append('subCategory', params.subCategory);
     if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.severity && params.severity !== 'all') query.append('severity', params.severity);
     if (params.slaStatus && params.slaStatus !== 'all') query.append('slaStatus', params.slaStatus);
     if (params.assignedTo && params.assignedTo !== 'all') query.append('assignedTo', params.assignedTo);
+    if (params.team && params.team !== 'all') query.append('team', params.team);
+    if (params.metric && params.metric !== 'total') query.append('metric', params.metric);
     if (params.page) query.append('page', params.page);
     if (params.limit) query.append('limit', params.limit);
+    if (params.sortBy) query.append('sortBy', params.sortBy);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
 
     const qs = query.toString() ? `?${query.toString()}` : '';
     const res = await fetchWithTimeout(`${getBaseUrl()}/complaints${qs}`, {
@@ -958,7 +1043,7 @@ export const complaintApi = {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || 'Failed to fetch complaint');
+      throw new Error(data.message || 'Failed to fetch complaint details');
     }
     return data;
   },
@@ -989,6 +1074,110 @@ export const complaintApi = {
     return data;
   },
 
+  async updateComplaintStatus(id, status, notes) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/status`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, notes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update complaint status');
+    }
+    return data;
+  },
+
+  async assignComplaint(id, assignData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/assign`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(assignData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to assign complaint');
+    }
+    return data;
+  },
+
+  async reassignComplaint(id, assignData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/assign`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(assignData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to reassign complaint');
+    }
+    return data;
+  },
+
+  async escalateComplaint(id, escalateData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/escalate`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(escalateData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to escalate complaint');
+    }
+    return data;
+  },
+
+  async investigateComplaint(id, investigateData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/investigate`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(investigateData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update investigation');
+    }
+    return data;
+  },
+
+  async updateInvestigation(id, investigateData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/investigate`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(investigateData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update investigation');
+    }
+    return data;
+  },
+
+  async addComplaintActivity(id, activityData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/activities`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(activityData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to record activity');
+    }
+    return data;
+  },
+
+  async addActivity(id, activityData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/activities`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(activityData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to add activity');
+    }
+    return data;
+  },
+
   async resolveComplaint(id, resolveData) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/resolve`, {
       method: 'PUT',
@@ -1002,6 +1191,45 @@ export const complaintApi = {
     return data;
   },
 
+  async closeComplaint(id, closeData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/close`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(closeData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to close complaint');
+    }
+    return data;
+  },
+
+  async reopenComplaint(id, reopenData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/reopen`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(reopenData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to reopen complaint');
+    }
+    return data;
+  },
+
+  async linkComplaint(id, linkData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/link`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(linkData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to link items to complaint');
+    }
+    return data;
+  },
+
   async deleteComplaint(id) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}`, {
       method: 'DELETE',
@@ -1010,6 +1238,111 @@ export const complaintApi = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to delete complaint ticket');
+    }
+    return data;
+  },
+
+  // Complaint MIS Analytics & Reporting
+  async getComplaintMISAnalytics() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/mis/analytics`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch Complaint MIS analytics');
+    }
+    return data;
+  },
+
+  async getComplaintMISReport(reportId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
+    if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
+    if (params.severity && params.severity !== 'all') query.append('severity', params.severity);
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/mis/reports/${reportId}${qs}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || `Failed to fetch MIS report ${reportId}`);
+    }
+    return data;
+  },
+
+  getComplaintMISExportUrl(reportId, format = 'xlsx') {
+    const token =
+      (typeof window !== 'undefined' &&
+        (sessionStorage.getItem('taskflow_token') || localStorage.getItem('taskflow_token'))) ||
+      '';
+    return `${getBaseUrl()}/complaints/mis/export/${reportId}?format=${format}&token=${encodeURIComponent(token)}`;
+  },
+
+  // Complaint Excel Suite (.xlsx only)
+  async downloadComplaintExcelTemplate() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/excel/template`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to download Complaint Excel template');
+    }
+    return await res.blob();
+  },
+
+  async previewComplaintExcel(fileData, fileName) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/excel/preview`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ fileData, fileName }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to parse Complaint Excel file preview');
+    }
+    return data;
+  },
+
+  async importComplaintExcel(payload) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/excel/import`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to import Complaint Excel data');
+    }
+    return data;
+  },
+
+  async exportComplaintExcel(payload = {}) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/excel/export`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to export Complaint Excel data');
+    }
+    return await res.blob();
+  },
+
+  async getComplaintExcelHistory() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/excel/history`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch Complaint Excel history');
     }
     return data;
   },
@@ -1026,6 +1359,7 @@ export const projectApi = {
     if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
     if (params.category && params.category !== 'all') query.append('category', params.category);
     if (params.manager && params.manager !== 'all') query.append('manager', params.manager);
+    if (params.dateFilter && params.dateFilter !== 'all') query.append('dateFilter', params.dateFilter);
     if (params.page) query.append('page', params.page);
     if (params.limit) query.append('limit', params.limit);
 
@@ -1081,6 +1415,19 @@ export const projectApi = {
     return data;
   },
 
+  async updateProjectStatus(id, status, remarks = '') {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, remarks }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update project status');
+    }
+    return data;
+  },
+
   async toggleMilestone(projectId, milestoneIndex) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/milestones/${milestoneIndex}/toggle`, {
       method: 'PUT',
@@ -1103,6 +1450,202 @@ export const projectApi = {
       throw new Error(data.message || 'Failed to delete project');
     }
     return data;
+  },
+
+  // Templates
+  async getProjectTemplates() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/templates`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch templates');
+    }
+    return data;
+  },
+
+  // MIS Analytics
+  async getProjectMISStats() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/stats/mis`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch project MIS analytics');
+    }
+    return data;
+  },
+
+  // Reports
+  async getReport(reportType, params = {}) {
+    const query = new URLSearchParams();
+    if (params.category) query.append('category', params.category);
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/reports/${reportType}${qs}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch project report');
+    }
+    return data;
+  },
+
+  async getProjectReport(reportType, params = {}) {
+    return this.getReport(reportType, params);
+  },
+
+  // Tasks
+  async createProjectTask(projectId, taskData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/tasks`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(taskData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to add project task');
+    }
+    return data;
+  },
+
+  async updateProjectTaskStatus(projectId, taskId, status, progress) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/tasks/${taskId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, progress }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update task status');
+    }
+    return data;
+  },
+
+  // Issues
+  async createProjectIssue(projectId, issueData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/issues`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(issueData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create issue');
+    }
+    return data;
+  },
+
+  async updateProjectIssueStatus(projectId, issueId, status, resolution = '') {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/issues/${issueId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, resolution }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update issue status');
+    }
+    return data;
+  },
+
+  // Risks
+  async createProjectRisk(projectId, riskData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/risks`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(riskData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to add risk');
+    }
+    return data;
+  },
+
+  // Timesheets
+  async createTimesheet(projectId, timesheetData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/timesheets`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(timesheetData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to log timesheet');
+    }
+    return data;
+  },
+
+  async updateTimesheetStatus(projectId, timesheetId, status, rejectionReason = '') {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/timesheets/${timesheetId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, rejectionReason }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update timesheet status');
+    }
+    return data;
+  },
+
+  // Comments
+  async addProjectComment(projectId, commentData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/${projectId}/comments`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(commentData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to add comment');
+    }
+    return data;
+  },
+
+  // Excel / CSV Import & Export
+  async previewProjectExcel(fileData, fileName) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/excel/preview`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ fileData, fileName }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to preview Excel file');
+    }
+    return data;
+  },
+
+  async importProjectExcel(payload) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/excel/import`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to import projects');
+    }
+    return data;
+  },
+
+  async exportProjectExcel(payload = {}) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/projects/excel/export`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to export projects');
+    }
+    return await res.blob();
   },
 };
 
@@ -1146,4 +1689,6 @@ export const hierarchyApi = {
     return data;
   },
 };
+
+
 

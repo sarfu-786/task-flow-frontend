@@ -40,6 +40,7 @@ export const TaskProvider = ({ children }) => {
   const [search, setSearch] = useState('');
   const [taskTypeFilter, setTaskTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [assignedToFilter, setAssignedToFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -70,34 +71,30 @@ export const TaskProvider = ({ children }) => {
     setLiveToast(null);
   }, []);
 
-  // Fetch tasks (Always fetch complete list for authenticated user/manager to maintain accurate dashboard counts)
+  // Fetch tasks (Backend automatically scopes tasks to user's permitted hierarchy)
   const fetchTasks = useCallback(async (silent = false) => {
     if (!isAuthenticated) return;
     if (!silent) setLoading(true);
     setError('');
     try {
-      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
-      const res = await api.getTasks({
-        myTasksOnly: !isManager,
-      });
+      const res = await api.getTasks({});
       if (res.success) {
-        setTasks(res.tasks);
-        localStorage.setItem('taskflow_cached_tasks', JSON.stringify(res.tasks));
+        setTasks(res.tasks || []);
+        localStorage.setItem('taskflow_cached_tasks', JSON.stringify(res.tasks || []));
       }
     } catch (err) {
       console.error('Fetch tasks error:', err);
-      if (!silent) setError(err.message || 'Failed to load tasks');
+      if (!silent) setError(err.message || 'Unable to load tasks. Please try again.');
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
-  // Fetch Manager / User Stats
+  // Fetch Manager / User Stats (Backend automatically scopes to user's permitted hierarchy)
   const fetchStats = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
-      const res = await api.getStats({ myTasksOnly: !isManager });
+      const res = await api.getStats({});
       if (res.success) {
         setStats(res.stats);
         localStorage.setItem('taskflow_cached_stats', JSON.stringify(res.stats));
@@ -105,7 +102,7 @@ export const TaskProvider = ({ children }) => {
     } catch (err) {
       console.error('Fetch stats error:', err);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   // Fetch Notifications (Runs for ALL authenticated users)
   const fetchNotifications = useCallback(async () => {
@@ -246,7 +243,15 @@ export const TaskProvider = ({ children }) => {
   // Reset to page 1 when search or filter criteria changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, taskTypeFilter, statusFilter]);
+  }, [search, taskTypeFilter, statusFilter, assignedToFilter]);
+
+  const resetFilters = useCallback(() => {
+    setSearch('');
+    setTaskTypeFilter('all');
+    setStatusFilter('all');
+    setAssignedToFilter('all');
+    setCurrentPage(1);
+  }, []);
 
   // Create Task
   const createTask = async (taskData) => {
@@ -379,7 +384,6 @@ export const TaskProvider = ({ children }) => {
       setUnreadCount(0);
     } catch (err) {
       console.error('Clear all notifications error:', err);
-      // Optimistically clear notifications in UI
       setNotifications([]);
       setUnreadCount(0);
     }
@@ -426,12 +430,33 @@ export const TaskProvider = ({ children }) => {
   // Total and paginated calculations for TaskList view
   const filteredTasks = tasks.filter((t) => {
     if (!t) return false;
-    if (taskTypeFilter !== 'all' && (t.taskType || '').toLowerCase() !== taskTypeFilter.toLowerCase()) {
-      return false;
+    
+    // Task Type Filter
+    if (taskTypeFilter !== 'all') {
+      const type = (t.taskType || '').toLowerCase().trim();
+      const filter = taskTypeFilter.toLowerCase().trim();
+      const isMatch =
+        type === filter ||
+        (filter === 'sells' && (type === 'sales' || type === 'sells')) ||
+        (filter === 'research & analysis' && (type === 'research and analysis' || type === 'research & analysis')) ||
+        (filter === 'follow-up' && (type === 'follow up' || type === 'follow-up')) ||
+        (filter === 'testing & quality check' && (type === 'testing and quality check' || type === 'testing & quality check'));
+      if (!isMatch) return false;
     }
+
+    // Status Filter
     if (statusFilter !== 'all' && t.status !== statusFilter) {
       return false;
     }
+
+    // Assigned To Filter
+    if (assignedToFilter !== 'all') {
+      const assigned = (t.assignedTo || '').toLowerCase().trim();
+      const filterAssigned = assignedToFilter.toLowerCase().trim();
+      if (assigned !== filterAssigned) return false;
+    }
+
+    // Search Query
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       const matchDesc = (t.description || '').toLowerCase().includes(q);
@@ -440,7 +465,8 @@ export const TaskProvider = ({ children }) => {
         (t.completionRemark || '').toLowerCase().includes(q);
       const matchAssigned = (t.assignedTo || '').toLowerCase().includes(q);
       const matchType = (t.taskType || '').toLowerCase().includes(q);
-      if (!matchDesc && !matchRemark && !matchAssigned && !matchType) return false;
+      const matchAssignedBy = (t.assignedBy || '').toLowerCase().includes(q);
+      if (!matchDesc && !matchRemark && !matchAssigned && !matchType && !matchAssignedBy) return false;
     }
     return true;
   });
@@ -465,6 +491,9 @@ export const TaskProvider = ({ children }) => {
         setTaskTypeFilter,
         statusFilter,
         setStatusFilter,
+        assignedToFilter,
+        setAssignedToFilter,
+        resetFilters,
         currentPage,
         setCurrentPage,
         itemsPerPage,

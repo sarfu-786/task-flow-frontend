@@ -15,10 +15,13 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Layers,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
+import { projectApi } from '../../services/api';
 
 export const ProjectMetricDetailDialog = ({
   open,
@@ -32,6 +35,8 @@ export const ProjectMetricDetailDialog = ({
 }) => {
   const { projects: contextProjects, stats } = useProjects();
 
+  const [metricProjects, setMetricProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -44,6 +49,31 @@ export const ProjectMetricDetailDialog = ({
     setActiveTab('all');
     setCategoryFilter('all');
     setPage(0);
+
+    let isMounted = true;
+    const loadProjectsForMetric = async () => {
+      try {
+        setLoadingProjects(true);
+        // Scoped according to hierarchy rule via backend projectApi
+        const res = await projectApi.getProjects({
+          limit: 500, // retrieve all scoped projects for this metric view
+          status: metricType === 'completed' ? 'Completed' : (metricType === 'in_progress' ? 'In Progress' : 'all'),
+        });
+        if (isMounted && res && res.success) {
+          setMetricProjects(res.projects || []);
+        }
+      } catch (err) {
+        console.error('Error fetching metric projects:', err);
+      } finally {
+        if (isMounted) setLoadingProjects(false);
+      }
+    };
+
+    loadProjectsForMetric();
+
+    return () => {
+      isMounted = false;
+    };
   }, [open, metricType]);
 
   // Dialog configuration
@@ -99,12 +129,14 @@ export const ProjectMetricDetailDialog = ({
 
   // Filter projects according to metricType and local filters
   const filteredProjects = useMemo(() => {
-    return (contextProjects || []).filter((p) => {
+    const list = metricProjects.length > 0 ? metricProjects : (contextProjects || []);
+    return list.filter((p) => {
       // 1. Metric Type base filter
       if (metricType === 'in_progress') {
-        if (!['In Progress', 'Under Review'].includes(p.status)) return false;
+        if (!['In Progress', 'Active', 'Active / In Progress', 'Planning', 'Approved', 'Under Review'].includes(p.status)) return false;
       } else if (metricType === 'completed') {
-        if (p.status !== 'Completed') return false;
+        const isDelivered = ['Completed', 'Closed', 'Delivered'].includes(p.status) || Number(p.progress) === 100;
+        if (!isDelivered) return false;
       }
 
       // 2. Sub-tab filter
@@ -123,7 +155,7 @@ export const ProjectMetricDetailDialog = ({
         const code = (p.projectCode || '').toLowerCase();
         const name = (p.name || '').toLowerCase();
         const client = (p.clientName || '').toLowerCase();
-        const mgr = (p.managerName || '').toLowerCase();
+        const mgr = (p.managerName || p.projectManager || (typeof p.manager === 'object' ? p.manager?.name : '') || '').toLowerCase();
         const cat = (p.category || '').toLowerCase();
 
         return (
@@ -137,16 +169,17 @@ export const ProjectMetricDetailDialog = ({
 
       return true;
     });
-  }, [contextProjects, metricType, activeTab, categoryFilter, searchTerm]);
+  }, [metricProjects, contextProjects, metricType, activeTab, categoryFilter, searchTerm]);
 
   // Categories list
   const availableCategories = useMemo(() => {
     const cats = new Set();
-    (contextProjects || []).forEach((p) => {
+    const list = metricProjects.length > 0 ? metricProjects : (contextProjects || []);
+    list.forEach((p) => {
       if (p.category) cats.add(p.category);
     });
     return Array.from(cats);
-  }, [contextProjects]);
+  }, [metricProjects, contextProjects]);
 
   const totalPages = Math.ceil(filteredProjects.length / rowsPerPage) || 1;
   const paginatedProjects = filteredProjects.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
@@ -379,35 +412,47 @@ export const ProjectMetricDetailDialog = ({
           {/* Category Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Category:</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setPage(0);
-              }}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '0.82rem',
-                color: '#334155',
-                background: '#ffffff',
-                outline: 'none',
-              }}
-            >
-              <option value="all">All Categories</option>
-              {availableCategories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+              <select
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setPage(0);
+                }}
+                style={{
+                  padding: '7px 32px 7px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  color: '#334155',
+                  background: '#ffffff',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="all">All Categories</option>
+                {availableCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: '10px', pointerEvents: 'none', color: '#94a3b8' }} />
+            </div>
           </div>
         </div>
 
         {/* Table Body */}
         <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0' }}>
-          {paginatedProjects.length === 0 ? (
+          {loadingProjects ? (
+            <div style={{ padding: '60px 24px', textAlign: 'center' }}>
+              <Loader2 size={32} className="animate-spin" style={{ color: config.primaryColor, margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Loading projects...</p>
+            </div>
+          ) : paginatedProjects.length === 0 ? (
             <div style={{ padding: '60px 24px', textAlign: 'center' }}>
               <div
                 style={{
@@ -727,3 +772,6 @@ export const ProjectMetricDetailDialog = ({
     </div>
   );
 };
+
+export default ProjectMetricDetailDialog;
+

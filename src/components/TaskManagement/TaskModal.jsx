@@ -342,11 +342,18 @@ export const TaskModal = () => {
                   if (errors.taskType) setErrors((prev) => ({ ...prev, taskType: '' }));
                 }}
               >
-                <option value="internet work">(i) Internet Work</option>
-                <option value="documentation">(ii) Documentation</option>
-                <option value="social media">(iii) Social Media</option>
-                <option value="backend work">(iv) Backend Work</option>
-                <option value="sells">(v) Sells</option>
+                <option value="internet work">Internet Work</option>
+                <option value="documentation">Documentation</option>
+                <option value="social media">Social Media</option>
+                <option value="backend work">Backend Work</option>
+                <option value="client communication">Client Communication</option>
+                <option value="data entry">Data Entry</option>
+                <option value="research & analysis">Research & Analysis</option>
+                <option value="follow-up">Follow-up</option>
+                <option value="testing & quality check">Testing & Quality Check</option>
+                <option value="administrative work">Administrative Work</option>
+                <option value="technical support">Technical Support</option>
+                <option value="sells">Sales / Sells</option>
               </select>
               {errors.taskType && <span className="form-error-msg">{errors.taskType}</span>}
             </div>
@@ -380,7 +387,7 @@ export const TaskModal = () => {
                 <input
                   id="expectedDate"
                   type="date"
-                  min={new Date().toISOString().split('T')[0]}
+                  min={modalMode === 'create' ? new Date().toISOString().split('T')[0] : undefined}
                   className="form-control"
                   value={expectedDate}
                   onChange={(e) => {
@@ -403,6 +410,8 @@ export const TaskModal = () => {
                   onChange={(e) => setStatus(e.target.value)}
                 >
                   <option value="To Do">To Do</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
                 </select>
               </div>
             </div>

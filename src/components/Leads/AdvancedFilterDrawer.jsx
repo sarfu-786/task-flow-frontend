@@ -18,7 +18,7 @@ const AVAILABLE_FIELDS = [
   { id: 'lead_status', label: 'Lead Status', type: 'categorical', options: ['NEW', 'IN_PROGRESS', 'NURTURING', 'LOST', 'CONVERTED'] },
   { id: 'disposition_code', label: 'Disposition Code', type: 'categorical', options: ['NO_ANSWER', 'BUSY', 'CALL_BACK', 'NOT_INTERESTED', 'QUALIFIED_OPPORTUNITY', 'NONE'] },
   { id: 'priority', label: 'Priority Level', type: 'categorical', options: ['Low', 'Medium', 'High', 'Urgent'] },
-  { id: 'campaign_source', label: 'Campaign Source', type: 'categorical', options: ['Website Direct', 'Google Ads', 'LinkedIn Ads', 'Partner Referral', 'Inbound Calls', 'Cold Outreach'] },
+  { id: 'campaign_source', label: 'Campaign Source', type: 'categorical', options: ['Website Direct', 'Justdial', 'Instamart', 'IndiaMART', 'TradeIndia', 'Google Ads', 'Meta Ads', 'LinkedIn Ads', 'WhatsApp', 'Partner Referral', 'Inbound Calls', 'Cold Outreach', 'Walk-In', 'Other'] },
   { id: 'assignedTo', label: 'Assigned Agent', type: 'categorical' },
   { id: 'pipeline_value', label: 'Pipeline Value ($)', type: 'numeric' },
   { id: 'engagement_score', label: 'Engagement Score (0-100)', type: 'numeric' },

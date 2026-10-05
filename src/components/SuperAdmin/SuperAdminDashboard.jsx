@@ -398,12 +398,12 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
         </div>
       )}
 
-      {/* 3. Existing 8 KPI Metric Cards (Preserved 100% Functionality & Click Handlers) */}
+      {/* 3. Existing 8 KPI Metric Cards - Divided 4-4 Equally Across 2 Rows */}
       <div
-        className="stats-grid"
+        className="stats-grid super-admin-kpi-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
           gap: '12px',
           marginBottom: '14px',
         }}

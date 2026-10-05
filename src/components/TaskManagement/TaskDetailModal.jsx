@@ -16,6 +16,13 @@ import {
   Edit2,
   Trash2,
   Tag,
+  MessageSquare,
+  Search,
+  FileSpreadsheet,
+  CheckSquare,
+  Headphones,
+  PhoneCall,
+  Briefcase,
 } from 'lucide-react';
 
 export const TaskDetailModal = () => {
@@ -39,7 +46,8 @@ export const TaskDetailModal = () => {
   if (!isViewModalOpen || !taskToView) return null;
 
   const getTaskTypeBadge = (type) => {
-    switch (type?.toLowerCase()) {
+    const norm = (type || '').toLowerCase().trim();
+    switch (norm) {
       case 'internet work':
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -68,6 +76,58 @@ export const TaskDetailModal = () => {
             <span>Backend Work</span>
           </span>
         );
+      case 'client communication':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <MessageSquare size={13} />
+            <span>Client Communication</span>
+          </span>
+        );
+      case 'data entry':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <FileSpreadsheet size={13} />
+            <span>Data Entry</span>
+          </span>
+        );
+      case 'research & analysis':
+      case 'research and analysis':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f3e8ff', color: '#7e22ce', border: '1px solid #e9d5ff', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <Search size={13} />
+            <span>Research & Analysis</span>
+          </span>
+        );
+      case 'follow-up':
+      case 'follow up':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfeff', color: '#0e7490', border: '1px solid #a5f3fc', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <PhoneCall size={13} />
+            <span>Follow-up</span>
+          </span>
+        );
+      case 'testing & quality check':
+      case 'testing and quality check':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <CheckSquare size={13} />
+            <span>Testing & Quality Check</span>
+          </span>
+        );
+      case 'administrative work':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <Briefcase size={13} />
+            <span>Administrative Work</span>
+          </span>
+        );
+      case 'technical support':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            <Headphones size={13} />
+            <span>Technical Support</span>
+          </span>
+        );
       case 'sells':
       case 'sales':
         return (
@@ -78,7 +138,7 @@ export const TaskDetailModal = () => {
         );
       default:
         return (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>
             <Tag size={13} />
             <span>{type || 'General'}</span>
           </span>

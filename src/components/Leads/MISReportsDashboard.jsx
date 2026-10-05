@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { exportToExcel } from '../../services/exportUtils';
 import {
-  FileSpreadsheet,
-  Download,
   Layers,
   Award,
   PieChart,
@@ -75,151 +72,12 @@ export const MISReportsDashboard = () => {
 
   const activeReportConfig = MIS_REPORTS_MENU.find((r) => r.id === selectedReportId) || MIS_REPORTS_MENU[0];
 
-  const handleExportExcel = () => {
-    if (!reportData) {
-      alert('Report data is still loading. Please wait a moment.');
-      return;
-    }
-
-    if (selectedReportId === 'MIS-01') {
-      const stages = reportData?.metrics?.stageBreakdown || [];
-      const columns = [
-        { key: 'name', label: 'Stage' },
-        { key: 'count', label: 'Active Leads / Deals' },
-        { key: 'avgDays', label: 'Avg Days in Stage', formatter: (val) => `${val} Days` },
-        { key: 'conversionRate', label: 'Stage Conversion Rate', formatter: (val) => `${val}%` },
-      ];
-      exportToExcel('Funnel_Cycle_Time_Report', stages, columns, {
-        sheetName: 'Funnel Velocity',
-      });
-    } else if (selectedReportId === 'MIS-02') {
-      const agents = reportData?.metrics?.agents || [];
-      const columns = [
-        { key: 'agentName', label: 'Agent / Representative' },
-        { key: 'role', label: 'Role' },
-        { key: 'leadsManaged', label: 'Leads Assigned' },
-        { key: 'callsMade', label: 'Calls Made' },
-        { key: 'dispositionsLogged', label: 'Dispositions Logged' },
-        { key: 'wonConversionValue', label: 'Won Value (INR)', formatter: (val) => Number(val || 0) },
-        { key: 'conversionRatio', label: 'Conversion Ratio', formatter: (val) => `${val || 0}%` },
-      ];
-      exportToExcel('Agent_Performance_Report', agents, columns, {
-        sheetName: 'Agent Efficiency',
-      });
-    } else if (selectedReportId === 'MIS-03') {
-      const sources = reportData?.metrics?.sourceBreakdown || [];
-      const columns = [
-        { key: 'source', label: 'Inbound Source' },
-        { key: 'total', label: 'Total Leads' },
-        { key: 'NO_ANSWER', label: 'No Answer' },
-        { key: 'BUSY', label: 'Busy' },
-        { key: 'CALL_BACK', label: 'Callback' },
-        { key: 'NOT_INTERESTED', label: 'Not Interested' },
-        { key: 'QUALIFIED_OPPORTUNITY', label: 'Qualified' },
-      ];
-      exportToExcel('Call_Outcomes_Dispositions_Report', sources, columns, {
-        sheetName: 'Call Dispositions',
-      });
-    } else if (selectedReportId === 'MIS-04') {
-      const atRisk = reportData?.metrics?.atRiskList || [];
-      const columns = [
-        { key: 'name', label: 'Opportunity' },
-        { key: 'company', label: 'Company' },
-        { key: 'stage', label: 'Stage' },
-        { key: 'pipeline_value', label: 'Pipeline Value (INR)', formatter: (val) => Number(val || 0) },
-        { key: 'daysInStage', label: 'Days Inactive', formatter: (val) => `${val} Days` },
-        { key: 'assignedTo', label: 'Owner' },
-        { key: 'riskTier', label: 'Risk Level' },
-      ];
-      exportToExcel('Pipeline_Aging_Risk_Report', atRisk, columns, {
-        sheetName: 'Pipeline Risk',
-      });
-    } else if (selectedReportId === 'MIS-05') {
-      const channels = reportData?.metrics?.channels || [];
-      const columns = [
-        { key: 'channel', label: 'Marketing Channel' },
-        { key: 'leadsAcquired', label: 'Leads' },
-        { key: 'avgCPL', label: 'Avg CPL ($)' },
-        { key: 'totalAcquisitionCost', label: 'Acquisition Cost ($)' },
-        { key: 'revenueGenerated', label: 'Won Revenue (INR)', formatter: (val) => Number(val || 0) },
-        { key: 'netProfit', label: 'Net Profit (INR)', formatter: (val) => Number(val || 0) },
-        { key: 'roiPercentage', label: 'Channel ROI', formatter: (val) => `${val}%` },
-      ];
-      exportToExcel('Lead_Source_ROI_Revenue_Report', channels, columns, {
-        sheetName: 'Channel ROI',
-      });
-    }
-  };
-
   const formatCurrency = (val) => {
     return `₹${Number(val || 0).toLocaleString('en-IN')}`;
   };
 
   return (
-    <div className="mis-reports-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      {/* Top Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileSpreadsheet size={22} color="#2563eb" />
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
-              MIS Reports & Performance Analytics
-            </h3>
-          </div>
-          <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-            Track sales velocity, agent productivity, call dispositions, and channel ROI.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '999px',
-              background: '#059669',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 3px 10px rgba(5, 150, 105, 0.25)',
-              transition: 'all 0.15s ease',
-            }}
-            title="Download report as Excel (.xlsx) file"
-          >
-            <FileSpreadsheet size={15} />
-            <span>Export Excel</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => fetchReport(selectedReportId)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '999px',
-              background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              color: '#334155',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <RefreshCw size={13} className={loading ? 'spin' : ''} />
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
-
+    <div className="mis-reports-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 5 Clean MIS Report Selector Cards */}
       <div
         className="stats-grid"

@@ -92,6 +92,10 @@ export const LeadProvider = ({ children }) => {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [leadForAudit, setLeadForAudit] = useState(null);
 
+  // Import / Export Modals
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
   const [roleScope, setRoleScope] = useState('');
 
   // Fetch leads
@@ -475,6 +479,34 @@ export const LeadProvider = ({ children }) => {
     setLeadForAudit(null);
   };
 
+  const openImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const closeImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const openExportModal = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const closeExportModal = () => {
+    setIsExportModalOpen(false);
+  };
+
+  const previewLeadExcel = async (fileData, fileName, mapping = null) => {
+    return await api.previewLeadExcel(fileData, fileName, mapping);
+  };
+
+  const importLeadExcel = async (payload) => {
+    return await api.importLeadExcel(payload);
+  };
+
+  const downloadLeadExcelTemplate = async (format = 'xlsx') => {
+    return await api.downloadLeadExcelTemplate(format);
+  };
+
   // Filtered Leads computation
   const baseLeads = isAdvancedFilterActive && advancedFilteredLeads !== null ? advancedFilteredLeads : leads;
 
@@ -697,6 +729,18 @@ export const LeadProvider = ({ children }) => {
         leadForAudit,
         openAuditModal,
         closeAuditModal,
+        // Import & Export Modals & APIs
+        isImportModalOpen,
+        setIsImportModalOpen,
+        openImportModal,
+        closeImportModal,
+        isExportModalOpen,
+        setIsExportModalOpen,
+        openExportModal,
+        closeExportModal,
+        previewLeadExcel,
+        importLeadExcel,
+        downloadLeadExcelTemplate,
       }}
     >
       {children}

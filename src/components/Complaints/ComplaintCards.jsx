@@ -204,8 +204,12 @@ export const ComplaintCards = ({
       className="complaint-cards-grid"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-        gap: '20px',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+        gap: '14px',
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        padding: '2px',
       }}
     >
       {complaints.map((ticket) => {
@@ -220,15 +224,15 @@ export const ComplaintCards = ({
             onClick={() => onView(ticket)}
             style={{
               background: '#ffffff',
-              borderRadius: '18px',
+              borderRadius: '14px',
               border: '1px solid #e2e8f0',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              padding: '14px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
               cursor: 'pointer',
-              transition: 'all 0.24s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px',
+              gap: '10px',
               position: 'relative',
               overflow: 'hidden',
             }}
@@ -241,13 +245,13 @@ export const ComplaintCards = ({
                 top: 0,
                 left: 0,
                 right: 0,
-                height: '4px',
+                height: '3px',
                 background: sla.progressColor,
               }}
             />
 
             {/* Card Header: Ticket #, Category & Status */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span
                   style={{
