@@ -11,7 +11,6 @@ import {
   Eye,
   Edit2,
   Trash2,
-  Plus,
   ArrowRight,
   ShieldCheck,
   ChevronRight,
@@ -24,7 +23,6 @@ export const ComplaintKanban = ({
   onResolve,
   onDelete,
   canDelete,
-  onCreate,
 }) => {
   const { complaints, updateComplaintStatus, loading } = useComplaints();
 
@@ -237,30 +235,6 @@ export const ComplaintKanban = ({
                   {columnTickets.length}
                 </span>
               </div>
-
-              {col.id === 'Logged' && (
-                <button
-                  type="button"
-                  onClick={onCreate}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    padding: '2px 7px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: '#dc2626',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '3px',
-                  }}
-                  title="Log Ticket into this stage"
-                >
-                  <Plus size={11} />
-                  <span>Add</span>
-                </button>
-              )}
             </div>
 
             {/* Cards Scrollable Body */}

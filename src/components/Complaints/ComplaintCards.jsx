@@ -25,7 +25,6 @@ export const ComplaintCards = ({
   onResolve,
   onDelete,
   canDelete,
-  onCreate,
 }) => {
   const { complaints, loading } = useComplaints();
 
@@ -178,23 +177,9 @@ export const ComplaintCards = ({
         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
           No Complaints In View
         </h3>
-        <p style={{ fontSize: '0.88rem', color: '#64748b', margin: '0 auto 20px', maxWidth: '400px' }}>
+        <p style={{ fontSize: '0.88rem', color: '#64748b', margin: '0 auto', maxWidth: '400px' }}>
           No customer complaints found matching your active filters.
         </p>
-        <button
-          type="button"
-          className="btn-official-primary"
-          onClick={onCreate}
-          style={{
-            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          <Sparkles size={16} />
-          <span>Log New Complaint</span>
-        </button>
       </div>
     );
   }

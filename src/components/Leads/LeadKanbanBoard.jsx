@@ -24,7 +24,6 @@ export const LeadKanbanBoard = () => {
     leads,
     filteredLeads,
     updateLeadStatus,
-    openCreateModal,
     openEditModal,
     openConvertModal,
     openDeleteModal,
@@ -487,32 +486,6 @@ export const LeadKanbanBoard = () => {
                   );
                 })
               )}
-            </div>
-
-            {/* Quick Add Button */}
-            <div style={{ padding: '8px 10px', borderTop: '1px solid #e2e8f0', background: '#ffffff' }}>
-              <button
-                type="button"
-                onClick={openCreateModal}
-                style={{
-                  width: '100%',
-                  background: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '6px',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  color: '#475569',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '5px',
-                }}
-              >
-                <Plus size={12} />
-                <span>Add {col.title} Lead</span>
-              </button>
             </div>
           </div>
         );

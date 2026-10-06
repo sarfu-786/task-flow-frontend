@@ -4,13 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { LeadMetricDetailDialog } from './LeadMetricDetailDialog';
 import { LeadDirectoryModal } from './LeadDirectoryModal';
 import { MISReportsModal } from './MISReportsModal';
-import { LeadModal } from './LeadModal';
 import { LeadDetailModal } from './LeadDetailModal';
 import { AddCallLogModal } from './AddCallLogModal';
 import { ScheduleFollowUpModal } from './ScheduleFollowUpModal';
 import { QualifyLeadModal } from './QualifyLeadModal';
-import { ConvertLeadModal } from './ConvertLeadModal';
-import { DeleteLeadModal } from './DeleteLeadModal';
 import { DispositionModal } from './DispositionModal';
 import { AuditTrailModal } from './AuditTrailModal';
 import { LeadImportModal } from './LeadImportModal';
@@ -157,7 +154,7 @@ export const LeadSection = () => {
             }}
           >
             <Plus size={18} />
-            <span>Add Lead</span>
+            <span>Create Lead</span>
           </button>
         </div>
       </div>
@@ -915,13 +912,10 @@ export const LeadSection = () => {
       />
 
       {/* CRM Modals (Preserved Exactly) */}
-      <LeadModal />
       <LeadDetailModal />
       <AddCallLogModal />
       <ScheduleFollowUpModal />
       <QualifyLeadModal />
-      <ConvertLeadModal />
-      <DeleteLeadModal />
       <DispositionModal />
       <AuditTrailModal />
       <LeadImportModal isOpen={isImportModalOpen} onClose={closeImportModal} />

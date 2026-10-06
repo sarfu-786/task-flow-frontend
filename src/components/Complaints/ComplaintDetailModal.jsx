@@ -351,11 +351,11 @@ export const ComplaintDetailModal = ({
             background: 'linear-gradient(to right, #f8fafc, #ffffff)',
             borderRadius: '20px 20px 0 0',
             flexShrink: 0,
-            flexWrap: 'wrap',
+            flexWrap: 'nowrap',
             gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
             <div
               style={{
                 width: '44px',
@@ -372,7 +372,7 @@ export const ComplaintDetailModal = ({
             >
               <AlertCircle size={22} />
             </div>
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span
                   style={{
@@ -384,6 +384,7 @@ export const ComplaintDetailModal = ({
                     borderRadius: '6px',
                     fontSize: '0.8rem',
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {complaint.ticketNumber}
@@ -397,6 +398,7 @@ export const ComplaintDetailModal = ({
                     borderRadius: '999px',
                     fontSize: '0.72rem',
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {complaint.priority} Priority
@@ -410,6 +412,7 @@ export const ComplaintDetailModal = ({
                     borderRadius: '999px',
                     fontSize: '0.72rem',
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {complaint.severity || 'Moderate'} Severity
@@ -423,35 +426,60 @@ export const ComplaintDetailModal = ({
                     borderRadius: '999px',
                     fontSize: '0.72rem',
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {complaint.status}
                 </span>
               </div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
+              <h2
+                style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                  margin: '4px 0 0 0',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '520px',
+                }}
+                title={complaint.subject}
+              >
                 {complaint.subject}
               </h2>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button
               type="button"
+              id="btn-close-complaint-detail-modal"
               onClick={onClose}
               style={{
-                background: '#f1f5f9',
-                border: 'none',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                border: 'none',
+                backgroundColor: '#f1f5f9',
+                color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
                 cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fee2e2';
+                e.currentTarget.style.color = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                e.currentTarget.style.color = '#64748b';
+              }}
+              title="Close"
             >
-              <X size={16} />
+              <X size={17} />
             </button>
           </div>
         </div>

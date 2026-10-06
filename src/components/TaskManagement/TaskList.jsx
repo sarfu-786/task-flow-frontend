@@ -4,9 +4,6 @@ import { useUserManagement } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
 import { ManagerTasksDrilldownModal } from '../ManagerDashboard/ManagerTasksDrilldownModal';
-import { TaskModal } from './TaskModal';
-import { DeleteConfirmModal } from './DeleteConfirmModal';
-import { TaskDetailModal } from './TaskDetailModal';
 import {
   Plus,
   CheckCircle2,
@@ -1194,15 +1191,6 @@ export const TaskList = () => {
         initialFilter={tasksFilterParam}
         modalTitle={tasksModalTitle}
       />
-
-      {/* Task Detail View Modal */}
-      <TaskDetailModal />
-
-      {/* Task Creation & Edit Modal */}
-      <TaskModal />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal />
     </div>
   );
 };

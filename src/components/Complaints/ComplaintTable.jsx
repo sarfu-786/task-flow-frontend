@@ -30,7 +30,6 @@ export const ComplaintTable = ({
   onResolve,
   onDelete,
   canDelete,
-  onCreate,
 }) => {
   const {
     complaints,
@@ -663,28 +662,6 @@ export const ComplaintTable = ({
                 <span>Reset Filters</span>
               </button>
             )}
-            <button
-              type="button"
-              className="btn-official-primary"
-              onClick={onCreate}
-              style={{
-                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.22)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '7px 15px',
-                borderRadius: '8px',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-              }}
-            >
-              <Sparkles size={15} />
-              <span>Log New Complaint Ticket</span>
-            </button>
           </div>
         </div>
       ) : (

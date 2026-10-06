@@ -160,8 +160,8 @@ export const LeadDetailModal = () => {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'nowrap' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span
                   style={{
@@ -172,11 +172,24 @@ export const LeadDetailModal = () => {
                     background: '#eff6ff',
                     color: '#2563eb',
                     border: '1px solid #bfdbfe',
+                    flexShrink: 0,
                   }}
                 >
                   {lead.leadId || 'LD-001'}
                 </span>
-                <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: '#1e293b' }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: '1.3rem',
+                    fontWeight: 800,
+                    color: '#1e293b',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '400px',
+                  }}
+                  title={lead.company || lead.name || lead.contactPerson}
+                >
                   {lead.company || lead.name || lead.contactPerson}
                 </h2>
                 <span
@@ -188,6 +201,7 @@ export const LeadDetailModal = () => {
                     background: badgeStyle.bg,
                     color: badgeStyle.color,
                     border: `1px solid ${badgeStyle.border}`,
+                    flexShrink: 0,
                   }}
                 >
                   {lead.status || 'New'}
@@ -206,6 +220,7 @@ export const LeadDetailModal = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
+                    flexShrink: 0,
                   }}
                   title={`Lead Score: ${score}/100 • Temperature: ${temp}`}
                 >
@@ -223,28 +238,59 @@ export const LeadDetailModal = () => {
                       background: lead.priority === 'Urgent' || lead.priority === 'High' ? '#fef2f2' : '#f1f5f9',
                       color: lead.priority === 'Urgent' || lead.priority === 'High' ? '#dc2626' : '#64748b',
                       border: lead.priority === 'Urgent' || lead.priority === 'High' ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                      flexShrink: 0,
                     }}
                   >
                     {lead.priority} Priority
                   </span>
                 )}
               </div>
-              <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontSize: '0.85rem',
+                  color: '#64748b',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 Contact: <strong style={{ color: '#334155' }}>{lead.contactPerson || lead.name}</strong>
                 {lead.mobileNumber || lead.phone ? ` • 📞 ${lead.mobileNumber || lead.phone}` : ''}
                 {lead.email ? ` • ✉️ ${lead.email}` : ''}
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
               <button
                 type="button"
-                className="btn-icon"
+                id="btn-close-lead-detail-modal"
                 onClick={closeLeadDetailModal}
                 aria-label="Close modal"
-                style={{ background: '#ffffff', border: '1px solid #cbd5e1' }}
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: '#f1f5f9',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fee2e2';
+                  e.currentTarget.style.color = '#dc2626';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#64748b';
+                }}
+                title="Close"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </div>
           </div>

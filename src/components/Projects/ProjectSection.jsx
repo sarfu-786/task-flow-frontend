@@ -4,9 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { MetricCard } from '../ManagerDashboard/MetricCard';
 import { ProjectTable } from './ProjectTable';
 import { ProjectDetailModal } from './ProjectDetailModal';
-import { ProjectModal } from './ProjectModal';
-import { MilestonesModal } from './MilestonesModal';
-import { DeleteProjectModal } from './DeleteProjectModal';
 import { ProjectMetricDetailDialog } from './ProjectMetricDetailDialog';
 import { ProjectGanttView } from './ProjectGanttView';
 import { ProjectKanbanBoard } from './ProjectKanbanBoard';
@@ -1025,7 +1022,7 @@ export const ProjectSection = () => {
             onMouseLeave={() => setHoveredCard(null)}
             style={{
               backgroundColor: '#ffffff',
-              border: `1.5px solid ${hoveredCard === 'directory' || viewMode === 'table' ? '#4f46e5' : '#e2e8f0'}`,
+              border: `1.5px solid ${hoveredCard === 'directory' ? '#4f46e5' : '#e2e8f0'}`,
               borderRadius: '16px',
               padding: '18px 20px',
               cursor: 'pointer',
@@ -1156,7 +1153,7 @@ export const ProjectSection = () => {
             onMouseLeave={() => setHoveredCard(null)}
             style={{
               backgroundColor: '#ffffff',
-              border: `1.5px solid ${hoveredCard === 'mis' || isReportsModalOpen ? '#0284c7' : '#e2e8f0'}`,
+              border: `1.5px solid ${hoveredCard === 'mis' ? '#0284c7' : '#e2e8f0'}`,
               borderRadius: '16px',
               padding: '18px 20px',
               cursor: 'pointer',
@@ -1291,10 +1288,6 @@ export const ProjectSection = () => {
           }
         }}
         canDelete={isSuperAdmin || isManager}
-        onCreateProject={() => {
-          if (openCreateModal) openCreateModal();
-          else setIsCreateModalOpen(true);
-        }}
       />
 
       {/* Project Detail Hub Modal */}
@@ -1323,41 +1316,6 @@ export const ProjectSection = () => {
             setIsDeleteModalOpen(true);
           }
         }}
-      />
-
-      {/* Project Create & Edit Modal */}
-      <ProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        projectToEdit={null}
-      />
-      <ProjectModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setProjectToEdit(null);
-        }}
-        projectToEdit={projectToEdit}
-      />
-
-      {/* Milestones Modal */}
-      <MilestonesModal
-        isOpen={isMilestonesModalOpen}
-        onClose={() => {
-          setIsMilestonesModalOpen(false);
-          setProjectForMilestones(null);
-        }}
-        project={projectForMilestones}
-      />
-
-      {/* Delete Project Modal */}
-      <DeleteProjectModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setProjectToDelete(null);
-        }}
-        project={projectToDelete}
       />
 
       {/* SEPARATE IMPORT MODAL */}

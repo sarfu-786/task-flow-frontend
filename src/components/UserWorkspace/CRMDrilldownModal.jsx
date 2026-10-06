@@ -18,11 +18,6 @@ import {
   ArrowUpRight,
   Plus,
 } from 'lucide-react';
-import { useLeads } from '../../context/LeadContext';
-import { useOpportunities } from '../../context/OpportunityContext';
-import { useComplaints } from '../../context/ComplaintContext';
-import { useProjects } from '../../context/ProjectContext';
-
 export const CRMDrilldownModal = ({
   isOpen,
   onClose,
@@ -31,11 +26,6 @@ export const CRMDrilldownModal = ({
   title = 'Module Overview',
   onItemClick,
 }) => {
-  const { openCreateModal: openCreateLeadModal } = useLeads();
-  const { openCreateModal: openCreateOpportunityModal } = useOpportunities();
-  const { openCreateModal: openCreateComplaintModal } = useComplaints();
-  const { openCreateModal: openCreateProjectModal } = useProjects();
-
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -310,112 +300,6 @@ export const CRMDrilldownModal = ({
                 </>
               )}
             </select>
-
-            {type === 'leads' && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  onClose();
-                  openCreateLeadModal();
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <Plus size={14} />
-                <span>Add Lead</span>
-              </button>
-            )}
-
-            {type === 'opportunities' && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  onClose();
-                  openCreateOpportunityModal();
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  background: 'linear-gradient(135deg, #059669, #10b981)',
-                  borderColor: '#059669',
-                }}
-              >
-                <Plus size={14} />
-                <span>Add Deal</span>
-              </button>
-            )}
-
-            {type === 'complaints' && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  onClose();
-                  openCreateComplaintModal();
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  background: 'linear-gradient(135deg, #dc2626, #ef4444)',
-                  borderColor: '#dc2626',
-                }}
-              >
-                <Plus size={14} />
-                <span>Add Complaint</span>
-              </button>
-            )}
-
-            {type === 'projects' && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  onClose();
-                  openCreateProjectModal();
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '0.825rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  background: 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
-                  borderColor: '#7c3aed',
-                }}
-              >
-                <Plus size={14} />
-                <span>Add Project</span>
-              </button>
-            )}
           </div>
         </div>
 

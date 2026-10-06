@@ -19,12 +19,35 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
-  const { createProject, updateProject, templates } = useProjects();
+export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, projectToEdit: propProjectToEdit }) => {
+  const {
+    createProject,
+    updateProject,
+    templates,
+    isCreateModalOpen,
+    setIsCreateModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    projectToEdit: ctxProjectToEdit,
+    setProjectToEdit,
+  } = useProjects();
   const { users, assignableUsers, fetchAssignableUsers } = useUserManagement ? useUserManagement() : { users: [], assignableUsers: [] };
   const { user: currentUser } = useAuth();
 
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isCreateModalOpen || isEditModalOpen);
+  const projectToEdit = propProjectToEdit !== undefined ? propProjectToEdit : (isEditModalOpen ? ctxProjectToEdit : null);
   const isEdit = !!projectToEdit;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsCreateModalOpen) setIsCreateModalOpen(false);
+      if (setIsEditModalOpen) setIsEditModalOpen(false);
+      if (setProjectToEdit) setProjectToEdit(null);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('basic'); // 'basic' | 'timeline' | 'financial' | 'team' | 'template'
 
   // Fetch all assignable organization members when modal opens
@@ -336,13 +359,15 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
       } else {
         await createProject(payload);
       }
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to save project.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -416,17 +441,33 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
+            id="btn-close-project-modal"
             style={{
-              padding: '6px',
-              backgroundColor: 'transparent',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
               border: 'none',
-              borderRadius: '8px',
-              color: '#94a3b8',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            title="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -1286,7 +1327,7 @@ export const ProjectModal = ({ isOpen, onClose, projectToEdit }) => {
           >
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               style={{
                 height: '40px',
                 padding: '0 18px',

@@ -8,7 +8,6 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Sparkles,
-  Plus,
 } from 'lucide-react';
 import { useComplaints } from '../../context/ComplaintContext';
 
@@ -20,7 +19,6 @@ export const ComplaintDirectoryModal = ({
   onResolve,
   onDelete,
   canDelete,
-  onCreate,
 }) => {
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'kanban' | 'cards'
   const { fetchComplaints, loading, totalItems, stats } = useComplaints();
@@ -242,40 +240,6 @@ export const ComplaintDirectoryModal = ({
 
 
 
-            {/* Primary Action: Log Complaint */}
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                if (onCreate) onCreate();
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '7px 15px',
-                borderRadius: '10px',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 3px 10px rgba(37, 99, 235, 0.2)',
-                transition: 'all 0.18s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-              }}
-              id="btn-log-complaint-dir"
-            >
-              <Plus size={15} />
-              <span>Log Complaint</span>
-            </button>
-
             {/* Separator */}
             <div style={{ width: '1px', height: '22px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
 
@@ -334,7 +298,6 @@ export const ComplaintDirectoryModal = ({
               onResolve={onResolve}
               onDelete={onDelete}
               canDelete={canDelete}
-              onCreate={onCreate}
             />
           )}
 
@@ -345,7 +308,6 @@ export const ComplaintDirectoryModal = ({
               onResolve={onResolve}
               onDelete={onDelete}
               canDelete={canDelete}
-              onCreate={onCreate}
             />
           )}
 
@@ -356,7 +318,6 @@ export const ComplaintDirectoryModal = ({
               onResolve={onResolve}
               onDelete={onDelete}
               canDelete={canDelete}
-              onCreate={onCreate}
             />
           )}
         </div>

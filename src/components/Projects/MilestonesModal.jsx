@@ -8,8 +8,26 @@ import {
   Check,
 } from 'lucide-react';
 
-export const MilestonesModal = ({ isOpen, onClose, project }) => {
-  const { toggleMilestone } = useProjects();
+export const MilestonesModal = ({ isOpen: propIsOpen, onClose: propOnClose, project: propProject }) => {
+  const {
+    toggleMilestone,
+    isMilestonesModalOpen,
+    setIsMilestonesModalOpen,
+    projectForMilestones,
+    setProjectForMilestones,
+  } = useProjects();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isMilestonesModalOpen;
+  const project = propProject !== undefined ? propProject : projectForMilestones;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsMilestonesModalOpen) setIsMilestonesModalOpen(false);
+      if (setProjectForMilestones) setProjectForMilestones(null);
+    }
+  };
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -51,7 +69,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
         padding: '16px',
         animation: 'fadeIn 0.2s ease',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         style={{
@@ -111,7 +129,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               width: '32px',
               height: '32px',
@@ -282,7 +300,7 @@ export const MilestonesModal = ({ isOpen, onClose, project }) => {
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               padding: '9px 24px',
               borderRadius: '10px',

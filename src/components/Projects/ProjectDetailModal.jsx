@@ -196,14 +196,14 @@ export const ProjectDetailModal = ({
             borderBottom: '1.5px solid #e2e8f0',
             backgroundColor: '#f8fafc',
             display: 'flex',
-            flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '16px',
             flexShrink: 0,
+            flexWrap: 'nowrap',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: 1 }}>
             <div
               style={{
                 width: '46px',
@@ -220,7 +220,7 @@ export const ProjectDetailModal = ({
             >
               <FolderKanban size={24} />
             </div>
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span
                   style={{
@@ -232,11 +232,24 @@ export const ProjectDetailModal = ({
                     backgroundColor: '#eff6ff',
                     color: '#2563eb',
                     border: '1px solid #bfdbfe',
+                    flexShrink: 0,
                   }}
                 >
                   {currentProj.projectId || currentProj.projectCode || 'PRJ'}
                 </span>
-                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    color: '#0f172a',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '420px',
+                  }}
+                  title={currentProj.name || currentProj.title}
+                >
                   {currentProj.name || currentProj.title}
                 </h2>
                 <span
@@ -248,6 +261,7 @@ export const ProjectDetailModal = ({
                     backgroundColor: statusStyle.bg,
                     color: statusStyle.color,
                     border: `1px solid ${statusStyle.border}`,
+                    flexShrink: 0,
                   }}
                 >
                   {currentProj.status || 'Draft'}
@@ -261,12 +275,25 @@ export const ProjectDetailModal = ({
                     backgroundColor: priorityStyle.bg,
                     color: priorityStyle.color,
                     border: `1px solid ${priorityStyle.border}`,
+                    flexShrink: 0,
                   }}
                 >
                   {currentProj.priority || 'Medium'}
                 </span>
               </div>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <p
+                style={{
+                  margin: '4px 0 0 0',
+                  fontSize: '12px',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 <span>Client: <strong style={{ color: '#1e293b' }}>{currentProj.client || currentProj.clientName || 'Internal'}</strong></span>
                 <span>•</span>
                 <span>Manager: <strong style={{ color: '#1e293b' }}>{currentProj.managerName || currentProj.projectManager || (typeof currentProj.manager === 'object' ? currentProj.manager?.name : '') || 'Unassigned'}</strong></span>
@@ -276,7 +303,7 @@ export const ProjectDetailModal = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Quick Status Selector */}
             <div style={{ position: 'relative' }}>
               <select
@@ -311,6 +338,7 @@ export const ProjectDetailModal = ({
 
             {onEdit && (
               <button
+                type="button"
                 onClick={() => {
                   onClose();
                   onEdit(currentProj);
@@ -326,6 +354,15 @@ export const ProjectDetailModal = ({
                   border: '1.5px solid #cbd5e1',
                   borderRadius: '10px',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.borderColor = '#94a3b8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
                 }}
                 title="Edit Project"
               >
@@ -335,6 +372,7 @@ export const ProjectDetailModal = ({
 
             {onDelete && (isSuperAdmin || isManager) && (
               <button
+                type="button"
                 onClick={() => {
                   if (window.confirm(`Are you sure you want to delete project ${currentProj.name}?`)) {
                     onDelete(currentProj);
@@ -352,6 +390,15 @@ export const ProjectDetailModal = ({
                   border: '1.5px solid #fecaca',
                   borderRadius: '10px',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fef2f2';
+                  e.currentTarget.style.borderColor = '#f87171';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#fecaca';
                 }}
                 title="Delete Project"
               >
@@ -360,21 +407,34 @@ export const ProjectDetailModal = ({
             )}
 
             <button
+              type="button"
               onClick={onClose}
+              id="btn-close-project-detail-modal"
               style={{
-                width: '38px',
-                height: '38px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: '#f1f5f9',
+                color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'transparent',
-                color: '#94a3b8',
-                border: 'none',
-                borderRadius: '10px',
                 cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fee2e2';
+                e.currentTarget.style.color = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                e.currentTarget.style.color = '#64748b';
+              }}
+              title="Close"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>

@@ -417,10 +417,20 @@ export const ProjectProvider = ({ children }) => {
     setIsCreateModalOpen(true);
   };
 
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setProjectToEdit(null);
+  };
+
   const openEditModal = (p) => {
     setProjectToEdit(p);
     setSelectedProject(p);
     setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setProjectToEdit(null);
   };
 
   const openMilestonesModal = (p) => {
@@ -429,16 +439,31 @@ export const ProjectProvider = ({ children }) => {
     setIsMilestonesModalOpen(true);
   };
 
+  const closeMilestonesModal = () => {
+    setIsMilestonesModalOpen(false);
+    setProjectForMilestones(null);
+  };
+
   const openDeleteModal = (p) => {
     setProjectToDelete(p);
     setSelectedProject(p);
     setIsDeleteModalOpen(true);
   };
 
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setProjectToDelete(null);
+  };
+
   const openDetailModal = (p) => {
     setProjectForDetail(p);
     setSelectedProject(p);
     setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setProjectForDetail(null);
   };
 
   const openTaskModal = (p) => {
@@ -527,10 +552,15 @@ export const ProjectProvider = ({ children }) => {
         targetProjectForSubEntity,
         setTargetProjectForSubEntity,
         openCreateModal,
+        closeCreateModal,
         openEditModal,
+        closeEditModal,
         openMilestonesModal,
+        closeMilestonesModal,
         openDeleteModal,
+        closeDeleteModal,
         openDetailModal,
+        closeDetailModal,
         openTaskModal,
         openIssueModal,
         openRiskModal,

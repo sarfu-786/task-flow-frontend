@@ -31,7 +31,6 @@ export const ProjectMetricDetailDialog = ({
   onOpenMilestones,
   onDeleteProject,
   canDelete = false,
-  onCreateProject,
 }) => {
   const { projects: contextProjects, stats } = useProjects();
 
@@ -266,7 +265,7 @@ export const ProjectMetricDetailDialog = ({
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: 1 }}>
             <div
               style={{
                 width: '46px',
@@ -311,52 +310,36 @@ export const ProjectMetricDetailDialog = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onCreateProject();
-              }}
-              className="btn btn-primary btn-curvy-action"
-              style={{
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '7px 16px',
-                fontSize: '0.82rem',
-                borderRadius: '999px',
-                border: 'none',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              <Plus size={15} />
-              <span>Create Project</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <X size={16} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            id="btn-close-metric-detail-dialog"
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            title="Close"
+          >
+            <X size={17} />
+          </button>
         </div>
 
         {/* Toolbar: Search & Category Filter */}

@@ -35,6 +35,7 @@ class SocketService {
   connect(user) {
     this.currentUser = user;
     const serverUrl = getSocketServerUrl();
+    const token = (typeof window !== 'undefined' ? localStorage.getItem('token') : '') || (user && user.token) || '';
 
     if (this.socket && this.socket.connected) {
       this.joinRooms(user);
@@ -42,11 +43,16 @@ class SocketService {
     }
 
     if (this.socket) {
+      if (token) {
+        this.socket.auth = { token };
+      }
       this.socket.connect();
       return this.socket;
     }
 
     this.socket = io(serverUrl, {
+      auth: { token },
+      query: token ? { token } : {},
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,

@@ -54,7 +54,6 @@ export const EnhancedLeadTable = () => {
     followUpStatusFilter,
     setFollowUpStatusFilter,
     clearAllFilters,
-    openCreateModal,
     openEditModal,
     openLeadDetailModal,
     openAddCallModal,

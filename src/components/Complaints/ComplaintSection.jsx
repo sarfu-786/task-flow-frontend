@@ -4,10 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ComplaintMetricDetailDialog } from './ComplaintMetricDetailDialog';
 import { ComplaintDirectoryModal } from './ComplaintDirectoryModal';
 import { ComplaintMISModal } from './ComplaintMISModal';
-import { ComplaintModal } from './ComplaintModal';
 import { ComplaintDetailModal } from './ComplaintDetailModal';
-import { ResolveComplaintModal } from './ResolveComplaintModal';
-import { DeleteComplaintModal } from './DeleteComplaintModal';
 import {
   AlertCircle,
   Plus,
@@ -26,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const ComplaintSection = () => {
-  const { stats, allComplaints } = useComplaints();
+  const { stats, allComplaints, openCreateModal, openEditModal, openResolveModal, openDeleteModal } = useComplaints();
   const { isSuperAdmin, user } = useAuth();
   const isManager = user && ['Manager', 'Executive', 'Administrator'].includes(user.role);
 
@@ -37,11 +34,7 @@ export const ComplaintSection = () => {
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
   const [isMISModalOpen, setIsMISModalOpen] = useState(false);
 
-  // Modals for CRUD and detailed operations
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [complaintToEdit, setComplaintToEdit] = useState(null);
-  const [complaintToResolve, setComplaintToResolve] = useState(null);
-  const [complaintToDelete, setComplaintToDelete] = useState(null);
+  // Modal for detailed view
   const [complaintToView, setComplaintToView] = useState(null);
 
   // Hover states for interactive cards
@@ -167,7 +160,7 @@ export const ComplaintSection = () => {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setIsCreateOpen(true)}
+            onClick={openCreateModal}
             id="btn-log-complaint-top"
             style={{
               display: 'inline-flex',
@@ -186,7 +179,7 @@ export const ComplaintSection = () => {
             }}
           >
             <Plus size={18} />
-            <span>Log Complaint</span>
+            <span>Create Complaint</span>
           </button>
         </div>
       </div>
@@ -903,21 +896,17 @@ export const ComplaintSection = () => {
         }}
         onEditTicket={(ticket) => {
           setActiveMetricDialog(null);
-          setComplaintToEdit(ticket);
+          openEditModal(ticket);
         }}
         onResolveTicket={(ticket) => {
           setActiveMetricDialog(null);
-          setComplaintToResolve(ticket);
+          openResolveModal(ticket);
         }}
         onDeleteTicket={(ticket) => {
           setActiveMetricDialog(null);
-          setComplaintToDelete(ticket);
+          openDeleteModal(ticket);
         }}
         canDelete={isSuperAdmin}
-        onCreateTicket={() => {
-          setActiveMetricDialog(null);
-          setIsCreateOpen(true);
-        }}
       />
 
       {/* Pop-up Dialog 2: Complaint Directory Modal (Table, Kanban, Cards) */}
@@ -928,18 +917,15 @@ export const ComplaintSection = () => {
           setComplaintToView(ticket);
         }}
         onEdit={(ticket) => {
-          setComplaintToEdit(ticket);
+          openEditModal(ticket);
         }}
         onResolve={(ticket) => {
-          setComplaintToResolve(ticket);
+          openResolveModal(ticket);
         }}
         onDelete={(ticket) => {
-          setComplaintToDelete(ticket);
+          openDeleteModal(ticket);
         }}
         canDelete={isSuperAdmin}
-        onCreate={() => {
-          setIsCreateOpen(true);
-        }}
       />
 
       {/* Pop-up Dialog 3: MIS Reports & Analytics Modal (All 20 Reports) */}
@@ -948,42 +934,22 @@ export const ComplaintSection = () => {
         onClose={() => setIsMISModalOpen(false)}
       />
 
-      {/* CRUD & View Popups */}
-      <ComplaintModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        complaintToEdit={null}
-      />
-      <ComplaintModal
-        isOpen={!!complaintToEdit}
-        onClose={() => setComplaintToEdit(null)}
-        complaintToEdit={complaintToEdit}
-      />
-      <ResolveComplaintModal
-        isOpen={!!complaintToResolve}
-        onClose={() => setComplaintToResolve(null)}
-        complaint={complaintToResolve}
-      />
-      <DeleteComplaintModal
-        isOpen={!!complaintToDelete}
-        onClose={() => setComplaintToDelete(null)}
-        complaint={complaintToDelete}
-      />
+      {/* Detailed 360 View Popup */}
       <ComplaintDetailModal
         isOpen={!!complaintToView}
         onClose={() => setComplaintToView(null)}
         complaint={complaintToView}
         onEdit={(t) => {
           setComplaintToView(null);
-          setComplaintToEdit(t);
+          openEditModal(t);
         }}
         onResolve={(t) => {
           setComplaintToView(null);
-          setComplaintToResolve(t);
+          openResolveModal(t);
         }}
         onDelete={(t) => {
           setComplaintToView(null);
-          setComplaintToDelete(t);
+          openDeleteModal(t);
         }}
       />
     </div>

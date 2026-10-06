@@ -127,14 +127,35 @@ const SOURCES = [
   'Executive Escalation',
 ];
 
-export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
-  const { createComplaint, updateComplaint } = useComplaints();
+export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, complaintToEdit: propComplaintToEdit }) => {
+  const {
+    createComplaint,
+    updateComplaint,
+    isCreateModalOpen,
+    setIsCreateModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    selectedComplaint,
+    setSelectedComplaint,
+  } = useComplaints();
   const { users } = useUserManagement ? useUserManagement() : { users: [] };
   const { user: currentUser, isSuperAdmin, isManager } = useAuth();
   const { opportunities } = useOpportunities ? useOpportunities() : { opportunities: [] };
   const { projects } = useProjects ? useProjects() : { projects: [] };
 
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isCreateModalOpen || isEditModalOpen);
+  const complaintToEdit = propComplaintToEdit !== undefined ? propComplaintToEdit : (isEditModalOpen ? selectedComplaint : null);
   const isEdit = !!complaintToEdit;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsCreateModalOpen) setIsCreateModalOpen(false);
+      if (setIsEditModalOpen) setIsEditModalOpen(false);
+      if (setSelectedComplaint) setSelectedComplaint(null);
+    }
+  };
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -294,7 +315,7 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
       } else {
         await createComplaint(formData);
       }
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || 'Failed to save complaint');
     } finally {
@@ -305,7 +326,7 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
   return (
     <div
       className="modal-overlay"
-      onClick={onClose}
+      onClick={handleClose}
       style={{
         position: 'fixed',
         top: 0,
@@ -379,7 +400,7 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               background: '#f1f5f9',
               border: 'none',
@@ -904,7 +925,7 @@ export const ComplaintModal = ({ isOpen, onClose, complaintToEdit }) => {
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               padding: '9px 18px',
               borderRadius: '999px',

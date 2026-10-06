@@ -10,8 +10,26 @@ import {
   Send,
 } from 'lucide-react';
 
-export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
-  const { resolveComplaint } = useComplaints();
+export const ResolveComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, complaint: propComplaint }) => {
+  const {
+    resolveComplaint,
+    isResolveModalOpen,
+    setIsResolveModalOpen,
+    selectedComplaint,
+    setSelectedComplaint,
+  } = useComplaints();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isResolveModalOpen;
+  const complaint = propComplaint !== undefined ? propComplaint : selectedComplaint;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsResolveModalOpen) setIsResolveModalOpen(false);
+      if (setSelectedComplaint) setSelectedComplaint(null);
+    }
+  };
 
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [rootCause, setRootCause] = useState('');
@@ -51,7 +69,7 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
         rootCause,
         csatRating: Number(csatRating),
       });
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || 'Failed to mark ticket as resolved');
     } finally {
@@ -77,7 +95,7 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
         padding: '16px',
         animation: 'fadeIn 0.2s ease',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         style={{
@@ -137,7 +155,7 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               width: '32px',
               height: '32px',
@@ -346,7 +364,7 @@ export const ResolveComplaintModal = ({ isOpen, onClose, complaint }) => {
           >
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={submitting}
               style={{
                 padding: '9px 18px',

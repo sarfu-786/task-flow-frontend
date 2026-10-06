@@ -63,6 +63,45 @@ export const ComplaintProvider = ({ children }) => {
   const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
 
+  const openCreateModal = useCallback(() => {
+    setSelectedComplaint(null);
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const closeCreateModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+  }, []);
+
+  const openEditModal = useCallback((c) => {
+    setSelectedComplaint(c);
+    setIsEditModalOpen(true);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setSelectedComplaint(null);
+    setIsEditModalOpen(false);
+  }, []);
+
+  const openResolveModal = useCallback((c) => {
+    setSelectedComplaint(c);
+    setIsResolveModalOpen(true);
+  }, []);
+
+  const closeResolveModal = useCallback(() => {
+    setSelectedComplaint(null);
+    setIsResolveModalOpen(false);
+  }, []);
+
+  const openDeleteModal = useCallback((c) => {
+    setSelectedComplaint(c);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    setSelectedComplaint(null);
+    setIsDeleteModalOpen(false);
+  }, []);
+
   const fetchComplaints = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -489,6 +528,14 @@ export const ComplaintProvider = ({ children }) => {
         setIsReopenModalOpen,
         selectedComplaint,
         setSelectedComplaint,
+        openCreateModal,
+        closeCreateModal,
+        openEditModal,
+        closeEditModal,
+        openResolveModal,
+        closeResolveModal,
+        openDeleteModal,
+        closeDeleteModal,
         fetchComplaints,
         createComplaint,
         updateComplaint,

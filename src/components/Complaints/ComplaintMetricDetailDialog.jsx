@@ -9,7 +9,6 @@ import {
   Eye,
   Edit2,
   Trash2,
-  Plus,
   Search,
   Check,
   Copy,
@@ -32,7 +31,6 @@ export const ComplaintMetricDetailDialog = ({
   onResolveTicket,
   onDeleteTicket,
   canDelete = false,
-  onCreateTicket,
 }) => {
   const { allComplaints, fetchComplaints } = useComplaints();
 
@@ -992,33 +990,6 @@ export const ComplaintMetricDetailDialog = ({
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            {onCreateTicket && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onCreateTicket();
-                }}
-                style={{
-                  padding: '9px 18px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  backgroundColor: config.primaryColor,
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.86rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: `0 4px 12px ${config.primaryColor}30`,
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Plus size={16} />
-                <span>Log Complaint</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={onClose}

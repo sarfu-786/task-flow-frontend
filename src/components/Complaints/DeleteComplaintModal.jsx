@@ -2,8 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
 import { Trash2, AlertTriangle, X } from 'lucide-react';
 
-export const DeleteComplaintModal = ({ isOpen, onClose, complaint }) => {
-  const { deleteComplaint } = useComplaints();
+export const DeleteComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, complaint: propComplaint }) => {
+  const {
+    deleteComplaint,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    selectedComplaint,
+    setSelectedComplaint,
+  } = useComplaints();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isDeleteModalOpen;
+  const complaint = propComplaint !== undefined ? propComplaint : selectedComplaint;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsDeleteModalOpen) setIsDeleteModalOpen(false);
+      if (setSelectedComplaint) setSelectedComplaint(null);
+    }
+  };
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,7 +48,7 @@ export const DeleteComplaintModal = ({ isOpen, onClose, complaint }) => {
       setSubmitting(true);
       setError('');
       await deleteComplaint(complaint._id);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || 'Failed to delete complaint');
     } finally {
@@ -55,7 +74,7 @@ export const DeleteComplaintModal = ({ isOpen, onClose, complaint }) => {
         padding: '16px',
         animation: 'fadeIn 0.2s ease',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         style={{
@@ -114,7 +133,7 @@ export const DeleteComplaintModal = ({ isOpen, onClose, complaint }) => {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               width: '32px',
               height: '32px',
@@ -237,7 +256,7 @@ export const DeleteComplaintModal = ({ isOpen, onClose, complaint }) => {
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={submitting}
             style={{
               padding: '9px 18px',

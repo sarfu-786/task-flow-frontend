@@ -17,7 +17,6 @@ import {
 export const LeadDirectoryModal = ({ isOpen, onClose }) => {
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'kanban'
   const {
-    openCreateModal,
     isImportModalOpen,
     openImportModal,
     closeImportModal,
@@ -149,44 +148,9 @@ export const LeadDirectoryModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Right Action Area: + Add Lead | Import Leads | Export | View Mode | Close */}
+          {/* Right Action Area: Import Leads | Export | View Mode | Close */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* 1. Primary Action: + Add Lead */}
-            <button
-              type="button"
-              onClick={openCreateModal}
-              id="btn-lead-dir-add-lead"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '7px 13px',
-                borderRadius: '8px',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)',
-                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-                e.currentTarget.style.boxShadow = '0 4px 10px rgba(37, 99, 235, 0.3)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-                e.currentTarget.style.boxShadow = '0 2px 6px rgba(37, 99, 235, 0.2)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <Plus size={14} />
-              <span>Add Lead</span>
-            </button>
-
-            {/* 2. Compact Action: Import Leads */}
+            {/* 1. Compact Action: Import Leads */}
             <button
               type="button"
               onClick={openImportModal}

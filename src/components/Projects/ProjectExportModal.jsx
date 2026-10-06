@@ -143,16 +143,32 @@ export const ProjectExportModal = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
+            id="btn-close-project-export-modal"
             style={{
-              padding: '6px',
-              backgroundColor: 'transparent',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
               border: 'none',
-              borderRadius: '8px',
-              color: '#94a3b8',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            title="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 

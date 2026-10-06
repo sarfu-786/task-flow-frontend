@@ -2,10 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useProjects } from '../../context/ProjectContext';
 import { Trash2, AlertTriangle, X } from 'lucide-react';
 
-export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
-  const { deleteProject } = useProjects();
+export const DeleteProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project: propProject }) => {
+  const {
+    deleteProject,
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    projectToDelete,
+    setProjectToDelete,
+  } = useProjects();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isDeleteModalOpen;
+  const project = propProject !== undefined ? propProject : projectToDelete;
+
+  const handleClose = () => {
+    if (propOnClose) {
+      propOnClose();
+    } else {
+      if (setIsDeleteModalOpen) setIsDeleteModalOpen(false);
+      if (setProjectToDelete) setProjectToDelete(null);
+    }
+  };
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -29,7 +47,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
       setSubmitting(true);
       setError('');
       await deleteProject(project._id);
-      onClose();
+      handleClose();
     } catch (err) {
       setError(err.message || 'Failed to delete project');
     } finally {
@@ -55,7 +73,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
         padding: '16px',
         animation: 'fadeIn 0.2s ease',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         style={{
@@ -114,7 +132,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               width: '32px',
               height: '32px',
@@ -237,7 +255,7 @@ export const DeleteProjectModal = ({ isOpen, onClose, project }) => {
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={submitting}
             style={{
               padding: '9px 18px',
