@@ -21,6 +21,9 @@ import {
   Tag,
   Shield,
   Layers,
+  Flame,
+  Sun,
+  Snowflake,
 } from 'lucide-react';
 
 export const EnhancedLeadTable = () => {
@@ -46,6 +49,10 @@ export const EnhancedLeadTable = () => {
     setConversionStatusFilter,
     followUpDateFilter,
     setFollowUpDateFilter,
+    temperatureFilter,
+    setTemperatureFilter,
+    followUpStatusFilter,
+    setFollowUpStatusFilter,
     clearAllFilters,
     openCreateModal,
     openEditModal,
@@ -93,10 +100,55 @@ export const EnhancedLeadTable = () => {
     }
   };
 
+  const getTemperatureBadge = (temp, score = 0) => {
+    const t = temp || (score >= 70 ? 'Hot' : score >= 40 ? 'Warm' : 'Cold');
+    switch (t) {
+      case 'Hot':
+        return { bg: '#fef2f2', color: '#ea580c', border: '#fecaca', icon: '🔥', label: 'Hot' };
+      case 'Warm':
+        return { bg: '#fffbeb', color: '#d97706', border: '#fde68a', icon: '☀️', label: 'Warm' };
+      case 'Cold':
+      default:
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', icon: '❄️', label: 'Cold' };
+    }
+  };
+
+  const getFollowUpStateBadge = (lead) => {
+    const status = lead.followUpStatus || 'None';
+    const nextDate = lead.nextFollowUpDate || lead.next_followup_at;
+    if (!nextDate && status === 'None') return null;
+
+    switch (status) {
+      case 'Overdue':
+        return {
+          bg: '#fef2f2',
+          color: '#dc2626',
+          border: '#fecaca',
+          label: lead.followUpOverdueDays ? `Overdue (${lead.followUpOverdueDays}d)` : 'Overdue',
+        };
+      case 'Due Today':
+        return { bg: '#fffbeb', color: '#d97706', border: '#fde68a', label: 'Due Today' };
+      case 'Upcoming':
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', label: 'Upcoming' };
+      case 'Completed':
+        return { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', label: 'Completed' };
+      default:
+        return null;
+    }
+  };
+
   const formatCurrency = (val) => {
     if (!val && val !== 0) return '₹0';
-    return `₹${Number(val).toLocaleString()}`;
+    return `₹${Number(val).toLocaleString('en-IN')}`;
   };
+
+  const isAnyFilterActive =
+    search ||
+    statusFilter !== 'all' ||
+    priorityFilter !== 'all' ||
+    sourceFilter !== 'all' ||
+    temperatureFilter !== 'all' ||
+    followUpStatusFilter !== 'all';
 
   return (
     <div
@@ -110,6 +162,163 @@ export const EnhancedLeadTable = () => {
         flexDirection: 'column',
       }}
     >
+      {/* Interactive Quick Filter Toolbar */}
+      <div
+        style={{
+          padding: '14px 18px',
+          borderBottom: '1px solid #e2e8f0',
+          background: '#f8fafc',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+        }}
+      >
+        {/* Left: Search Box */}
+        <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 240px' }}>
+          <Search
+            size={14}
+            color="#94a3b8"
+            style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+          />
+          <input
+            type="text"
+            placeholder="Search leads by name, company, email, phone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '6px 10px 6px 30px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.8rem',
+              backgroundColor: '#ffffff',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Right: Quick Filter Dropdowns */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* 1. Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.78rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Follow-Up">Follow-Up</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Interested">Interested</option>
+            <option value="Converted">Converted</option>
+            <option value="Not Interested">Not Interested</option>
+            <option value="Invalid">Invalid</option>
+          </select>
+
+          {/* 2. Temperature Filter */}
+          <select
+            value={temperatureFilter}
+            onChange={(e) => setTemperatureFilter(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.78rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All Temperatures</option>
+            <option value="Hot">🔥 Hot Leads (Score ≥ 70)</option>
+            <option value="Warm">☀️ Warm Leads (Score 40-69)</option>
+            <option value="Cold">❄️ Cold Leads (Score &lt; 40)</option>
+          </select>
+
+          {/* 3. Follow-Up Status Filter */}
+          <select
+            value={followUpStatusFilter}
+            onChange={(e) => setFollowUpStatusFilter(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.78rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All Follow-Up States</option>
+            <option value="Overdue">🔴 Overdue</option>
+            <option value="Due Today">🟡 Due Today</option>
+            <option value="Upcoming">🔵 Upcoming</option>
+            <option value="Completed">🟢 Completed</option>
+          </select>
+
+          {/* 4. Priority Filter */}
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              fontSize: '0.78rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="all">All Priorities</option>
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+
+          {/* Reset Filters */}
+          {isAnyFilterActive && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              title="Reset all search queries and filters"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                backgroundColor: '#ffffff',
+                color: '#64748b',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <RotateCcw size={12} />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Main Responsive Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
@@ -119,6 +328,7 @@ export const EnhancedLeadTable = () => {
               <th style={{ padding: '12px 14px' }}>COMPANY</th>
               <th style={{ padding: '12px 14px' }}>CONTACT</th>
               <th style={{ padding: '12px 14px' }}>STATUS</th>
+              <th style={{ padding: '12px 14px' }}>SCORE / TEMP</th>
               <th style={{ padding: '12px 14px' }}>ASSIGNED TO</th>
               <th style={{ padding: '12px 14px' }}>LAST CONTACT</th>
               <th style={{ padding: '12px 14px' }}>NEXT FOLLOW-UP</th>
@@ -129,7 +339,7 @@ export const EnhancedLeadTable = () => {
           <tbody>
             {paginatedLeads.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan="10" style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
                   <AlertCircle size={28} color="#cbd5e1" style={{ marginBottom: '6px' }} />
                   <div style={{ fontWeight: 700, color: '#475569' }}>No leads matching your current criteria.</div>
                   <button
@@ -146,6 +356,9 @@ export const EnhancedLeadTable = () => {
               paginatedLeads.map((lead) => {
                 const statusBadge = getStatusBadge(lead.status);
                 const priorityBadge = getPriorityBadge(lead.priority);
+                const score = lead.leadScore !== undefined ? lead.leadScore : 50;
+                const tempBadge = getTemperatureBadge(lead.leadTemperature, score);
+                const followUpBadge = getFollowUpStateBadge(lead);
                 const isConverted = lead.status === 'Converted' || !!lead.opportunityId || !!lead.convertedOpportunityId;
                 const canConvert = !isConverted && (lead.status === 'Qualified' || lead.status === 'Interested');
                 const canQualify = !isConverted && lead.status !== 'Qualified' && lead.status !== 'Lost' && lead.status !== 'Invalid';
@@ -232,7 +445,40 @@ export const EnhancedLeadTable = () => {
                       </div>
                     </td>
 
-                    {/* 5. Assigned To */}
+                    {/* 5. Lead Score & Temperature */}
+                    <td style={{ padding: '12px 14px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            padding: '2px 7px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: tempBadge.bg,
+                            color: tempBadge.color,
+                            border: `1px solid ${tempBadge.border}`,
+                          }}
+                          title={`Lead Temperature: ${tempBadge.label} (Score: ${score}/100)`}
+                        >
+                          <span>{tempBadge.icon}</span>
+                          <span>{tempBadge.label}</span>
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.76rem',
+                            fontWeight: 800,
+                            color: '#1e293b',
+                          }}
+                        >
+                          {score}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* 6. Assigned To */}
                     <td style={{ padding: '12px 14px' }}>
                       <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '0.82rem' }}>
                         {lead.assignedSalesUser || lead.assignedTo || 'Unassigned'}
@@ -244,7 +490,7 @@ export const EnhancedLeadTable = () => {
                       )}
                     </td>
 
-                    {/* 6. Last Contact */}
+                    {/* 7. Last Contact */}
                     <td style={{ padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.78rem', color: lead.lastContactDate ? '#334155' : '#94a3b8' }}>
                         {lead.lastContactDate || lead.last_contacted_at
@@ -277,32 +523,49 @@ export const EnhancedLeadTable = () => {
                       )}
                     </td>
 
-                    {/* 7. Next Follow-Up */}
+                    {/* 8. Next Follow-Up (With Follow-Up State Badge) */}
                     <td style={{ padding: '12px 14px' }}>
                       {lead.nextFollowUpDate || lead.next_followup_at ? (
                         <div>
                           <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#b45309' }}>
                             {new Date(lead.nextFollowUpDate || lead.next_followup_at).toLocaleDateString('en-GB')}
                           </div>
-                          {lead.nextFollowUpTime && (
-                            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                              {lead.nextFollowUpTime}
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            {followUpBadge && (
+                              <span
+                                style={{
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  background: followUpBadge.bg,
+                                  color: followUpBadge.color,
+                                  border: `1px solid ${followUpBadge.border}`,
+                                }}
+                              >
+                                {followUpBadge.label}
+                              </span>
+                            )}
+                            {lead.nextFollowUpTime && (
+                              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                                {lead.nextFollowUpTime}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>No follow-up</span>
                       )}
                     </td>
 
-                    {/* 8. Value */}
+                    {/* 9. Value */}
                     <td style={{ padding: '12px 14px' }}>
                       <div style={{ fontWeight: 800, color: '#059669', fontSize: '0.86rem' }}>
                         {formatCurrency(lead.estimatedValue || lead.dealValue || lead.pipeline_value)}
                       </div>
                     </td>
 
-                    {/* 9. Action: View | Edit | Add Call | Follow-Up | Convert | Delete (Icon-only Signs) */}
+                    {/* 10. Action: View | Edit | Add Call | Follow-Up | Convert | Delete (Icon-only Signs) */}
                     <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', flexWrap: 'nowrap' }}>
                         {/* 1. View Sign */}
@@ -583,3 +846,4 @@ export const EnhancedLeadTable = () => {
 };
 
 export default EnhancedLeadTable;
+

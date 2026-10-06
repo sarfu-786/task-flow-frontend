@@ -219,9 +219,13 @@ export const MISReportsDashboard = () => {
                   Total Cycle Velocity
                 </div>
                 <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1e3a8a', marginTop: '3px' }}>
-                  {reportData?.metrics?.totalCycleDays || 23.0} Days
+                  {reportData?.metrics?.totalCycleDays !== null && reportData?.metrics?.totalCycleDays !== undefined
+                    ? `${reportData.metrics.totalCycleDays} Days`
+                    : 'N/A'}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '2px' }}>Average Lead-to-Won duration</div>
+                <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '2px' }}>
+                  Average Lead-to-Won duration
+                </div>
               </div>
             </div>
 
@@ -240,10 +244,21 @@ export const MISReportsDashboard = () => {
                     <tr key={s.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b' }}>{s.name}</td>
                       <td style={{ padding: '12px 14px', color: '#334155' }}>{s.count}</td>
-                      <td style={{ padding: '12px 14px', fontWeight: 600, color: '#d97706' }}>{s.avgDays} Days</td>
+                      <td style={{ padding: '12px 14px', fontWeight: 600, color: '#d97706' }}>
+                        {s.avgDays !== null && s.avgDays !== undefined ? `${s.avgDays} Days` : 'N/A'}
+                      </td>
                       <td style={{ padding: '12px 14px' }}>
-                        <span style={{ padding: '3px 8px', borderRadius: '6px', background: '#ecfdf5', color: '#059669', fontWeight: 700, fontSize: '0.76rem' }}>
-                          {s.conversionRate}%
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: s.conversionRate !== null ? '#ecfdf5' : '#f8fafc',
+                            color: s.conversionRate !== null ? '#059669' : '#94a3b8',
+                            fontWeight: 700,
+                            fontSize: '0.76rem',
+                          }}
+                        >
+                          {s.conversionRate !== null && s.conversionRate !== undefined ? `${s.conversionRate}%` : 'N/A'}
                         </span>
                       </td>
                     </tr>
@@ -401,10 +416,20 @@ export const MISReportsDashboard = () => {
                   <tr key={ch.channel} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b' }}>{ch.channel}</td>
                     <td style={{ padding: '12px 14px', color: '#334155' }}>{ch.leadsAcquired}</td>
-                    <td style={{ padding: '12px 14px', color: '#64748b' }}>${ch.avgCPL}</td>
-                    <td style={{ padding: '12px 14px', color: '#d97706' }}>${ch.totalAcquisitionCost}</td>
-                    <td style={{ padding: '12px 14px', fontWeight: 700, color: '#059669' }}>{formatCurrency(ch.revenueGenerated)}</td>
-                    <td style={{ padding: '12px 14px', fontWeight: 700, color: ch.netProfit >= 0 ? '#059669' : '#dc2626' }}>
+                    <td style={{ padding: '12px 14px', color: '#64748b' }}>
+                      {ch.avgCPL !== null && ch.avgCPL !== undefined ? formatCurrency(ch.avgCPL) : 'N/A'}
+                    </td>
+                    <td style={{ padding: '12px 14px', color: '#d97706' }}>{formatCurrency(ch.totalAcquisitionCost)}</td>
+                    <td style={{ padding: '12px 14px', fontWeight: 700, color: '#059669' }}>
+                      {formatCurrency(ch.revenueGenerated)}
+                    </td>
+                    <td
+                      style={{
+                        padding: '12px 14px',
+                        fontWeight: 700,
+                        color: ch.netProfit >= 0 ? '#059669' : '#dc2626',
+                      }}
+                    >
                       {formatCurrency(ch.netProfit)}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
@@ -412,13 +437,15 @@ export const MISReportsDashboard = () => {
                         style={{
                           padding: '3px 8px',
                           borderRadius: '6px',
-                          background: ch.roiPercentage > 0 ? '#ecfdf5' : '#f8fafc',
-                          color: ch.roiPercentage > 0 ? '#059669' : '#64748b',
+                          background: ch.roiPercentage !== null && ch.roiPercentage > 0 ? '#ecfdf5' : '#f8fafc',
+                          color: ch.roiPercentage !== null && ch.roiPercentage > 0 ? '#059669' : '#64748b',
                           fontWeight: 800,
                           fontSize: '0.74rem',
                         }}
                       >
-                        {ch.roiPercentage}% ROI
+                        {ch.roiPercentage !== null && ch.roiPercentage !== undefined
+                          ? `${ch.roiPercentage}% ROI`
+                          : 'N/A'}
                       </span>
                     </td>
                   </tr>

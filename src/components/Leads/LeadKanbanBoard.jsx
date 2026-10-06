@@ -259,8 +259,10 @@ export const LeadKanbanBoard = () => {
               ) : (
                 colLeads.map((lead) => {
                   const isDragging = draggedLeadId === lead._id;
-                  const leadScore = lead.leadScore || 50;
-                  const scoreColor = leadScore >= 75 ? '#059669' : leadScore >= 45 ? '#d97706' : '#64748b';
+                  const leadScore = lead.leadScore !== undefined ? lead.leadScore : 50;
+                  const leadTemp = lead.leadTemperature || (leadScore >= 70 ? 'Hot' : leadScore >= 40 ? 'Warm' : 'Cold');
+                  const tempIcon = leadTemp === 'Hot' ? '🔥' : leadTemp === 'Warm' ? '☀️' : '❄️';
+                  const scoreColor = leadTemp === 'Hot' ? '#ea580c' : leadTemp === 'Warm' ? '#d97706' : '#2563eb';
 
                   return (
                     <div
@@ -308,13 +310,14 @@ export const LeadKanbanBoard = () => {
                         }}
                       >
                         <div style={{ fontWeight: 800, color: '#1e293b' }}>
-                          <span style={{ color: '#059669', marginRight: '2px' }}>{lead.currency === 'INR' ? '₹' : '$'}</span>
-                          {(Number(lead.dealValue) || 0).toLocaleString()}
+                          <span style={{ color: '#059669', marginRight: '2px' }}>₹</span>
+                          {(Number(lead.dealValue || lead.estimatedValue || lead.pipeline_value) || 0).toLocaleString('en-IN')}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ color: '#64748b', fontSize: '0.7rem' }}>Score:</span>
-                          <span style={{ fontWeight: 700, color: scoreColor }}>{leadScore}%</span>
+                          <span style={{ fontSize: '0.75rem' }}>{tempIcon}</span>
+                          <span style={{ fontWeight: 800, color: scoreColor }}>{leadScore}</span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/100</span>
                         </div>
                       </div>
 

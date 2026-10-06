@@ -483,6 +483,11 @@ export const api = {
     if (params.priority && params.priority !== 'all') query.append('priority', params.priority);
     if (params.source && params.source !== 'all') query.append('source', params.source);
     if (params.assignedTo && params.assignedTo !== 'all') query.append('assignedTo', params.assignedTo);
+    if (params.manager && params.manager !== 'all') query.append('manager', params.manager);
+    if (params.conversionStatus && params.conversionStatus !== 'all') query.append('conversionStatus', params.conversionStatus);
+    if (params.temperature && params.temperature !== 'all') query.append('temperature', params.temperature);
+    if (params.followUpStatus && params.followUpStatus !== 'all') query.append('followUpStatus', params.followUpStatus);
+    if (params.followUpDate && params.followUpDate !== 'all') query.append('followUpDate', params.followUpDate);
     if (params.myLeadsOnly) query.append('myLeadsOnly', 'true');
 
     const queryString = query.toString() ? `?${query.toString()}` : '';
@@ -493,6 +498,19 @@ export const api = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to fetch leads');
+    }
+    return data;
+  },
+
+  async checkLeadDuplicate(leadData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/leads/check-duplicate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(leadData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to check duplicate lead');
     }
     return data;
   },

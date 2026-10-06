@@ -37,6 +37,8 @@ export const LeadProvider = ({ children }) => {
   const [assignedToFilter, setAssignedToFilter] = useState('all');
   const [managerFilter, setManagerFilter] = useState('all');
   const [conversionStatusFilter, setConversionStatusFilter] = useState('all');
+  const [temperatureFilter, setTemperatureFilter] = useState('all');
+  const [followUpStatusFilter, setFollowUpStatusFilter] = useState('all');
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
   const [followUpDateFilter, setFollowUpDateFilter] = useState('');
   const [slaTierFilter, setSlaTierFilter] = useState('all');
@@ -554,6 +556,16 @@ export const LeadProvider = ({ children }) => {
       if (conversionStatusFilter === 'unconverted' && isConverted) return false;
     }
 
+    if (temperatureFilter !== 'all' && lead.leadTemperature?.toLowerCase() !== temperatureFilter.toLowerCase()) {
+      return false;
+    }
+
+    if (followUpStatusFilter !== 'all') {
+      const normStatus = (lead.followUpStatus || '').toLowerCase().replace(/[\s-]+/g, '_');
+      const normFilter = followUpStatusFilter.toLowerCase().replace(/[\s-]+/g, '_');
+      if (normStatus !== normFilter) return false;
+    }
+
     if (followUpDateFilter && followUpDateFilter !== '') {
       if (!lead.nextFollowUpDate && !lead.next_followup_at) return false;
       const fDate = new Date(lead.nextFollowUpDate || lead.next_followup_at).toISOString().split('T')[0];
@@ -588,6 +600,8 @@ export const LeadProvider = ({ children }) => {
     setAssignedToFilter('all');
     setManagerFilter('all');
     setConversionStatusFilter('all');
+    setTemperatureFilter('all');
+    setFollowUpStatusFilter('all');
     setDateRangeFilter({ start: '', end: '' });
     setFollowUpDateFilter('');
     setSlaTierFilter('all');
@@ -614,11 +628,17 @@ export const LeadProvider = ({ children }) => {
     assignedToFilter,
     managerFilter,
     conversionStatusFilter,
+    temperatureFilter,
+    followUpStatusFilter,
     followUpDateFilter,
     dateRangeFilter,
     slaTierFilter,
     dispositionFilter,
   ]);
+
+  const checkDuplicate = async (leadData) => {
+    return await api.checkLeadDuplicate(leadData);
+  };
 
   return (
     <LeadContext.Provider
@@ -649,6 +669,10 @@ export const LeadProvider = ({ children }) => {
         setManagerFilter,
         conversionStatusFilter,
         setConversionStatusFilter,
+        temperatureFilter,
+        setTemperatureFilter,
+        followUpStatusFilter,
+        setFollowUpStatusFilter,
         dateRangeFilter,
         setDateRangeFilter,
         followUpDateFilter,
@@ -679,6 +703,7 @@ export const LeadProvider = ({ children }) => {
         qualifyLead,
         convertLeadToOpportunity,
         deleteLead,
+        checkDuplicate,
         // Create / Edit Modal
         isLeadModalOpen,
         modalMode,

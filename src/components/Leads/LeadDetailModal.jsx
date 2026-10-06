@@ -33,6 +33,10 @@ import {
   RotateCcw,
   Trash2,
   Edit2,
+  ShieldCheck,
+  Flame,
+  Sun,
+  Snowflake,
 } from 'lucide-react';
 import { LeadOpportunitySection } from './LeadOpportunitySection';
 
@@ -48,6 +52,7 @@ export const LeadDetailModal = () => {
     openQualifyModal,
     openConvertModal,
     openDeleteModal,
+    openAuditModal,
     updateLeadStatus,
     updateFollowUp,
   } = useLeads();
@@ -115,6 +120,22 @@ export const LeadDetailModal = () => {
   const followups = Array.isArray(lead.followups) ? [...lead.followups] : [];
   const timeline = Array.isArray(lead.timeline) ? [...lead.timeline] : [];
 
+  const score = lead.leadScore !== undefined ? lead.leadScore : 50;
+  const temp = lead.leadTemperature || (score >= 70 ? 'Hot' : score >= 40 ? 'Warm' : 'Cold');
+
+  const getTempDetails = (t, s) => {
+    switch (t) {
+      case 'Hot':
+        return { bg: '#fef2f2', color: '#ea580c', border: '#fecaca', icon: '🔥', label: 'Hot Lead' };
+      case 'Warm':
+        return { bg: '#fffbeb', color: '#d97706', border: '#fde68a', icon: '☀️', label: 'Warm Lead' };
+      case 'Cold':
+      default:
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', icon: '❄️', label: 'Cold Lead' };
+    }
+  };
+  const tempInfo = getTempDetails(temp, score);
+
   return (
     <div className="modal-backdrop active" onClick={closeLeadDetailModal} style={{ zIndex: 1100 }}>
       <div
@@ -171,6 +192,27 @@ export const LeadDetailModal = () => {
                 >
                   {lead.status || 'New'}
                 </span>
+
+                {/* Score & Temperature Header Badge */}
+                <span
+                  style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: '999px',
+                    background: tempInfo.bg,
+                    color: tempInfo.color,
+                    border: `1px solid ${tempInfo.border}`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title={`Lead Score: ${score}/100 • Temperature: ${temp}`}
+                >
+                  <span>{tempInfo.icon}</span>
+                  <span>{tempInfo.label} ({score})</span>
+                </span>
+
                 {lead.priority && (
                   <span
                     style={{
@@ -350,6 +392,29 @@ export const LeadDetailModal = () => {
               >
                 <Edit2 size={14} />
                 <span>Edit Lead</span>
+              </button>
+
+              {/* Audit History Button */}
+              <button
+                type="button"
+                onClick={() => openAuditModal(lead)}
+                title="View complete immutable compliance audit trail for this lead"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                <ShieldCheck size={14} color="#059669" />
+                <span>Audit History</span>
               </button>
 
               <button
@@ -600,6 +665,109 @@ export const LeadDetailModal = () => {
           {/* TAB 1: LEAD INFORMATION */}
           {activeTab === 'info' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Lead Scoring & Quality Intelligence Card */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: `1.5px solid ${tempInfo.border}`,
+                  borderRadius: '14px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '10px',
+                        background: tempInfo.bg,
+                        color: tempInfo.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        border: `1px solid ${tempInfo.border}`,
+                      }}
+                    >
+                      {tempInfo.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
+                        Lead Scoring & Conversion Intelligence
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                        Dynamic qualification algorithm assessing channel quality, deal value, engagement, and follow-up velocity.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        background: tempInfo.bg,
+                        color: tempInfo.color,
+                        border: `1px solid ${tempInfo.border}`,
+                      }}
+                    >
+                      {tempInfo.label}
+                    </span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e293b' }}>
+                      {score} <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>/ 100</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Visual Score Bar */}
+                <div style={{ width: '100%', height: '8px', borderRadius: '999px', background: '#f1f5f9', overflow: 'hidden', marginBottom: '14px' }}>
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(0, score))}%`,
+                      height: '100%',
+                      borderRadius: '999px',
+                      background: score >= 70 ? 'linear-gradient(90deg, #f97316, #ea580c)' : score >= 40 ? 'linear-gradient(90deg, #fbbf24, #d97706)' : 'linear-gradient(90deg, #60a5fa, #2563eb)',
+                      transition: 'width 0.4s ease',
+                    }}
+                  />
+                </div>
+
+                {/* Metric Factors Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
+                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>SOURCE WEIGHT</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                      {lead.source || 'Website'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>PRIORITY WEIGHT</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                      {lead.priority || 'Medium'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>CALL ENGAGEMENT</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                      {callLogs.length} Logged Calls
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>FOLLOW-UP STATUS</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                      {lead.followUpStatus || 'None'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div
                 style={{
                   display: 'grid',
@@ -964,41 +1132,50 @@ export const LeadDetailModal = () => {
                   {followups.map((flw, idx) => {
                     const isPending = flw.status === 'Pending';
                     const isDone = flw.status === 'Completed';
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let fDateStr = '';
+                    if (flw.followUpDate) {
+                      try {
+                        fDateStr = new Date(flw.followUpDate).toISOString().split('T')[0];
+                      } catch {}
+                    }
+                    const isOverdue = isPending && fDateStr && fDateStr < todayStr;
+                    const isDueToday = isPending && fDateStr && fDateStr === todayStr;
 
                     return (
                       <div
                         key={flw.followUpId || idx}
                         style={{
-                          background: isPending ? '#ffffff' : '#f8fafc',
-                          border: isPending ? '1px solid #fde68a' : '1px solid #e2e8f0',
+                          background: isOverdue ? '#fff1f2' : isPending ? '#ffffff' : '#f8fafc',
+                          border: isOverdue ? '1.5px solid #fecdd3' : isPending ? '1px solid #fde68a' : '1px solid #e2e8f0',
                           borderRadius: '10px',
                           padding: '14px',
-                          boxShadow: isPending ? '0 2px 4px rgba(217, 119, 6, 0.08)' : 'none',
+                          boxShadow: isOverdue ? '0 2px 6px rgba(225, 29, 72, 0.08)' : isPending ? '0 2px 4px rgba(217, 119, 6, 0.08)' : 'none',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                               <span
                                 style={{
                                   fontSize: '0.72rem',
                                   fontWeight: 800,
                                   padding: '2px 8px',
                                   borderRadius: '6px',
-                                  background: isDone ? '#ecfdf5' : isPending ? '#fffbeb' : '#f1f5f9',
-                                  color: isDone ? '#059669' : isPending ? '#b45309' : '#64748b',
-                                  border: isDone ? '1px solid #a7f3d0' : isPending ? '1px solid #fde68a' : '1px solid #e2e8f0',
+                                  background: isDone ? '#ecfdf5' : isOverdue ? '#fef2f2' : isDueToday ? '#fffbeb' : '#eff6ff',
+                                  color: isDone ? '#059669' : isOverdue ? '#dc2626' : isDueToday ? '#d97706' : '#2563eb',
+                                  border: isDone ? '1px solid #a7f3d0' : isOverdue ? '1px solid #fecaca' : isDueToday ? '1px solid #fde68a' : '1px solid #bfdbfe',
                                 }}
                               >
-                                {flw.status || 'Pending'}
+                                {isDone ? 'Completed' : isOverdue ? '🔴 Overdue' : isDueToday ? '🟡 Due Today' : '🔵 Upcoming'}
                               </span>
-                              <strong style={{ fontSize: '0.88rem', color: '#1e293b' }}>
+                              <strong style={{ fontSize: '0.88rem', color: isOverdue ? '#9f1239' : '#1e293b' }}>
                                 {flw.reason || 'Follow-Up Callback'}
                               </strong>
                             </div>
                             <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
                               Scheduled Date:{' '}
-                              <strong style={{ color: '#1e293b' }}>
+                              <strong style={{ color: isOverdue ? '#e11d48' : '#1e293b' }}>
                                 {flw.followUpDate ? new Date(flw.followUpDate).toLocaleDateString('en-GB') : 'N/A'}
                                 {flw.followUpTime ? ` at ${flw.followUpTime}` : ''}
                               </strong>{' '}

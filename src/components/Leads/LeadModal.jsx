@@ -19,6 +19,8 @@ import {
   Clock,
   Briefcase,
   Shield,
+  AlertTriangle,
+  ArrowRight,
 } from 'lucide-react';
 
 const getSubordinateUserIds = (user, allUsers) => {
@@ -64,7 +66,17 @@ const getSubordinateUserIds = (user, allUsers) => {
 };
 
 export const LeadModal = () => {
-  const { leads, isLeadModalOpen, modalMode, selectedLead, closeLeadModal, createLead, updateLead } = useLeads();
+  const {
+    leads,
+    isLeadModalOpen,
+    modalMode,
+    selectedLead,
+    closeLeadModal,
+    createLead,
+    updateLead,
+    checkDuplicate,
+    openLeadDetailModal,
+  } = useLeads();
   const { users } = useUserManagement();
   const { user: currentUser } = useAuth();
 
@@ -120,6 +132,53 @@ export const LeadModal = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  // Debounced real-time duplicate detection across email, phone, and company + contact
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(async () => {
+      const email = formData.email?.trim();
+      const phone = formData.mobileNumber?.trim();
+      const contactPerson = formData.contactPerson?.trim();
+      const company = formData.company?.trim();
+
+      if (!email && !phone && (!contactPerson || !company)) {
+        setDuplicateWarning(null);
+        return;
+      }
+
+      try {
+        setIsCheckingDuplicate(true);
+        const excludeId = modalMode === 'edit' && selectedLead ? (selectedLead._id || selectedLead.leadId) : null;
+        const res = await checkDuplicate({
+          email,
+          phone,
+          contactPerson,
+          company,
+          excludeId,
+        });
+
+        if (active) {
+          if (res && res.isDuplicate) {
+            setDuplicateWarning(res);
+          } else {
+            setDuplicateWarning(null);
+          }
+        }
+      } catch (err) {
+        // Non-blocking catch
+      } finally {
+        if (active) setIsCheckingDuplicate(false);
+      }
+    }, 450);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [formData.email, formData.mobileNumber, formData.contactPerson, formData.company, modalMode, selectedLead, checkDuplicate]);
 
   // Check if an email is already used by another lead
   const checkDuplicateEmail = (emailToCheck) => {
@@ -184,6 +243,7 @@ export const LeadModal = () => {
     }
     setErrors({});
     setServerError('');
+    setDuplicateWarning(null);
   }, [modalMode, selectedLead, isLeadModalOpen, currentUser]);
 
   if (!isLeadModalOpen) return null;
@@ -318,6 +378,100 @@ export const LeadModal = () => {
                 <span>{serverError}</span>
               </div>
             )}
+
+            {/* Real-Time Duplicate Warning Alert */}
+            {duplicateWarning && (
+              <div
+                style={{
+                  marginBottom: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  backgroundColor: '#fffbeb',
+                  border: '1.5px solid #fde68a',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  animation: 'fadeIn 0.2s ease',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    backgroundColor: '#fef3c7',
+                    color: '#d97706',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <AlertTriangle size={18} />
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: '0.86rem', color: '#92400e' }}>
+                      ⚠️ Duplicate Lead Warning
+                    </strong>
+                    {duplicateWarning.matchedBy && (
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: '#fef3c7',
+                          color: '#b45309',
+                          border: '1px solid #fde68a',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Matched by {duplicateWarning.matchedBy}
+                      </span>
+                    )}
+                  </div>
+
+                  <p style={{ margin: '4px 0 6px', fontSize: '0.78rem', color: '#78350f', lineHeight: 1.4 }}>
+                    {duplicateWarning.message || 'An existing lead matches this contact information.'}
+                    {duplicateWarning.matchedLead && (
+                      <span>
+                        {' '}(<strong>{duplicateWarning.matchedLead.leadId || 'LD-MATCH'}</strong> — {duplicateWarning.matchedLead.name || duplicateWarning.matchedLead.contactPerson}{duplicateWarning.matchedLead.company ? ` at ${duplicateWarning.matchedLead.company}` : ''}{duplicateWarning.matchedLead.assignedTo ? ` • Owner: ${duplicateWarning.matchedLead.assignedTo}` : ''})
+                      </span>
+                    )}
+                  </p>
+
+                  {duplicateWarning.matchedLead && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeLeadModal();
+                        openLeadDetailModal(duplicateWarning.matchedLead);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#ffffff',
+                        color: '#b45309',
+                        border: '1px solid #fde68a',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        marginTop: '2px',
+                      }}
+                    >
+                      <span>Review Existing Lead Details</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Contact Person */}
             <div className="form-group">
