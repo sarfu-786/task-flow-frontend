@@ -615,7 +615,7 @@ export const LeadExportModal = ({ isOpen, onClose }) => {
                     'Lead Status',
                     'Priority Level',
                     'Lead Source',
-                    'Lead Value ($)',
+                    'Lead Value (₹)',
                     'Assigned To',
                     'Created Date',
                     'Last Updated',

@@ -17,6 +17,7 @@ import {
   UserCheck,
   ArrowRight,
   Target,
+  Flame,
 } from 'lucide-react';
 
 export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
@@ -190,14 +191,18 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                   })
                 : 'Just now';
 
+              const isEscalation =
+                notif.type === 'complaint_escalated' ||
+                notif.taskType === 'complaint';
               const isLead =
-                notif.type === 'lead_assigned' ||
+                !isEscalation &&
+                (notif.type === 'lead_assigned' ||
                 notif.type === 'new_lead' ||
                 notif.type === 'lead_created' ||
-                notif.taskType === 'lead';
-              const isRegistration = notif.type === 'user_registered';
-              const isAssignment = notif.type === 'task_assigned' || (!isManager && !isRegistration && !isLead && notif.type !== 'task_completed');
-              const isCompletion = notif.type === 'task_completed';
+                notif.taskType === 'lead');
+              const isRegistration = !isEscalation && notif.type === 'user_registered';
+              const isAssignment = !isEscalation && (notif.type === 'task_assigned' || (!isManager && !isRegistration && !isLead && notif.type !== 'task_completed'));
+              const isCompletion = !isEscalation && notif.type === 'task_completed';
 
               // Visual styling theme based on notification type
               let badgeText = 'Notification';
@@ -209,7 +214,16 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
               let iconBg = '#64748b';
               let iconComponent = <User size={16} />;
 
-              if (isLead) {
+              if (isEscalation) {
+                badgeText = '🚨 Priority Complaint Escalation';
+                badgeBg = '#fef2f2';
+                badgeColor = '#b91c1c';
+                badgeBorder = '#fecaca';
+                cardBg = notif.isRead ? '#ffffff' : '#fff5f5';
+                cardBorder = notif.isRead ? '#e2e8f0' : '#f87171';
+                iconBg = '#dc2626';
+                iconComponent = <Flame size={16} />;
+              } else if (isLead) {
                 badgeText = '🎯 New Lead Assigned';
                 badgeBg = '#eef2ff';
                 badgeColor = '#4338ca';
@@ -249,7 +263,25 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
 
               return (
                 <div
-                  key={notif._id}
+                  key={notif._id || notif.id || `notif_${Math.random()}`}
+                  onClick={(e) => {
+                    if (e.target.closest('button')) return;
+                    if (isEscalation) {
+                      if (!notif.isRead) markNotificationAsRead(notif._id || notif.id);
+                      if (onNavigateSection) onNavigateSection('complaints');
+                      if (onClose) onClose();
+                      if (notif.complaintId || notif.complaintTicketNumber || notif.ticketNumber) {
+                        window.dispatchEvent(
+                          new CustomEvent('open-complaint-detail', {
+                            detail: {
+                              complaintId: notif.complaintId,
+                              ticketNumber: notif.complaintTicketNumber || notif.ticketNumber,
+                            },
+                          })
+                        );
+                      }
+                    }
+                  }}
                   style={{
                     background: cardBg,
                     border: `1px solid ${cardBorder}`,
@@ -261,6 +293,7 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
                     position: 'relative',
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)',
+                    cursor: isEscalation ? 'pointer' : 'default',
                   }}
                 >
                   {/* Top Bar */}
@@ -345,9 +378,113 @@ export const ManagerInboxModal = ({ isOpen, onClose, onNavigateSection }) => {
 
                   {/* Task Description / Message */}
                   <div style={{ paddingLeft: '44px' }}>
-                    <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.45 }}>
                       {notif.taskDescription || notif.message}
                     </div>
+
+                    {isEscalation && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                        {(notif.complaintTicketNumber || notif.ticketNumber) && (
+                          <span style={{ fontSize: '0.74rem', background: '#f1f5f9', color: '#1e293b', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
+                            {notif.complaintTicketNumber || notif.ticketNumber}
+                          </span>
+                        )}
+                        {notif.customerName && (
+                          <span style={{ fontSize: '0.74rem', background: '#f8fafc', color: '#475569', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                            Customer: {notif.customerName}
+                          </span>
+                        )}
+                        <span style={{ fontSize: '0.74rem', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
+                          Priority: {notif.priority || 'Critical'}
+                        </span>
+                        {notif.escalatedBy && (
+                          <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#1d4ed8', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                            Escalated By: {notif.escalatedBy}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {isEscalation && notif.escalationReason && (
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          background: '#fff1f2',
+                          border: '1px solid #ffe4e6',
+                          borderLeft: '3px solid #dc2626',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '0.78rem',
+                          color: '#9f1239',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        <strong>Escalation Reason:</strong> {notif.escalationReason}
+                      </div>
+                    )}
+
+                    {/* Complaint Escalation Action Banner */}
+                    {isEscalation && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          background: '#fef2f2',
+                          border: '1px solid #fee2e2',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '10px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Flame size={16} color="#dc2626" />
+                          <span style={{ fontSize: '0.82rem', color: '#991b1b', fontWeight: 600 }}>
+                            Priority Escalation ({notif.priority || 'Critical'})
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!notif.isRead) markNotificationAsRead(notif._id);
+                            if (onNavigateSection) {
+                              onNavigateSection('complaints');
+                            }
+                            if (onClose) onClose();
+                            if (notif.complaintId || notif.complaintTicketNumber || notif.ticketNumber) {
+                              window.dispatchEvent(
+                                new CustomEvent('open-complaint-detail', {
+                                  detail: {
+                                    complaintId: notif.complaintId,
+                                    ticketNumber: notif.complaintTicketNumber || notif.ticketNumber,
+                                  },
+                                })
+                              );
+                            }
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(220, 38, 38, 0.25)',
+                          }}
+                        >
+                          <span>Review Complaint</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Lead Action Banner */}
                     {isLead && (

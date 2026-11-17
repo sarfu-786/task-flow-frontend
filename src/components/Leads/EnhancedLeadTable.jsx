@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLeads } from '../../context/LeadContext';
 import { useUserManagement } from '../../context/UserContext';
+import { AdvancedFilterDrawer } from './AdvancedFilterDrawer';
 import {
   PhoneCall,
   Edit2,
@@ -24,6 +25,7 @@ import {
   Flame,
   Sun,
   Snowflake,
+  Upload,
 } from 'lucide-react';
 
 export const EnhancedLeadTable = () => {
@@ -53,7 +55,10 @@ export const EnhancedLeadTable = () => {
     setTemperatureFilter,
     followUpStatusFilter,
     setFollowUpStatusFilter,
+    isAdvancedFilterActive,
     clearAllFilters,
+    openCreateModal,
+    openImportModal,
     openEditModal,
     openLeadDetailModal,
     openAddCallModal,
@@ -63,6 +68,7 @@ export const EnhancedLeadTable = () => {
     openDeleteModal,
   } = useLeads();
 
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const { users } = useUserManagement();
 
   const getStatusBadge = (status) => {
@@ -142,21 +148,22 @@ export const EnhancedLeadTable = () => {
   };
 
   const isAnyFilterActive =
-    search ||
+    Boolean(search) ||
     statusFilter !== 'all' ||
     priorityFilter !== 'all' ||
     sourceFilter !== 'all' ||
     temperatureFilter !== 'all' ||
-    followUpStatusFilter !== 'all';
+    followUpStatusFilter !== 'all' ||
+    Boolean(isAdvancedFilterActive);
 
   return (
     <div
       className="enhanced-lead-table-container"
       style={{
         background: '#ffffff',
-        borderRadius: '16px',
+        borderRadius: '12px',
         border: '1px solid #e2e8f0',
-        boxShadow: 'var(--shadow-sm)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -164,22 +171,22 @@ export const EnhancedLeadTable = () => {
       {/* Interactive Quick Filter Toolbar */}
       <div
         style={{
-          padding: '14px 18px',
+          padding: '10px 14px',
           borderBottom: '1px solid #e2e8f0',
           background: '#f8fafc',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '10px',
+          gap: '8px',
         }}
       >
         {/* Left: Search Box */}
-        <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 240px' }}>
+        <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 200px' }}>
           <Search
-            size={14}
+            size={13}
             color="#94a3b8"
-            style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
+            style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
             type="text"
@@ -188,10 +195,10 @@ export const EnhancedLeadTable = () => {
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%',
-              padding: '6px 10px 6px 30px',
-              borderRadius: '8px',
+              padding: '5px 8px 5px 28px',
+              borderRadius: '7px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               backgroundColor: '#ffffff',
               outline: 'none',
             }}
@@ -199,16 +206,16 @@ export const EnhancedLeadTable = () => {
         </div>
 
         {/* Right: Quick Filter Dropdowns */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           {/* 1. Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
+              padding: '5px 8px',
+              borderRadius: '6px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               backgroundColor: '#ffffff',
               color: '#334155',
               fontWeight: 600,
@@ -231,10 +238,10 @@ export const EnhancedLeadTable = () => {
             value={temperatureFilter}
             onChange={(e) => setTemperatureFilter(e.target.value)}
             style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
+              padding: '5px 8px',
+              borderRadius: '6px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               backgroundColor: '#ffffff',
               color: '#334155',
               fontWeight: 600,
@@ -242,9 +249,9 @@ export const EnhancedLeadTable = () => {
             }}
           >
             <option value="all">All Temperatures</option>
-            <option value="Hot">🔥 Hot Leads (Score ≥ 70)</option>
-            <option value="Warm">☀️ Warm Leads (Score 40-69)</option>
-            <option value="Cold">❄️ Cold Leads (Score &lt; 40)</option>
+            <option value="Hot">🔥 Hot (&ge; 70)</option>
+            <option value="Warm">☀️ Warm (40-69)</option>
+            <option value="Cold">❄️ Cold (&lt; 40)</option>
           </select>
 
           {/* 3. Follow-Up Status Filter */}
@@ -252,17 +259,17 @@ export const EnhancedLeadTable = () => {
             value={followUpStatusFilter}
             onChange={(e) => setFollowUpStatusFilter(e.target.value)}
             style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
+              padding: '5px 8px',
+              borderRadius: '6px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               backgroundColor: '#ffffff',
               color: '#334155',
               fontWeight: 600,
               cursor: 'pointer',
             }}
           >
-            <option value="all">All Follow-Up States</option>
+            <option value="all">All Follow-Ups</option>
             <option value="Overdue">🔴 Overdue</option>
             <option value="Due Today">🟡 Due Today</option>
             <option value="Upcoming">🔵 Upcoming</option>
@@ -274,10 +281,10 @@ export const EnhancedLeadTable = () => {
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
             style={{
-              padding: '6px 10px',
-              borderRadius: '8px',
+              padding: '5px 8px',
+              borderRadius: '6px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.78rem',
+              fontSize: '0.74rem',
               backgroundColor: '#ffffff',
               color: '#334155',
               fontWeight: 600,
@@ -290,6 +297,42 @@ export const EnhancedLeadTable = () => {
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
+
+          {/* Advanced Filter Engine Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '5px 9px',
+              borderRadius: '6px',
+              border: '1px solid',
+              borderColor: isAdvancedFilterActive ? '#4f46e5' : showAdvancedFilter ? '#6366f1' : '#cbd5e1',
+              backgroundColor: isAdvancedFilterActive ? '#eef2ff' : showAdvancedFilter ? '#f5f3ff' : '#ffffff',
+              color: isAdvancedFilterActive ? '#4338ca' : showAdvancedFilter ? '#4f46e5' : '#334155',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            title="Toggle multi-dimensional Advanced Filter Engine"
+          >
+            <Filter size={12} color={isAdvancedFilterActive ? '#4338ca' : '#4f46e5'} />
+            <span>{isAdvancedFilterActive ? 'Filter (Active)' : 'Advanced'}</span>
+            {isAdvancedFilterActive && (
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#4f46e5',
+                }}
+              />
+            )}
+          </button>
 
           {/* Reset Filters */}
           {isAnyFilterActive && (
@@ -318,6 +361,13 @@ export const EnhancedLeadTable = () => {
         </div>
       </div>
 
+      {/* Collapsible Advanced Multi-Dimensional Filter Drawer */}
+      {(showAdvancedFilter || isAdvancedFilterActive) && (
+        <div style={{ padding: '16px 18px 0 18px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <AdvancedFilterDrawer />
+        </div>
+      )}
+
       {/* Main Responsive Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
@@ -338,17 +388,122 @@ export const EnhancedLeadTable = () => {
           <tbody>
             {paginatedLeads.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
-                  <AlertCircle size={28} color="#cbd5e1" style={{ marginBottom: '6px' }} />
-                  <div style={{ fontWeight: 700, color: '#475569' }}>No leads matching your current criteria.</div>
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="btn btn-secondary"
-                    style={{ marginTop: '12px', fontSize: '0.78rem' }}
-                  >
-                    Reset Filters
-                  </button>
+                <td colSpan="10" style={{ padding: '28px 16px', textAlign: 'center' }}>
+                  {isAnyFilterActive ? (
+                    <div>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          backgroundColor: '#f1f5f9',
+                          color: '#64748b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 8px auto',
+                        }}
+                      >
+                        <Search size={16} />
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1e293b', marginBottom: '3px' }}>
+                        No leads matching your current criteria
+                      </div>
+                      <p style={{ margin: '0 0 12px 0', fontSize: '0.75rem', color: '#64748b' }}>
+                        Try clearing or adjusting your search keywords and filter parameters.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#ffffff',
+                          color: '#475569',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                        }}
+                      >
+                        <RotateCcw size={12} />
+                        <span>Reset Filters</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '10px',
+                          backgroundColor: '#eff6ff',
+                          color: '#2563eb',
+                          border: '1.5px solid #bfdbfe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 10px auto',
+                          boxShadow: '0 2px 5px rgba(37, 99, 235, 0.1)',
+                        }}
+                      >
+                        <Layers size={18} />
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', marginBottom: '3px' }}>
+                        No leads in your CRM registry yet
+                      </div>
+                      <p style={{ margin: '0 auto 14px auto', fontSize: '0.76rem', color: '#64748b', maxWidth: '360px', lineHeight: 1.45 }}>
+                        Start tracking prospect pipelines, outreach logs, and deal conversions by adding your first lead or importing from Excel.
+                      </p>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={openCreateModal}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 14px',
+                            borderRadius: '6px',
+                            backgroundColor: '#2563eb',
+                            color: '#ffffff',
+                            border: 'none',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
+                          }}
+                        >
+                          <Plus size={13} />
+                          <span>Add Lead</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={openImportModal}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            backgroundColor: '#ffffff',
+                            color: '#059669',
+                            border: '1.5px solid #a7f3d0',
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Upload size={12} />
+                          <span>Import Leads</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </td>
               </tr>
             ) : (

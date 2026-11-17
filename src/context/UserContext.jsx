@@ -5,13 +5,56 @@ import { socketService } from '../services/socket';
 
 const UserContext = createContext(null);
 
+const EXCLUDED_EMAILS = new Set([
+  'sarfu@gmail.com',
+  'admin@taskflow.com',
+  'rohan.verma@taskflow.com',
+  'ananya.iyer@taskflow.com',
+  'vikram.malhotra@taskflow.com',
+  'neha.gupta@taskflow.com',
+  'rajesh.kothari@taskflow.com',
+  'kavita.reddy@taskflow.com',
+  'sarah.test1788242656501@example.com',
+  'manager.1788243837519@company.com',
+  'emma.1788243837519@company.com',
+]);
+
+const EXCLUDED_NAMES = new Set([
+  'sarfu',
+  'priya patel',
+  'rohan verma',
+  'ananya iyer',
+  'vikram malhotra',
+  'neha gupta',
+  'rajesh kothari',
+  'kavita reddy',
+  'sarah connor',
+  'manager mark',
+  'employee emma',
+]);
+
+const sanitizeUsers = (list) => {
+  if (!Array.isArray(list)) return [];
+  return list.filter((u) => {
+    if (!u) return false;
+    const email = (u.email || '').toLowerCase().trim();
+    const name = (u.name || '').toLowerCase().trim();
+    if (EXCLUDED_EMAILS.has(email)) return false;
+    if (email.endsWith('@taskflow.com') || email.endsWith('@company.com') || email.endsWith('@example.com')) return false;
+    for (const exName of EXCLUDED_NAMES) {
+      if (name === exName || name.startsWith(exName)) return false;
+    }
+    return true;
+  });
+};
+
 export const UserProvider = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   
   const [users, setUsers] = useState(() => {
     try {
       const cached = localStorage.getItem('taskflow_cached_users');
-      return cached ? JSON.parse(cached) : [];
+      return cached ? sanitizeUsers(JSON.parse(cached)) : [];
     } catch {
       return [];
     }
@@ -59,7 +102,7 @@ export const UserProvider = ({ children }) => {
   const [assignableUsers, setAssignableUsers] = useState(() => {
     try {
       const cached = localStorage.getItem('taskflow_cached_assignable_users');
-      return cached ? JSON.parse(cached) : [];
+      return cached ? sanitizeUsers(JSON.parse(cached)) : [];
     } catch {
       return [];
     }
@@ -73,8 +116,9 @@ export const UserProvider = ({ children }) => {
     try {
       const res = await api.getUsers({});
       if (res.success) {
-        setUsers(res.users);
-        localStorage.setItem('taskflow_cached_users', JSON.stringify(res.users));
+        const cleanUsers = sanitizeUsers(res.users);
+        setUsers(cleanUsers);
+        localStorage.setItem('taskflow_cached_users', JSON.stringify(cleanUsers));
       }
     } catch (err) {
       console.error('Fetch users error:', err);
@@ -90,8 +134,9 @@ export const UserProvider = ({ children }) => {
     try {
       const res = await api.getAssignableUsers();
       if (res && res.success && Array.isArray(res.users)) {
-        setAssignableUsers(res.users);
-        localStorage.setItem('taskflow_cached_assignable_users', JSON.stringify(res.users));
+        const cleanAssignable = sanitizeUsers(res.users);
+        setAssignableUsers(cleanAssignable);
+        localStorage.setItem('taskflow_cached_assignable_users', JSON.stringify(cleanAssignable));
       }
     } catch (err) {
       console.error('Fetch assignable users error:', err);

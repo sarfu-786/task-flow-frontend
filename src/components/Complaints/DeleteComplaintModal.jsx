@@ -44,6 +44,10 @@ export const DeleteComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose,
   if (!isOpen || !complaint) return null;
 
   const handleDelete = async () => {
+    if (complaint && ['Resolved', 'Closed'].includes(complaint.status)) {
+      setError('Resolved and closed complaints cannot be deleted. Users can only view ticket details.');
+      return;
+    }
     try {
       setSubmitting(true);
       setError('');

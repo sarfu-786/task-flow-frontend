@@ -3488,4 +3488,314 @@ html, body {
   background: #94a3b8;
 }
 
+/* ==========================================================================
+   12. COMPLETE COMPREHENSIVE RESPONSIVENESS SYSTEM (TaskFlow 9/10 Upgrade)
+   Covers all standard breakpoints:
+   - Small mobile: 320px–375px
+   - Standard mobile: 376px–480px
+   - Large mobile: 481px–767px
+   - Tablet: 768px–1023px
+   - Small laptop: 1024px–1279px
+   - Desktop: 1280px–1599px
+   - Large desktop: 1600px and above
+   ========================================================================== */
+
+/* Universal Box Sizing & Horizontal Overflow Protection */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root, .app-layout, .authenticated-layout, .main-layout {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Controlled horizontal scrolling for all table containers */
+.table-responsive,
+.table-container,
+.data-table-container,
+.data-table-wrapper,
+.table-scroll,
+.table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: thin;
+}
+
+/* Base Modal Fluid Responsive Standards */
+.modal-overlay,
+.modal-backdrop {
+  padding: 16px;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-container-modern,
+.modal-content,
+.modal-dialog {
+  max-width: min(960px, 96vw) !important;
+  max-height: calc(100vh - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  margin: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   Large Desktop (1600px and above)
+   -------------------------------------------------------------------------- */
+@media (min-width: 1600px) {
+  .page-body,
+  .main-content-body {
+    max-width: 1560px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Desktop (1280px - 1599px)
+   -------------------------------------------------------------------------- */
+@media (min-width: 1280px) and (max-width: 1599px) {
+  .page-body,
+  .main-content-body {
+    max-width: 1260px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small Laptop (1024px - 1279px)
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .page-body {
+    padding: 20px 18px !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tablet (768px - 1023px)
+   -------------------------------------------------------------------------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page-body {
+    padding: 16px 14px !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  .form-grid-3,
+  .grid-issue-dropdowns,
+  .grid-assignment-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .section-header-modern,
+  .workspace-header-card {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Large Mobile (481px - 767px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .page-body {
+    padding: 14px 12px !important;
+  }
+
+  /* Single Column Layouts on mobile screens */
+  .form-row-2,
+  .form-row-3,
+  .form-grid,
+  .form-grid-2,
+  .form-grid-3,
+  .grid-customer-info,
+  .grid-issue-dropdowns,
+  .grid-priority-sla,
+  .grid-assignment-row,
+  .user-hierarchy-split-grid,
+  .manager-details-grid {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .modal-overlay,
+  .modal-backdrop {
+    padding: 10px !important;
+  }
+
+  .modal-container-modern,
+  .modal-content {
+    max-width: 100vw !important;
+    max-height: calc(100vh - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 16px !important;
+  }
+
+  /* Controls and buttons */
+  button, .btn {
+    min-height: 38px;
+  }
+
+  /* Filters Row */
+  .task-filters-row,
+  .complaint-filters-bar,
+  .lead-filters-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .filters-group-center,
+  .filters-group-right {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .filters-group-center select,
+  .filters-group-center input,
+  .select-filter {
+    flex: 1 1 140px !important;
+    width: 100% !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Standard Mobile (376px - 480px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .page-body {
+    padding: 12px 8px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .metric-card,
+  .stat-card {
+    padding: 12px 10px !important;
+  }
+
+  .navbar {
+    padding: 8px 10px !important;
+  }
+
+  .navbar-title {
+    font-size: 0.95rem !important;
+  }
+
+  .modal-overlay,
+  .modal-backdrop {
+    padding: 6px !important;
+  }
+
+  .modal-container-modern,
+  .modal-content {
+    border-radius: 12px !important;
+    max-height: calc(100vh - 12px) !important;
+    max-height: calc(100dvh - 12px) !important;
+  }
+
+  .modal-footer {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .modal-footer button,
+  .modal-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .login-card {
+    padding: 20px 14px 18px !important;
+    border-radius: 16px !important;
+  }
+
+  .login-title {
+    font-size: 1.25rem !important;
+  }
+
+  /* Tab bars scrollable horizontally on mobile */
+  .nav-tabs,
+  .status-tabs-container,
+  .filter-tabs-wrapper {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small Mobile (320px - 375px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 375px) {
+  .page-body {
+    padding: 8px 6px !important;
+  }
+
+  .navbar {
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+
+  .navbar-logo {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .navbar-title {
+    font-size: 0.88rem !important;
+  }
+
+  .btn {
+    padding: 7px 10px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .form-control,
+  input,
+  select,
+  textarea {
+    font-size: 0.82rem !important;
+  }
+
+  .login-card {
+    padding: 16px 10px 14px !important;
+    border-radius: 12px !important;
+  }
+}
+
+
 

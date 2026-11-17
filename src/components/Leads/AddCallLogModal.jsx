@@ -155,234 +155,234 @@ export const AddCallLogModal = () => {
               </div>
             )}
             <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* Sales User */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <User size={14} color="#2563eb" />
-                <span>Sales User</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                value={formData.salesUser}
-                onChange={(e) => setFormData({ ...formData, salesUser: e.target.value })}
-                required
-              />
-            </div>
+              {/* Sales User */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <User size={14} color="#2563eb" />
+                  <span>Sales User</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={formData.salesUser}
+                  onChange={(e) => setFormData({ ...formData, salesUser: e.target.value })}
+                  required
+                />
+              </div>
 
-            {/* Call Type */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                {formData.callType === 'Incoming' ? <PhoneIncoming size={14} color="#059669" /> : <PhoneOutgoing size={14} color="#2563eb" />}
-                <span>Call Type</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.callType}
-                onChange={(e) => setFormData({ ...formData, callType: e.target.value })}
-              >
-                <option value="Outgoing">Outgoing Call</option>
-                <option value="Incoming">Incoming Call</option>
-              </select>
-            </div>
+              {/* Call Type */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  {formData.callType === 'Incoming' ? <PhoneIncoming size={14} color="#059669" /> : <PhoneOutgoing size={14} color="#2563eb" />}
+                  <span>Call Type</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.callType}
+                  onChange={(e) => setFormData({ ...formData, callType: e.target.value })}
+                >
+                  <option value="Outgoing">Outgoing Call</option>
+                  <option value="Incoming">Incoming Call</option>
+                </select>
+              </div>
 
-            {/* Date */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Calendar size={14} color="#2563eb" />
-                <span>Date</span>
-              </label>
-              <input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                className="form-control"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
-              />
-            </div>
+              {/* Date */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Calendar size={14} color="#2563eb" />
+                  <span>Date</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="form-control"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                />
+              </div>
 
-            {/* Exact Time */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Clock size={14} color="#2563eb" />
-                <span>Exact Time</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. 10:00 AM, 03:30 PM"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                required
-              />
-            </div>
+              {/* Exact Time */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Clock size={14} color="#2563eb" />
+                  <span>Exact Time</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. 10:00 AM, 03:30 PM"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  required
+                />
+              </div>
 
-            {/* Call Status */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <PhoneCall size={14} color="#2563eb" />
-                <span>Call Status</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.callStatus}
-                onChange={(e) => {
-                  const newStatus = e.target.value;
-                  let autoAction = formData.nextAction;
-                  if (newStatus === 'No Answer' || newStatus === 'Busy' || newStatus === 'Switched Off' || newStatus === 'Number Not Reachable') {
-                    autoAction = 'Call Again';
-                  } else if (newStatus === 'Call Back Requested') {
-                    autoAction = 'Call Back';
-                  }
-                  setFormData({ ...formData, callStatus: newStatus, nextAction: autoAction });
-                }}
-              >
-                <option value="No Answer">No Answer</option>
-                <option value="Call Received">Call Received</option>
-                <option value="Busy">Busy</option>
-                <option value="Switched Off">Switched Off</option>
-                <option value="Number Not Reachable">Number Not Reachable</option>
-                <option value="Call Back Requested">Call Back Requested</option>
-                <option value="Connected Successfully">Connected Successfully</option>
-              </select>
-            </div>
+              {/* Call Status */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <PhoneCall size={14} color="#2563eb" />
+                  <span>Call Status</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.callStatus}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    let autoAction = formData.nextAction;
+                    if (newStatus === 'No Answer' || newStatus === 'Busy' || newStatus === 'Switched Off' || newStatus === 'Number Not Reachable') {
+                      autoAction = 'Call Again';
+                    } else if (newStatus === 'Call Back Requested') {
+                      autoAction = 'Call Back';
+                    }
+                    setFormData({ ...formData, callStatus: newStatus, nextAction: autoAction });
+                  }}
+                >
+                  <option value="No Answer">No Answer</option>
+                  <option value="Call Received">Call Received</option>
+                  <option value="Busy">Busy</option>
+                  <option value="Switched Off">Switched Off</option>
+                  <option value="Number Not Reachable">Number Not Reachable</option>
+                  <option value="Call Back Requested">Call Back Requested</option>
+                  <option value="Connected Successfully">Connected Successfully</option>
+                </select>
+              </div>
 
-            {/* Call Outcome */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <CheckCircle2 size={14} color="#2563eb" />
-                <span>Call Outcome</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.callOutcome}
-                onChange={(e) => setFormData({ ...formData, callOutcome: e.target.value })}
-              >
-                <option value="Interested">Interested</option>
-                <option value="Not Interested">Not Interested</option>
-                <option value="Need More Information">Need More Information</option>
-                <option value="Call Later">Call Later</option>
-                <option value="Meeting Requested">Meeting Requested</option>
-                <option value="Proposal Requested">Proposal Requested</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Not Qualified">Not Qualified</option>
-                <option value="No Response">No Response</option>
-              </select>
-            </div>
+              {/* Call Outcome */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <CheckCircle2 size={14} color="#2563eb" />
+                  <span>Call Outcome</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.callOutcome}
+                  onChange={(e) => setFormData({ ...formData, callOutcome: e.target.value })}
+                >
+                  <option value="Interested">Interested</option>
+                  <option value="Not Interested">Not Interested</option>
+                  <option value="Need More Information">Need More Information</option>
+                  <option value="Call Later">Call Later</option>
+                  <option value="Meeting Requested">Meeting Requested</option>
+                  <option value="Proposal Requested">Proposal Requested</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Not Qualified">Not Qualified</option>
+                  <option value="No Response">No Response</option>
+                </select>
+              </div>
 
-            {/* Call Duration (optional) */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Clock size={14} color="#64748b" />
-                <span>Call Duration (Optional)</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. 1m 15s or 6m 40s"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-              />
-            </div>
+              {/* Call Duration (optional) */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Clock size={14} color="#64748b" />
+                  <span>Call Duration (Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. 1m 15s or 6m 40s"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                />
+              </div>
 
-            {/* Lead Response (Quote) */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <MessageSquare size={14} color="#2563eb" />
-                <span>Lead Response (Client's exact words / feedback)</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder='e.g. "Abhi busy hoon, 4 ghante baad call kijiye."'
-                value={formData.leadResponse}
-                onChange={(e) => setFormData({ ...formData, leadResponse: e.target.value })}
-              />
-            </div>
+              {/* Lead Response (Quote) */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <MessageSquare size={14} color="#2563eb" />
+                  <span>Lead Response (Client's exact words / feedback)</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder='e.g. "Abhi busy hoon, 4 ghante baad call kijiye."'
+                  value={formData.leadResponse}
+                  onChange={(e) => setFormData({ ...formData, leadResponse: e.target.value })}
+                />
+              </div>
 
-            {/* Remarks */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <FileText size={14} color="#2563eb" />
-                <span>Sales Remarks & Interaction Notes</span>
-              </label>
-              <textarea
-                className="form-control"
-                rows={2}
-                placeholder="e.g. Lead is interested in the product and wants pricing details for 50 seats."
-                value={formData.remarks}
-                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-              />
-            </div>
+              {/* Remarks */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <FileText size={14} color="#2563eb" />
+                  <span>Sales Remarks & Interaction Notes</span>
+                </label>
+                <textarea
+                  className="form-control"
+                  rows={2}
+                  placeholder="e.g. Lead is interested in the product and wants pricing details for 50 seats."
+                  value={formData.remarks}
+                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                />
+              </div>
 
-            {/* Next Action */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <ArrowRight size={14} color="#2563eb" />
-                <span>Next Action</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Call Again, Call Back, Send Proposal, Schedule Demo"
-                value={formData.nextAction}
-                onChange={(e) => setFormData({ ...formData, nextAction: e.target.value })}
-              />
-            </div>
+              {/* Next Action */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <ArrowRight size={14} color="#2563eb" />
+                  <span>Next Action</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Call Again, Call Back, Send Proposal, Schedule Demo"
+                  value={formData.nextAction}
+                  onChange={(e) => setFormData({ ...formData, nextAction: e.target.value })}
+                />
+              </div>
 
-            {/* Next Follow-Up Date & Time */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Calendar size={14} color="#2563eb" />
-                <span>Next Follow-Up Date (Optional)</span>
-              </label>
-              <input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                className="form-control"
-                value={formData.nextFollowUpDate}
-                onChange={(e) => setFormData({ ...formData, nextFollowUpDate: e.target.value })}
-              />
-            </div>
+              {/* Next Follow-Up Date & Time */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Calendar size={14} color="#2563eb" />
+                  <span>Next Follow-Up Date (Optional)</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="form-control"
+                  value={formData.nextFollowUpDate}
+                  onChange={(e) => setFormData({ ...formData, nextFollowUpDate: e.target.value })}
+                />
+              </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Clock size={14} color="#2563eb" />
-                <span>Next Follow-Up Time</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. 03:30 PM"
-                value={formData.nextFollowUpTime}
-                onChange={(e) => setFormData({ ...formData, nextFollowUpTime: e.target.value })}
-              />
-            </div>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Clock size={14} color="#2563eb" />
+                  <span>Next Follow-Up Time</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. 03:30 PM"
+                  value={formData.nextFollowUpTime}
+                  onChange={(e) => setFormData({ ...formData, nextFollowUpTime: e.target.value })}
+                />
+              </div>
 
-            {/* Optional status update */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Tag size={14} color="#2563eb" />
-                <span>Update Lead Status (Optional)</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.updateStatus}
-                onChange={(e) => setFormData({ ...formData, updateStatus: e.target.value })}
-              >
-                <option value="">Keep Current Status ({leadForCall.status || 'New'})</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Follow-Up">Follow-Up</option>
-                <option value="Interested">Interested</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Not Interested">Not Interested</option>
-              </select>
+              {/* Optional status update */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Tag size={14} color="#2563eb" />
+                  <span>Update Lead Status (Optional)</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.updateStatus}
+                  onChange={(e) => setFormData({ ...formData, updateStatus: e.target.value })}
+                >
+                  <option value="">Keep Current Status ({leadForCall.status || 'New'})</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Follow-Up">Follow-Up</option>
+                  <option value="Interested">Interested</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Not Interested">Not Interested</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" onClick={closeAddCallModal} disabled={isSubmitting}>
               Cancel
             </button>

@@ -18,9 +18,13 @@ import {
   Sparkles,
   Building,
   User,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 import { useComplaints } from '../../context/ComplaintContext';
 import { complaintApi } from '../../services/api';
+import { PRIMARY_CATEGORY_NAMES, CORE_DEPARTMENTS } from '../../utils/complaintCategories';
+import { getGoogleMapsUrl } from '../../utils/locationService';
 
 export const ComplaintMetricDetailDialog = ({
   open,
@@ -101,16 +105,34 @@ export const ComplaintMetricDetailDialog = ({
   };
 
   // Format SLA time remaining helper
-  const formatSlaRemaining = (deadlineStr, status) => {
-    if (['Resolved', 'Closed'].includes(status)) {
+  const formatSlaRemaining = (deadlineStr, status, slaStatus, resolvedAt) => {
+    const isResolved = ['Resolved', 'Closed'].includes(status);
+
+    if (isResolved) {
+      const isBreached =
+        slaStatus === 'Breached' ||
+        (resolvedAt && deadlineStr && new Date(resolvedAt) > new Date(deadlineStr));
+
+      if (isBreached) {
+        return {
+          text: 'Resolved – Breached SLA',
+          color: '#dc2626',
+          bgColor: '#fef2f2',
+          borderColor: '#fecaca',
+          icon: <AlertTriangle size={13} />,
+          isBreached: true,
+        };
+      }
       return {
-        text: 'SLA Met',
+        text: 'Resolved – SLA Met',
         color: '#059669',
         bgColor: '#ecfdf5',
         borderColor: '#a7f3d0',
         icon: <CheckCircle2 size={13} />,
+        isMet: true,
       };
     }
+
     if (!deadlineStr) {
       return {
         text: 'Standard 24h',
@@ -126,7 +148,7 @@ export const ComplaintMetricDetailDialog = ({
     const diffMs = deadline.getTime() - now.getTime();
     const hours = Math.round(diffMs / (1000 * 60 * 60));
 
-    if (diffMs < 0) {
+    if (diffMs < 0 || slaStatus === 'Breached') {
       const overdueHours = Math.abs(hours);
       return {
         text: `Breached (${overdueHours}h overdue)`,
@@ -136,7 +158,7 @@ export const ComplaintMetricDetailDialog = ({
         icon: <AlertTriangle size={13} />,
         isBreached: true,
       };
-    } else if (hours <= 4) {
+    } else if (hours <= 4 || slaStatus === 'At Risk') {
       return {
         text: `At Risk (${hours}h remaining)`,
         color: '#d97706',
@@ -173,7 +195,7 @@ export const ComplaintMetricDetailDialog = ({
       case 'sla_risk':
         return {
           title: 'SLA Breached & At Risk Registry',
-          subtitle: 'Live tracking of tickets that have either breached their resolution deadline or are within the 4-hour warning window.',
+          subtitle: 'Live tracking of tickets that have either breached their resolution deadline (including late closures) or are within the 4-hour warning window.',
           icon: Clock,
           primaryColor: '#d97706',
           bgLight: '#fffbeb',
@@ -214,13 +236,15 @@ export const ComplaintMetricDetailDialog = ({
     return baseTickets.filter((t) => {
       if (!t) return false;
       const isResolved = ['Resolved', 'Closed'].includes(t.status);
-      const slaInfo = formatSlaRemaining(t.slaDeadline, t.status);
+      const slaInfo = formatSlaRemaining(t.slaDeadline, t.status, t.slaStatus, t.resolvedAt);
 
       // Metric Filter
       if (metricType === 'urgent') {
         if (t.priority !== 'Urgent' || isResolved) return false;
       } else if (metricType === 'sla_risk') {
-        if (isResolved || (!slaInfo.isBreached && !slaInfo.isAtRisk)) return false;
+        if (!slaInfo.isBreached && !slaInfo.isAtRisk && t.slaStatus !== 'Breached' && t.slaStatus !== 'At Risk') {
+          return false;
+        }
       } else if (metricType === 'resolved') {
         if (!isResolved) return false;
       }
@@ -414,24 +438,23 @@ export const ComplaintMetricDetailDialog = ({
         {/* Modal Toolbar: Search & Filters */}
         <div
           style={{
-            padding: '14px 28px',
+            padding: '10px 24px',
             backgroundColor: '#ffffff',
             borderBottom: '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '8px',
             flexWrap: 'wrap',
-            gap: '12px',
             flexShrink: 0,
           }}
         >
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: '380px' }}>
+          {/* Search Box - Compact */}
+          <div style={{ position: 'relative', width: '190px', flexShrink: 0 }}>
             <Search
-              size={15}
+              size={14}
               style={{
                 position: 'absolute',
-                left: '12px',
+                left: '10px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: '#94a3b8',
@@ -440,7 +463,7 @@ export const ComplaintMetricDetailDialog = ({
             />
             <input
               type="text"
-              placeholder="Search in these tickets..."
+              placeholder="Search tickets..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -448,12 +471,13 @@ export const ComplaintMetricDetailDialog = ({
               }}
               style={{
                 width: '100%',
-                padding: '8px 30px 8px 34px',
-                borderRadius: '10px',
+                padding: '6px 26px 6px 30px',
+                borderRadius: '8px',
                 border: '1px solid #cbd5e1',
-                fontSize: '0.82rem',
+                fontSize: '0.8rem',
                 outline: 'none',
                 background: '#f8fafc',
+                boxSizing: 'border-box',
               }}
             />
             {search && (
@@ -462,7 +486,7 @@ export const ComplaintMetricDetailDialog = ({
                 onClick={() => setSearch('')}
                 style={{
                   position: 'absolute',
-                  right: '8px',
+                  right: '6px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
@@ -470,15 +494,16 @@ export const ComplaintMetricDetailDialog = ({
                   color: '#94a3b8',
                   cursor: 'pointer',
                   padding: '2px',
+                  display: 'flex',
                 }}
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             )}
           </div>
 
-          {/* Quick Filters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Quick Filters - Compact content-fit */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <select
               value={categoryFilter}
               onChange={(e) => {
@@ -486,18 +511,22 @@ export const ComplaintMetricDetailDialog = ({
                 setPage(0);
               }}
               style={{
-                padding: '7px 12px',
+                padding: '6px 8px',
                 borderRadius: '8px',
-                border: '1px solid #cbd5e1',
+                border: categoryFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                background: categoryFilter !== 'all' ? '#eff6ff' : '#ffffff',
+                color: categoryFilter !== 'all' ? '#1d4ed8' : '#334155',
                 fontSize: '0.78rem',
-                color: '#334155',
                 fontWeight: 600,
-                background: '#ffffff',
                 outline: 'none',
                 cursor: 'pointer',
+                maxWidth: '155px',
               }}
             >
               <option value="all">All Categories</option>
+              {CORE_DEPARTMENTS.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.badgeLabel}</option>
+              ))}
               <option value="Technical Glitch">Technical Glitch</option>
               <option value="Product Defect">Product Defect</option>
               <option value="Service Delay">Service Delay</option>
@@ -513,15 +542,16 @@ export const ComplaintMetricDetailDialog = ({
                 setPage(0);
               }}
               style={{
-                padding: '7px 12px',
+                padding: '6px 8px',
                 borderRadius: '8px',
-                border: '1px solid #cbd5e1',
+                border: priorityFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                background: priorityFilter !== 'all' ? '#eff6ff' : '#ffffff',
+                color: priorityFilter !== 'all' ? '#1d4ed8' : '#334155',
                 fontSize: '0.78rem',
-                color: '#334155',
                 fontWeight: 600,
-                background: '#ffffff',
                 outline: 'none',
                 cursor: 'pointer',
+                maxWidth: '115px',
               }}
             >
               <option value="all">All Priorities</option>
@@ -558,6 +588,11 @@ export const ComplaintMetricDetailDialog = ({
                 <span>Reset</span>
               </button>
             )}
+          </div>
+
+          {/* Ticket Count Indicator on Right */}
+          <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+            <span>{filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'}</span>
           </div>
         </div>
 
@@ -639,7 +674,7 @@ export const ComplaintMetricDetailDialog = ({
                     </tr>
                   ) : (
                     paginatedTickets.map((ticket) => {
-                      const slaInfo = formatSlaRemaining(ticket.slaDeadline, ticket.status);
+                      const slaInfo = formatSlaRemaining(ticket.slaDeadline, ticket.status, ticket.slaStatus, ticket.resolvedAt);
                       const isResolved = ['Resolved', 'Closed'].includes(ticket.status);
 
                       return (
@@ -701,6 +736,71 @@ export const ComplaintMetricDetailDialog = ({
                               <Building size={11} />
                               <span>{ticket.organization || 'Direct Customer'}</span>
                             </div>
+                            {ticket.location && (ticket.location.city || ticket.location.address || ticket.location.type || ticket.location.ip) ? (
+                              <a
+                                href={getGoogleMapsUrl(ticket.location)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  fontSize: '0.67rem',
+                                  fontWeight: 600,
+                                  color: ticket.location.type === 'GPS' ? '#047857' : '#1d4ed8',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  marginTop: '2px',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  background: ticket.location.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
+                                  border: `1px solid ${ticket.location.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
+                                  maxWidth: '175px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  textDecoration: 'none',
+                                  cursor: 'pointer',
+                                }}
+                                title="Open submitter physical location in Google Maps"
+                              >
+                                <MapPin size={9} style={{ flexShrink: 0, color: ticket.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {ticket.location.city || (ticket.location.type === 'GPS' ? 'GPS Location' : (ticket.location.ip === '::1' ? 'Local Network' : `Network: ${ticket.location.ip}`))}
+                                </span>
+                                <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
+                              </a>
+                            ) : (
+                              <a
+                                href={getGoogleMapsUrl(ticket.location)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  fontSize: '0.67rem',
+                                  fontWeight: 600,
+                                  color: '#1d4ed8',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  marginTop: '2px',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  background: '#eff6ff',
+                                  border: '1px solid #bfdbfe',
+                                  maxWidth: '175px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  textDecoration: 'none',
+                                  cursor: 'pointer',
+                                }}
+                                title="Locate submitter on Google Maps"
+                              >
+                                <MapPin size={9} style={{ flexShrink: 0, color: '#2563eb' }} />
+                                <span>Locate Submitter</span>
+                                <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
+                              </a>
+                            )}
                           </td>
 
                           {/* Subject & Category */}
@@ -856,7 +956,7 @@ export const ComplaintMetricDetailDialog = ({
                                 </button>
                               )}
 
-                              {onEditTicket && (
+                              {onEditTicket && !['Resolved', 'Closed'].includes(ticket.status) && (
                                 <button
                                   type="button"
                                   onClick={() => onEditTicket(ticket)}
@@ -878,7 +978,7 @@ export const ComplaintMetricDetailDialog = ({
                                 </button>
                               )}
 
-                              {canDelete && onDeleteTicket && (
+                              {canDelete && onDeleteTicket && !['Resolved', 'Closed'].includes(ticket.status) && (
                                 <button
                                   type="button"
                                   onClick={() => onDeleteTicket(ticket)}

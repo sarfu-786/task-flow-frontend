@@ -25,6 +25,25 @@ export const getSocketServerUrl = () => {
   return 'https://task-flow-backend-f0gp.onrender.com';
 };
 
+/**
+ * Resolves active JWT auth token across all valid storage keys and user payload
+ */
+export const getAuthToken = (user = null) => {
+  if (typeof window === 'undefined') return '';
+  try {
+    return (
+      sessionStorage.getItem('taskflow_token') ||
+      localStorage.getItem('taskflow_token') ||
+      localStorage.getItem('token') ||
+      sessionStorage.getItem('token') ||
+      (user && (user.token || user.accessToken)) ||
+      ''
+    );
+  } catch {
+    return (user && (user.token || user.accessToken)) || '';
+  }
+};
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -33,31 +52,51 @@ class SocketService {
   }
 
   connect(user) {
-    this.currentUser = user;
-    const serverUrl = getSocketServerUrl();
-    const token = (typeof window !== 'undefined' ? localStorage.getItem('token') : '') || (user && user.token) || '';
-
-    if (this.socket && this.socket.connected) {
-      this.joinRooms(user);
-      return this.socket;
+    if (user) {
+      this.currentUser = user;
     }
+    const token = getAuthToken(this.currentUser || user);
 
-    if (this.socket) {
-      if (token) {
-        this.socket.auth = { token };
+    // If there is no token (e.g. user is on login screen or logged out), do not initiate unauthenticated connection
+    if (!token) {
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
       }
-      this.socket.connect();
+      return null;
+    }
+
+    const serverUrl = getSocketServerUrl();
+
+    // If socket is already connected and token matches, simply ensure rooms are joined
+    if (this.socket && this.socket.connected) {
+      if (this.socket.auth?.token !== token) {
+        this.socket.auth = { token };
+        this.socket.disconnect().connect();
+      } else if (this.currentUser) {
+        this.joinRooms(this.currentUser);
+      }
       return this.socket;
     }
 
+    // If socket exists but disconnected, update token and reconnect
+    if (this.socket) {
+      this.socket.auth = { token };
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+      return this.socket;
+    }
+
+    // Initialize new socket with validated token
     this.socket = io(serverUrl, {
       auth: { token },
-      query: token ? { token } : {},
+      query: { token },
       transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 15,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 6000,
       timeout: 20000,
       autoConnect: true,
     });
@@ -74,7 +113,15 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (err) => {
-      console.warn('[Real-Time WebSockets] Connection note:', err.message);
+      // If server rejects with token error, halt reconnect loop cleanly
+      if (err.message && err.message.toLowerCase().includes('token')) {
+        console.warn('[Real-Time WebSockets] Authentication note:', err.message);
+        if (this.socket) {
+          this.socket.disconnect();
+        }
+      } else {
+        console.warn('[Real-Time WebSockets] Connection note:', err.message);
+      }
     });
 
     return this.socket;
@@ -101,10 +148,13 @@ class SocketService {
   }
 
   on(event, callback) {
-    if (!this.socket) {
+    const token = getAuthToken(this.currentUser);
+    if (!this.socket && token) {
       this.connect(this.currentUser);
     }
-    this.socket.on(event, callback);
+    if (this.socket) {
+      this.socket.on(event, callback);
+    }
     return () => {
       if (this.socket) {
         this.socket.off(event, callback);

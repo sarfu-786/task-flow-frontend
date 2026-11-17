@@ -18,7 +18,7 @@ import {
 
 export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { user, logout } = useAuth();
-  const { unreadCount } = useTasks();
+  const { unreadCount, fetchNotifications } = useTasks();
   const [isInboxModalOpen, setIsInboxModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -149,7 +149,10 @@ export const Navbar = ({ activeSection, setActiveSection, isMobileMenuOpen, setI
           <button
             type="button"
             className="btn btn-secondary navbar-inbox-btn"
-            onClick={() => setIsInboxModalOpen(true)}
+            onClick={() => {
+              if (fetchNotifications) fetchNotifications();
+              setIsInboxModalOpen(true);
+            }}
             style={{
               position: 'relative',
               padding: '8px 10px',

@@ -21,10 +21,60 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+const EXCLUDED_EMAILS = new Set([
+  'sarfu@gmail.com',
+  'admin@taskflow.com',
+  'rohan.verma@taskflow.com',
+  'ananya.iyer@taskflow.com',
+  'vikram.malhotra@taskflow.com',
+  'neha.gupta@taskflow.com',
+  'rajesh.kothari@taskflow.com',
+  'kavita.reddy@taskflow.com',
+  'sarah.test1788242656501@example.com',
+  'manager.1788243837519@company.com',
+  'emma.1788243837519@company.com',
+]);
+
+const EXCLUDED_NAMES = [
+  'sarfu',
+  'priya patel',
+  'rohan verma',
+  'ananya iyer',
+  'vikram malhotra',
+  'neha gupta',
+  'rajesh kothari',
+  'kavita reddy',
+  'sarah connor',
+  'manager mark',
+  'employee emma',
+];
+
+const isExcludedUser = (u) => {
+  if (!u) return false;
+  const e = (u.email || '').toLowerCase().trim();
+  const n = (u.name || '').toLowerCase().trim();
+  if (EXCLUDED_EMAILS.has(e)) return true;
+  if (e.endsWith('@taskflow.com') || e.endsWith('@company.com') || e.endsWith('@example.com') || e === 'sarfu@gmail.com') return true;
+  for (const ex of EXCLUDED_NAMES) {
+    if (n === ex || n.startsWith(ex)) return true;
+  }
+  return false;
+};
+
+const pruneTree = (node) => {
+  if (!node || isExcludedUser(node)) return null;
+  const copy = { ...node };
+  if (Array.isArray(copy.children)) {
+    copy.children = copy.children.map(pruneTree).filter(Boolean);
+    copy.teamCount = copy.children.reduce((acc, curr) => acc + 1 + (curr.teamCount || 0), 0);
+  }
+  return copy;
+};
+
 // Dynamic client-side tree builder fallback
 const buildClientHierarchy = (userList, taskList, rootUserOverride = null) => {
   if (!userList || userList.length === 0) return null;
-  const activeUsers = userList.filter((u) => u.status !== 'Rejected' && u.status !== 'Pending');
+  const activeUsers = userList.filter((u) => !isExcludedUser(u) && u.status !== 'Rejected' && u.status !== 'Pending');
   if (activeUsers.length === 0) return null;
 
   let root = null;
@@ -360,14 +410,17 @@ export const OrganizationHierarchy = ({ setActiveSection }) => {
       setLoading(true);
       setError('');
       const data = await hierarchyApi.getOrganizationHierarchy();
-      if (data && data.success) {
-        setHierarchyData(data.hierarchy);
-        setMetaStats({
-          myReportingChain: data.myReportingChain || [],
-          mySupervisor: data.mySupervisor || null,
-          myPeers: data.myPeers || [],
-        });
-        return;
+      if (data && data.success && data.hierarchy) {
+        const sanitizedTree = pruneTree(data.hierarchy);
+        if (sanitizedTree) {
+          setHierarchyData(sanitizedTree);
+          setMetaStats({
+            myReportingChain: (data.myReportingChain || []).filter((u) => !isExcludedUser(u)),
+            mySupervisor: data.mySupervisor && !isExcludedUser(data.mySupervisor) ? data.mySupervisor : null,
+            myPeers: (data.myPeers || []).filter((u) => !isExcludedUser(u)),
+          });
+          return;
+        }
       }
       throw new Error(data?.message || 'Hierarchy API error');
     } catch (err) {

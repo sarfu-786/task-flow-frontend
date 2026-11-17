@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ComplaintTable } from './ComplaintTable';
-import { ComplaintKanban } from './ComplaintKanban';
-import { ComplaintCards } from './ComplaintCards';
 import {
   AlertCircle,
   X,
   Table as TableIcon,
-  LayoutGrid,
-  Sparkles,
 } from 'lucide-react';
 import { useComplaints } from '../../context/ComplaintContext';
 
@@ -20,8 +16,7 @@ export const ComplaintDirectoryModal = ({
   onDelete,
   canDelete,
 }) => {
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'kanban' | 'cards'
-  const { fetchComplaints, loading, totalItems, stats } = useComplaints();
+  const { totalItems, stats } = useComplaints();
 
   // Lock body scroll and handle ESC key
   useEffect(() => {
@@ -154,91 +149,24 @@ export const ComplaintDirectoryModal = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* View Switcher Segmented Control */}
+            {/* Table Badge Indicator (Only Table View) */}
             <div
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                backgroundColor: '#f1f5f9',
-                padding: '2.5px',
-                borderRadius: '10px',
-                border: '1px solid #e2e8f0',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                border: '1px solid #bfdbfe',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                backgroundColor: '#eff6ff',
+                color: '#1d4ed8',
               }}
             >
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  backgroundColor: viewMode === 'table' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'table' ? '#2563eb' : '#64748b',
-                  boxShadow: viewMode === 'table' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                }}
-                id="btn-view-table"
-              >
-                <TableIcon size={14} />
-                <span>Table</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode('kanban')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  backgroundColor: viewMode === 'kanban' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'kanban' ? '#2563eb' : '#64748b',
-                  boxShadow: viewMode === 'kanban' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                }}
-                id="btn-view-kanban"
-              >
-                <LayoutGrid size={14} />
-                <span>Kanban</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '5px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  backgroundColor: viewMode === 'cards' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'cards' ? '#2563eb' : '#64748b',
-                  boxShadow: viewMode === 'cards' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                }}
-                id="btn-view-cards"
-              >
-                <Sparkles size={14} />
-                <span>Cards</span>
-              </button>
+              <TableIcon size={14} />
+              <span>Table Registry</span>
             </div>
-
-
 
             {/* Separator */}
             <div style={{ width: '1px', height: '22px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
@@ -278,12 +206,12 @@ export const ComplaintDirectoryModal = ({
           </div>
         </div>
 
-        {/* Modal Scrollable Body */}
+        {/* Modal Scrollable Body - Pure Table View */}
         <div
           style={{
             flex: '1 1 auto',
             minHeight: 0,
-            overflowY: viewMode === 'table' ? 'hidden' : 'auto',
+            overflowY: 'hidden',
             overflowX: 'hidden',
             padding: '14px 18px',
             backgroundColor: '#f8fafc',
@@ -291,35 +219,13 @@ export const ComplaintDirectoryModal = ({
             flexDirection: 'column',
           }}
         >
-          {viewMode === 'table' && (
-            <ComplaintTable
-              onView={onView}
-              onEdit={onEdit}
-              onResolve={onResolve}
-              onDelete={onDelete}
-              canDelete={canDelete}
-            />
-          )}
-
-          {viewMode === 'kanban' && (
-            <ComplaintKanban
-              onView={onView}
-              onEdit={onEdit}
-              onResolve={onResolve}
-              onDelete={onDelete}
-              canDelete={canDelete}
-            />
-          )}
-
-          {viewMode === 'cards' && (
-            <ComplaintCards
-              onView={onView}
-              onEdit={onEdit}
-              onResolve={onResolve}
-              onDelete={onDelete}
-              canDelete={canDelete}
-            />
-          )}
+          <ComplaintTable
+            onView={onView}
+            onEdit={onEdit}
+            onResolve={onResolve}
+            onDelete={onDelete}
+            canDelete={canDelete}
+          />
         </div>
       </div>
     </div>

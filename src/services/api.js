@@ -1054,6 +1054,30 @@ export const complaintApi = {
     return data;
   },
 
+  async getCustomers() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/customers`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch customer records');
+    }
+    return data.customers || [];
+  },
+
+  async getSlaPolicy() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/sla-policy`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch SLA policy');
+    }
+    return data.policy || {};
+  },
+
   async getComplaint(id) {
     const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}`, {
       method: 'GET',
@@ -1077,6 +1101,34 @@ export const complaintApi = {
       throw new Error(data.message || 'Failed to create complaint ticket');
     }
     return data;
+  },
+
+  async createPublicComplaint(complaintData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/public`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(complaintData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to submit complaint');
+    }
+    return data;
+  },
+
+  async trackPublicTicket(ticketNumber) {
+    const res = await fetchWithTimeout(
+      `${getBaseUrl()}/complaints/public/track/${encodeURIComponent(ticketNumber)}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Ticket not found');
+    }
+    return data.ticket || data;
   },
 
   async updateComplaint(id, complaintData) {
@@ -1127,6 +1179,18 @@ export const complaintApi = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to reassign complaint');
+    }
+    return data;
+  },
+
+  async getEscalationRecipients() {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/escalation-recipients`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch escalation recipients');
     }
     return data;
   },
@@ -1192,6 +1256,44 @@ export const complaintApi = {
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.message || 'Failed to add activity');
+    }
+    return data;
+  },
+
+  async updateFollowUpStatus(id, activityId, followUpData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/activities/${activityId}/followup`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(followUpData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update follow-up status');
+    }
+    return data;
+  },
+
+  async submitCsat(id, csatData) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/csat`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(csatData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to submit CSAT feedback');
+    }
+    return data;
+  },
+
+  async getRelatedRecords(id) {
+    const res = await fetchWithTimeout(`${getBaseUrl()}/complaints/${id}/related`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch related records');
     }
     return data;
   },

@@ -38,6 +38,46 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+const EXCLUDED_EMAILS = new Set([
+  'sarfu@gmail.com',
+  'admin@taskflow.com',
+  'rohan.verma@taskflow.com',
+  'ananya.iyer@taskflow.com',
+  'vikram.malhotra@taskflow.com',
+  'neha.gupta@taskflow.com',
+  'rajesh.kothari@taskflow.com',
+  'kavita.reddy@taskflow.com',
+  'sarah.test1788242656501@example.com',
+  'manager.1788243837519@company.com',
+  'emma.1788243837519@company.com',
+]);
+
+const EXCLUDED_NAMES = new Set([
+  'sarfu',
+  'priya patel',
+  'rohan verma',
+  'ananya iyer',
+  'vikram malhotra',
+  'neha gupta',
+  'rajesh kothari',
+  'kavita reddy',
+  'sarah connor',
+  'manager mark',
+  'employee emma',
+]);
+
+const isExcludedUser = (u) => {
+  if (!u) return false;
+  const email = (u.email || '').toLowerCase().trim();
+  const name = (u.name || '').toLowerCase().trim();
+  if (EXCLUDED_EMAILS.has(email)) return true;
+  if (email.endsWith('@taskflow.com') || email.endsWith('@company.com') || email.endsWith('@example.com')) return true;
+  for (const exName of EXCLUDED_NAMES) {
+    if (name === exName || name.startsWith(exName)) return true;
+  }
+  return false;
+};
+
 // Helper to get all subordinate user IDs for a given user in the organizational hierarchy
 const getSubordinateUserIds = (user, allUsers) => {
   if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
@@ -209,7 +249,8 @@ export const UserSection = () => {
     email: '',
     username: '',
     role: 'User',
-    department: 'Operations',
+    department: 'Customer Support & Helpdesk',
+    city: '',
     reportsTo: '',
     reportsToName: '',
     password: '',
@@ -227,7 +268,8 @@ export const UserSection = () => {
         email: selectedUser.email || '',
         username: selectedUser.username || '',
         role: selectedUser.role || 'User',
-        department: selectedUser.department || 'Operations',
+        department: selectedUser.department || 'Customer Support & Helpdesk',
+        city: selectedUser.city || '',
         reportsTo: selectedUser.reportsTo || '',
         reportsToName: selectedUser.reportsToName || '',
         password: '',
@@ -239,7 +281,8 @@ export const UserSection = () => {
         email: '',
         username: '',
         role: 'User',
-        department: 'Operations',
+        department: 'Customer Support & Helpdesk',
+        city: '',
         reportsTo: '',
         reportsToName: '',
         password: '',
@@ -408,7 +451,7 @@ export const UserSection = () => {
   );
 
   // Active Approved Users
-  const activeUsers = (users || []).filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending');
+  const activeUsers = (users || []).filter((u) => u && !isExcludedUser(u) && u.status !== 'Rejected' && u.status !== 'Pending');
 
   // Role-Based Scoping
   const currentUserId = (currentUser?._id || currentUser?.id || '').toString();
@@ -831,13 +874,44 @@ export const UserSection = () => {
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     >
-                      <option value="Internet Work">Internet Work</option>
-                      <option value="Documentation">Documentation</option>
-                      <option value="Backend Work">Backend Work</option>
-                      <option value="Social Media">Social Media</option>
-                      <option value="Operations">Operations</option>
+                      {/* Core Organization Departments */}
+                      <option value="Customer Support & Helpdesk">Customer Support & Helpdesk ⭐ (Main CRM)</option>
+                      <option value="Technical & IT Support (Backend & Systems)">Technical & IT Support (Backend & Systems)</option>
+                      <option value="Sales & Business Development (Sells)">Sales & Business Development (Sells)</option>
+                      <option value="Operations & Field Logistics">Operations & Field Logistics</option>
+                      <option value="Accounts & Billing (Finance)">Accounts & Billing (Finance)</option>
+                      <option value="Documentation & Quality (Back Office)">Documentation & Quality (Back Office)</option>
+                      <option value="Social Media & Marketing">Social Media & Marketing</option>
+                      <option value="Internet & Network Work (Legacy Support)">Internet & Network Work (Legacy Support)</option>
+                      
+                      {/* Legacy Departments (for backward compatibility) */}
+                      <option value="Operations">Operations (Legacy)</option>
+                      <option value="Backend Work">Backend Work (Legacy)</option>
+                      <option value="Internet Work">Internet Work (Legacy)</option>
+                      <option value="Social Media">Social Media (Legacy)</option>
+                      <option value="Documentation">Documentation (Legacy)</option>
+                      <option value="Sells">Sells (Legacy)</option>
+                      <option value="Accounts">Accounts (Legacy)</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Base City / Service Territory */}
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label" htmlFor="emp-city">
+                    Base City / Service Area (Optional)
+                  </label>
+                  <input
+                    id="emp-city"
+                    type="text"
+                    className="form-control"
+                    value={formData.city || ''}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="e.g. Patna, Delhi, Noida, Mumbai"
+                  />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                    Used for intelligent proximity routing and nearby support ticket dispatching.
+                  </span>
                 </div>
 
                 {/* Reports To (Manager Selection) */}

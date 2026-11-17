@@ -73,6 +73,10 @@ export const ComplaintProvider = ({ children }) => {
   }, []);
 
   const openEditModal = useCallback((c) => {
+    if (c && ['Resolved', 'Closed'].includes(c.status)) {
+      alert('Resolved and closed complaints cannot be edited. Users can only view ticket details.');
+      return;
+    }
     setSelectedComplaint(c);
     setIsEditModalOpen(true);
   }, []);
@@ -93,6 +97,10 @@ export const ComplaintProvider = ({ children }) => {
   }, []);
 
   const openDeleteModal = useCallback((c) => {
+    if (c && ['Resolved', 'Closed'].includes(c.status)) {
+      alert('Resolved and closed complaints cannot be deleted. Users can only view ticket details.');
+      return;
+    }
     setSelectedComplaint(c);
     setIsDeleteModalOpen(true);
   }, []);
@@ -237,6 +245,26 @@ export const ComplaintProvider = ({ children }) => {
     };
   }, [fetchComplaints]);
 
+  const getCustomers = useCallback(async () => {
+    try {
+      const list = await complaintApi.getCustomers();
+      return list || [];
+    } catch (err) {
+      console.error('Failed to fetch complaint customers:', err);
+      throw err;
+    }
+  }, []);
+
+  const getSlaPolicy = useCallback(async () => {
+    try {
+      const policy = await complaintApi.getSlaPolicy();
+      return policy || {};
+    } catch (err) {
+      console.warn('Failed to fetch SLA policy:', err);
+      return {};
+    }
+  }, []);
+
   // CRUD & Workflow Operations
   const createComplaint = async (data) => {
     try {
@@ -244,9 +272,9 @@ export const ComplaintProvider = ({ children }) => {
       const res = await complaintApi.createComplaint(data);
       if (res && res.success) {
         await fetchComplaints(true);
-        setIsCreateModalOpen(false);
-        return res.complaint;
+        return res;
       }
+      return res;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -257,6 +285,12 @@ export const ComplaintProvider = ({ children }) => {
 
   const updateComplaint = async (id, data) => {
     try {
+      const existing = (allComplaints || []).find((c) => (c._id && c._id.toString() === id?.toString()) || (c.id && c.id.toString() === id?.toString()));
+      if (existing && ['Resolved', 'Closed'].includes(existing.status)) {
+        const msg = 'Resolved and closed complaints cannot be edited. Users can only view ticket details.';
+        setError(msg);
+        throw new Error(msg);
+      }
       setLoading(true);
       const res = await complaintApi.updateComplaint(id, data);
       if (res && res.success) {
@@ -292,6 +326,15 @@ export const ComplaintProvider = ({ children }) => {
       throw err;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getEscalationRecipients = async () => {
+    try {
+      return await complaintApi.getEscalationRecipients();
+    } catch (err) {
+      console.warn('Failed to fetch escalation recipients from server:', err);
+      return { success: false, recipients: [] };
     }
   };
 
@@ -432,6 +475,54 @@ export const ComplaintProvider = ({ children }) => {
     }
   };
 
+  const updateFollowUpStatus = async (id, activityId, followUpData) => {
+    try {
+      setLoading(true);
+      const res = await complaintApi.updateFollowUpStatus(id, activityId, followUpData);
+      if (res && res.success) {
+        await fetchComplaints(true);
+        if (selectedComplaint && selectedComplaint._id === id) {
+          setSelectedComplaint(res.complaint);
+        }
+        return res.complaint;
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitCsat = async (id, csatData) => {
+    try {
+      setLoading(true);
+      const res = await complaintApi.submitCsat(id, csatData);
+      if (res && res.success) {
+        await fetchComplaints(true);
+        if (selectedComplaint && selectedComplaint._id === id) {
+          setSelectedComplaint(res.complaint);
+        }
+        return res.complaint;
+      }
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRelatedRecords = async (id) => {
+    try {
+      const res = await complaintApi.getRelatedRecords(id);
+      return res;
+    } catch (err) {
+      console.error('Failed to get related records:', err);
+      throw err;
+    }
+  };
+
   const updateComplaintStatus = async (id, newStatus) => {
     try {
       setLoading(true);
@@ -453,6 +544,12 @@ export const ComplaintProvider = ({ children }) => {
 
   const deleteComplaint = async (id) => {
     try {
+      const existing = (allComplaints || []).find((c) => (c._id && c._id.toString() === id?.toString()) || (c.id && c.id.toString() === id?.toString()));
+      if (existing && ['Resolved', 'Closed'].includes(existing.status)) {
+        const msg = 'Resolved and closed complaints cannot be deleted. Users can only view ticket details.';
+        setError(msg);
+        throw new Error(msg);
+      }
       setLoading(true);
       const res = await complaintApi.deleteComplaint(id);
       if (res && res.success) {
@@ -537,16 +634,22 @@ export const ComplaintProvider = ({ children }) => {
         openDeleteModal,
         closeDeleteModal,
         fetchComplaints,
+        getCustomers,
+        getSlaPolicy,
         createComplaint,
         updateComplaint,
         assignComplaint,
         escalateComplaint,
+        getEscalationRecipients,
         investigateComplaint,
         addActivity,
         resolveComplaint,
         closeComplaint,
         reopenComplaint,
         linkComplaint,
+        updateFollowUpStatus,
+        submitCsat,
+        getRelatedRecords,
         updateComplaintStatus,
         deleteComplaint,
       }}

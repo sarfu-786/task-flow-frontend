@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
+import { getGoogleMapsUrl } from '../../utils/locationService';
+import { getCategoryBadgeStyle, PRIMARY_CATEGORY_NAMES, CORE_DEPARTMENTS } from '../../utils/complaintCategories';
 import {
   AlertCircle,
   Clock,
@@ -22,6 +24,8 @@ import {
   X,
   Filter,
   RotateCcw,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 
 export const ComplaintTable = ({
@@ -73,6 +77,22 @@ export const ComplaintTable = ({
     const isResolved = ['Resolved', 'Closed'].includes(status);
 
     if (isResolved) {
+      const isBreached =
+        complaint.slaStatus === 'Breached' ||
+        (complaint.resolvedAt && complaint.slaDeadline && new Date(complaint.resolvedAt) > new Date(complaint.slaDeadline));
+      if (isBreached) {
+        return {
+          text: 'Resolved – Breached SLA',
+          subtext: complaint.resolvedAt
+            ? `Resolved on ${new Date(complaint.resolvedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+            : 'Closed after SLA deadline',
+          color: '#dc2626',
+          bgColor: '#fef2f2',
+          borderColor: '#fecaca',
+          badgeClass: 'sla-breached',
+          icon: <AlertTriangle size={13} />,
+        };
+      }
       return {
         text: 'SLA Met',
         subtext: complaint.resolvedAt
@@ -184,24 +204,7 @@ export const ComplaintTable = ({
   };
 
   // Helper for Category styling
-  const getCategoryBadge = (cat) => {
-    switch (cat) {
-      case 'Technical Glitch':
-        return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' };
-      case 'Product Defect':
-        return { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' };
-      case 'Service Delay':
-        return { bg: '#fffbeb', color: '#b45309', border: '#fde68a' };
-      case 'Billing Query':
-        return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' };
-      case 'Hardware Fault':
-        return { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' };
-      case 'Account Access':
-        return { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' };
-      default:
-        return { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
-    }
-  };
+  const getCategoryBadge = (cat) => getCategoryBadgeStyle(cat);
 
   // Helper for Status badge styling
   const getStatusBadge = (status) => {
@@ -419,13 +422,12 @@ export const ComplaintTable = ({
             gap: '8px',
           }}
         >
-          {/* Search Input */}
+          {/* Search Input - Compact */}
           <div
             style={{
               position: 'relative',
-              flex: '1 1 220px',
-              maxWidth: '360px',
-              minWidth: '180px',
+              width: '210px',
+              flexShrink: 0,
             }}
           >
             <Search
@@ -441,7 +443,7 @@ export const ComplaintTable = ({
             />
             <input
               type="text"
-              placeholder="Search by ticket #, customer, subject, assignee..."
+              placeholder="Search tickets, customers..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -449,13 +451,14 @@ export const ComplaintTable = ({
               }}
               style={{
                 width: '100%',
-                padding: '6px 28px 6px 30px',
+                padding: '6px 26px 6px 30px',
                 borderRadius: '8px',
                 border: '1px solid #cbd5e1',
                 fontSize: '0.8rem',
                 color: '#0f172a',
                 outline: 'none',
                 background: '#f8fafc',
+                boxSizing: 'border-box',
                 transition: 'all 0.15s ease',
               }}
             />
@@ -465,7 +468,7 @@ export const ComplaintTable = ({
                 onClick={() => setSearch('')}
                 style={{
                   position: 'absolute',
-                  right: '8px',
+                  right: '6px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
@@ -491,7 +494,7 @@ export const ComplaintTable = ({
                 setCurrentPage(1);
               }}
               style={{
-                padding: '5px 10px',
+                padding: '5px 8px',
                 borderRadius: '8px',
                 border: categoryFilter !== 'all' ? '1px solid #93c5fd' : '1px solid #cbd5e1',
                 background: categoryFilter !== 'all' ? '#eff6ff' : '#ffffff',
@@ -500,15 +503,19 @@ export const ComplaintTable = ({
                 fontWeight: 600,
                 outline: 'none',
                 cursor: 'pointer',
+                maxWidth: '155px',
               }}
             >
               <option value="all">All Categories</option>
-              <option value="Technical Glitch">Technical Glitch</option>
-              <option value="Product Defect">Product Defect</option>
-              <option value="Service Delay">Service Delay</option>
-              <option value="Billing Query">Billing Query</option>
-              <option value="Hardware Fault">Hardware Fault</option>
-              <option value="Account Access">Account Access</option>
+              {CORE_DEPARTMENTS.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.badgeLabel}</option>
+              ))}
+              <option value="Technical Glitch">Technical Glitch (Legacy)</option>
+              <option value="Product Defect">Product Defect (Legacy)</option>
+              <option value="Service Delay">Service Delay (Legacy)</option>
+              <option value="Billing Query">Billing Query (Legacy)</option>
+              <option value="Hardware Fault">Hardware Fault (Legacy)</option>
+              <option value="Account Access">Account Access (Legacy)</option>
             </select>
 
             {/* Priority Filter */}
@@ -824,6 +831,71 @@ export const ComplaintTable = ({
                             <Building size={10} />
                             <span>{item.organization || 'Direct Customer'}</span>
                           </div>
+                          {item.location && (item.location.city || item.location.address || item.location.type || item.location.ip) ? (
+                            <a
+                              href={getGoogleMapsUrl(item.location)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: '0.67rem',
+                                fontWeight: 600,
+                                color: item.location.type === 'GPS' ? '#047857' : '#1d4ed8',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                marginTop: '2px',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                background: item.location.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
+                                border: `1px solid ${item.location.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
+                                maxWidth: '175px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                              }}
+                              title="Click to view submitter physical location on Google Maps"
+                            >
+                              <MapPin size={9} style={{ flexShrink: 0, color: item.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {item.location.city || (item.location.type === 'GPS' ? 'GPS Location' : (item.location.ip === '::1' || item.location.ip === '127.0.0.1' ? 'Local Network' : `IP: ${item.location.ip}`))}
+                              </span>
+                              <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
+                            </a>
+                          ) : (
+                            <a
+                              href={getGoogleMapsUrl(item.location)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: '0.67rem',
+                                fontWeight: 600,
+                                color: '#1d4ed8',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                marginTop: '2px',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                background: '#eff6ff',
+                                border: '1px solid #bfdbfe',
+                                maxWidth: '175px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                              }}
+                              title="Locate submitter on Google Maps"
+                            >
+                              <MapPin size={9} style={{ flexShrink: 0, color: '#2563eb' }} />
+                              <span>Locate Submitter</span>
+                              <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
+                            </a>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -959,11 +1031,13 @@ export const ComplaintTable = ({
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <button
                           type="button"
-                          onClick={() =>
+                          disabled={isResolved}
+                          onClick={() => {
+                            if (isResolved) return;
                             setActiveStatusDropdown(
                               activeStatusDropdown === item._id ? null : item._id
-                            )
-                          }
+                            );
+                          }}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -975,10 +1049,10 @@ export const ComplaintTable = ({
                             background: sBadge.bg,
                             color: sBadge.color,
                             border: `1px solid ${sBadge.border}`,
-                            cursor: 'pointer',
+                            cursor: isResolved ? 'default' : 'pointer',
                             transition: 'all 0.15s ease',
                           }}
-                          title="Click to update status"
+                          title={isResolved ? `Status: ${item.status} (Case Closed/Resolved - Read-only)` : 'Click to update status'}
                         >
                           <span
                             style={{
@@ -1087,28 +1161,30 @@ export const ComplaintTable = ({
                           <Eye size={13} />
                         </button>
 
-                        {/* Edit Ticket */}
-                        <button
-                          type="button"
-                          onClick={() => onEdit(item)}
-                          className="btn-icon-action"
-                          title="Edit Complaint"
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '7px',
-                            border: '1px solid #e2e8f0',
-                            background: '#ffffff',
-                            color: '#475569',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <Edit2 size={13} />
-                        </button>
+                        {/* Edit Ticket - Only if ticket is active (Not Resolved/Closed) */}
+                        {!isResolved && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit(item)}
+                            className="btn-icon-action"
+                            title="Edit Complaint"
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '7px',
+                              border: '1px solid #e2e8f0',
+                              background: '#ffffff',
+                              color: '#475569',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                        )}
 
                         {/* Quick Resolve Button if not yet resolved */}
                         {!isResolved && (
@@ -1135,8 +1211,8 @@ export const ComplaintTable = ({
                           </button>
                         )}
 
-                        {/* Delete Ticket (Super Admin) */}
-                        {canDelete && (
+                        {/* Delete Ticket (Super Admin) - Only if ticket is active (Not Resolved/Closed) */}
+                        {canDelete && !isResolved && (
                           <button
                             type="button"
                             onClick={() => onDelete(item)}

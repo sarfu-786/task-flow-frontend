@@ -1,12 +1,14 @@
 import React from 'react';
-import { Bell, CheckCircle2, Shield, X, ArrowRight, UserCheck, Target, Sparkles } from 'lucide-react';
+import { Bell, CheckCircle2, Shield, X, ArrowRight, UserCheck, Target, Sparkles, Flame, AlertCircle } from 'lucide-react';
 
 export const RealtimeToast = ({ toast, onClose, onAction }) => {
   if (!toast) return null;
 
-  const isLead = toast.type === 'lead_assigned' || toast.type === 'new_lead' || toast.type === 'lead_created' || toast.taskType === 'lead';
-  const isRegistration = toast.type === 'user_registered';
-  const isAssignment = !isRegistration && !isLead && (toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager'));
+  const isSuccess = toast.type === 'success_alert';
+  const isEscalation = !isSuccess && (toast.type === 'complaint_escalated' || toast.taskType === 'complaint');
+  const isLead = !isSuccess && !isEscalation && (toast.type === 'lead_assigned' || toast.type === 'new_lead' || toast.type === 'lead_created' || toast.taskType === 'lead');
+  const isRegistration = !isSuccess && !isEscalation && toast.type === 'user_registered';
+  const isAssignment = !isSuccess && !isEscalation && !isRegistration && !isLead && (toast.type === 'task_assigned' || (toast.assignedBy && toast.forRole !== 'Manager'));
 
   let primaryColor = '#059669';
   let badgeBg = '#ecfdf5';
@@ -15,7 +17,21 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
   let defaultTitle = 'Task Completed';
   let icon = <CheckCircle2 size={20} />;
 
-  if (isLead) {
+  if (isSuccess) {
+    primaryColor = '#16a34a';
+    badgeBg = '#dcfce7';
+    borderColor = '#86efac';
+    badgeTitle = '✓ Escalation Confirmed';
+    defaultTitle = 'Complaint Successfully Escalated';
+    icon = <CheckCircle2 size={20} />;
+  } else if (isEscalation) {
+    primaryColor = '#dc2626';
+    badgeBg = '#fef2f2';
+    borderColor = '#f87171';
+    badgeTitle = '🚨 Priority Escalation Alert';
+    defaultTitle = 'Complaint Escalated';
+    icon = <Flame size={20} />;
+  } else if (isLead) {
     primaryColor = '#6366f1';
     badgeBg = '#eef2ff';
     borderColor = '#818cf8';
@@ -45,7 +61,7 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
         top: '20px',
         right: '20px',
         zIndex: 9999,
-        maxWidth: '420px',
+        maxWidth: '430px',
         width: 'calc(100% - 40px)',
         background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(16px)',
@@ -118,11 +134,46 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
         </button>
       </div>
 
-      <p style={{ margin: 0, fontSize: '0.84rem', color: '#334155', lineHeight: 1.45, wordBreak: 'break-word' }}>
+      {isEscalation && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '2px 0' }}>
+          {(toast.complaintTicketNumber || toast.ticketNumber) && (
+            <span style={{ fontSize: '0.74rem', background: '#f1f5f9', color: '#1e293b', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
+              {toast.complaintTicketNumber || toast.ticketNumber}
+            </span>
+          )}
+          {toast.customerName && (
+            <span style={{ fontSize: '0.74rem', background: '#f8fafc', color: '#475569', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+              Customer: {toast.customerName}
+            </span>
+          )}
+          <span style={{ fontSize: '0.74rem', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
+            Priority: {toast.priority || 'Critical'}
+          </span>
+        </div>
+      )}
+
+      <p style={{ margin: 0, fontSize: '0.84rem', color: '#334155', lineHeight: 1.45, wordBreak: 'break-word', whiteSpace: 'pre-line' }}>
         {toast.message || toast.taskDescription}
       </p>
 
-      {toast.remark && (
+      {toast.escalationReason && isEscalation && (
+        <div
+          style={{
+            background: '#fff1f2',
+            border: '1px solid #ffe4e6',
+            borderLeft: `3px solid ${primaryColor}`,
+            padding: '6px 10px',
+            borderRadius: '6px',
+            fontSize: '0.78rem',
+            color: '#9f1239',
+            wordBreak: 'break-word',
+          }}
+        >
+          <strong>Reason:</strong> {toast.escalationReason}
+        </div>
+      )}
+
+      {toast.remark && !isEscalation && (
         <div
           style={{
             background: '#f8fafc',
@@ -157,10 +208,10 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: `0 4px 10px ${isLead ? 'rgba(99, 102, 241, 0.25)' : isRegistration ? 'rgba(217, 119, 6, 0.25)' : isAssignment ? 'rgba(37, 99, 235, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`,
+              boxShadow: `0 4px 10px ${isEscalation ? 'rgba(220, 38, 38, 0.25)' : isLead ? 'rgba(99, 102, 241, 0.25)' : isRegistration ? 'rgba(217, 119, 6, 0.25)' : isAssignment ? 'rgba(37, 99, 235, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`,
             }}
           >
-            <span>{isLead ? 'View Lead in CRM' : isRegistration ? 'Review & Approve' : 'View Details'}</span>
+            <span>{isEscalation ? 'Review Escalated Ticket' : isLead ? 'View Lead in CRM' : isRegistration ? 'Review & Approve' : 'View Details'}</span>
             <ArrowRight size={13} />
           </button>
         </div>

@@ -135,28 +135,28 @@ export const LeadModal = () => {
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
-  // Debounced real-time duplicate detection across email, phone, and company + contact
+  // Debounced real-time duplicate detection strictly for identical email or phone number
   useEffect(() => {
     let active = true;
     const timer = setTimeout(async () => {
       const email = formData.email?.trim();
       const phone = formData.mobileNumber?.trim();
-      const contactPerson = formData.contactPerson?.trim();
-      const company = formData.company?.trim();
 
-      if (!email && !phone && (!contactPerson || !company)) {
+      // Only check if email or phone is entered
+      if (!email && !phone) {
         setDuplicateWarning(null);
         return;
       }
 
       try {
         setIsCheckingDuplicate(true);
-        const excludeId = modalMode === 'edit' && selectedLead ? (selectedLead._id || selectedLead.leadId) : null;
+        const excludeId = modalMode === 'edit' && selectedLead
+          ? (selectedLead._id ? selectedLead._id.toString() : (selectedLead.leadId || selectedLead.lead_id || ''))
+          : null;
         const res = await checkDuplicate({
           email,
           phone,
-          contactPerson,
-          company,
+          excludeLeadId: excludeId,
           excludeId,
         });
 
@@ -178,7 +178,7 @@ export const LeadModal = () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [formData.email, formData.mobileNumber, formData.contactPerson, formData.company, modalMode, selectedLead, checkDuplicate]);
+  }, [formData.email, formData.mobileNumber, modalMode, selectedLead, checkDuplicate]);
 
   // Check if an email is already used by another lead
   const checkDuplicateEmail = (emailToCheck) => {
@@ -191,8 +191,10 @@ export const LeadModal = () => {
       if (modalMode === 'edit' && selectedLead) {
         const isSame =
           (l._id && selectedLead._id && l._id.toString() === selectedLead._id.toString()) ||
-          (l.leadId && selectedLead.leadId && l.leadId === selectedLead.leadId) ||
-          (l.lead_id && selectedLead.lead_id && l.lead_id === selectedLead.lead_id);
+          (l.leadId && selectedLead.leadId && l.leadId.toString().toLowerCase() === selectedLead.leadId.toString().toLowerCase()) ||
+          (l.lead_id && selectedLead.lead_id && l.lead_id.toString().toLowerCase() === selectedLead.lead_id.toString().toLowerCase()) ||
+          (l.leadId && selectedLead.lead_id && l.leadId.toString().toLowerCase() === selectedLead.lead_id.toString().toLowerCase()) ||
+          (l.lead_id && selectedLead.leadId && l.lead_id.toString().toLowerCase() === selectedLead.leadId.toString().toLowerCase());
         return !isSame;
       }
       return true;

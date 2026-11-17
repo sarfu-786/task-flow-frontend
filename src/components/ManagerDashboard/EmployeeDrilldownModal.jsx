@@ -24,6 +24,46 @@ import { useAuth } from '../../context/AuthContext';
 import { useUserManagement } from '../../context/UserContext';
 import { useTasks } from '../../context/TaskContext';
 
+const EXCLUDED_EMAILS = new Set([
+  'sarfu@gmail.com',
+  'admin@taskflow.com',
+  'rohan.verma@taskflow.com',
+  'ananya.iyer@taskflow.com',
+  'vikram.malhotra@taskflow.com',
+  'neha.gupta@taskflow.com',
+  'rajesh.kothari@taskflow.com',
+  'kavita.reddy@taskflow.com',
+  'sarah.test1788242656501@example.com',
+  'manager.1788243837519@company.com',
+  'emma.1788243837519@company.com',
+]);
+
+const EXCLUDED_NAMES = new Set([
+  'sarfu',
+  'priya patel',
+  'rohan verma',
+  'ananya iyer',
+  'vikram malhotra',
+  'neha gupta',
+  'rajesh kothari',
+  'kavita reddy',
+  'sarah connor',
+  'manager mark',
+  'employee emma',
+]);
+
+const isExcludedUser = (u) => {
+  if (!u) return false;
+  const email = (u.email || '').toLowerCase().trim();
+  const name = (u.name || '').toLowerCase().trim();
+  if (EXCLUDED_EMAILS.has(email)) return true;
+  if (email.endsWith('@taskflow.com') || email.endsWith('@company.com') || email.endsWith('@example.com')) return true;
+  for (const exName of EXCLUDED_NAMES) {
+    if (name === exName || name.startsWith(exName)) return true;
+  }
+  return false;
+};
+
 // Helper to get all subordinate user IDs for a given user in the organizational hierarchy
 const getSubordinateUserIds = (user, allUsers) => {
   if (!user || !allUsers || !Array.isArray(allUsers)) return new Set();
@@ -184,7 +224,7 @@ export const EmployeeDrilldownModal = ({
   if (!isOpen) return null;
 
   // Active Approved Users
-  const activeUsers = users.filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending');
+  const activeUsers = (users || []).filter((u) => u && !isExcludedUser(u) && u.status !== 'Rejected' && u.status !== 'Pending');
 
   // Role-Based Scoping:
   // 1. Super Admin: sees entire company personnel.

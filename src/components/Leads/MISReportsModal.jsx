@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { MISReportsDashboard } from './MISReportsDashboard';
+import { ExecutiveWidgets } from './ExecutiveWidgets';
 import { LeadExportModal } from './LeadExportModal';
 import {
   FileSpreadsheet,
   X,
   Download,
+  TrendingUp,
+  BarChart3,
 } from 'lucide-react';
 
 export const MISReportsModal = ({ isOpen, onClose }) => {
+  const [misViewMode, setMisViewMode] = useState('widgets'); // 'widgets' | 'reports'
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Lock body scroll and handle ESC key
@@ -133,8 +137,69 @@ export const MISReportsModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Top-Right Action Controls: Primary [ Export ] + Dedicated Close Button */}
+          {/* Top-Right Action Controls: View Switcher + Primary [ Export ] + Dedicated Close Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {/* View Switcher: Executive Widgets vs MIS Reports */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: '#f1f5f9',
+                padding: '3px',
+                borderRadius: '10px',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setMisViewMode('widgets')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '5px 11px',
+                  borderRadius: '7px',
+                  border: 'none',
+                  background: misViewMode === 'widgets' ? '#ffffff' : 'transparent',
+                  color: misViewMode === 'widgets' ? '#059669' : '#64748b',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer',
+                  boxShadow: misViewMode === 'widgets' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <TrendingUp size={13} />
+                <span>Executive Analytics</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMisViewMode('reports')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '5px 11px',
+                  borderRadius: '7px',
+                  border: 'none',
+                  background: misViewMode === 'reports' ? '#ffffff' : 'transparent',
+                  color: misViewMode === 'reports' ? '#059669' : '#64748b',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer',
+                  boxShadow: misViewMode === 'reports' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <BarChart3 size={13} />
+                <span>MIS Operational Reports</span>
+              </button>
+            </div>
+
+            {/* Separator */}
+            <div style={{ width: '1px', height: '20px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
+
             {/* Primary Export Button */}
             <button
               type="button"
@@ -215,7 +280,11 @@ export const MISReportsModal = ({ isOpen, onClose }) => {
             minHeight: 0,
           }}
         >
-          <MISReportsDashboard />
+          {misViewMode === 'widgets' ? (
+            <ExecutiveWidgets />
+          ) : (
+            <MISReportsDashboard />
+          )}
         </div>
       </div>
 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
+import { getGoogleMapsUrl } from '../../utils/locationService';
+import { getCategoryBadgeStyle } from '../../utils/complaintCategories';
 import {
   AlertCircle,
   Clock,
@@ -15,6 +17,8 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 
 export const ComplaintKanban = ({
@@ -146,22 +150,7 @@ export const ComplaintKanban = ({
   };
 
   // Category styling
-  const getCategoryStyle = (cat) => {
-    switch (cat) {
-      case 'Technical Glitch':
-        return { bg: '#eff6ff', color: '#1d4ed8' };
-      case 'Product Defect':
-        return { bg: '#fef2f2', color: '#b91c1c' };
-      case 'Service Delay':
-        return { bg: '#fffbeb', color: '#b45309' };
-      case 'Billing Query':
-        return { bg: '#f5f3ff', color: '#6d28d9' };
-      case 'Hardware Fault':
-        return { bg: '#fff7ed', color: '#c2410c' };
-      default:
-        return { bg: '#f1f5f9', color: '#475569' };
-    }
-  };
+  const getCategoryStyle = (cat) => getCategoryBadgeStyle(cat);
 
   const getInitials = (name = 'C') => {
     return name
@@ -391,6 +380,75 @@ export const ComplaintKanban = ({
                         </div>
                       </div>
 
+                      {/* Submitter Origin / Location Tag (Clickable to Google Maps - 100% Submitter Physical Location) */}
+                      {ticket.location && (ticket.location.city || ticket.location.address || ticket.location.type || ticket.location.ip) ? (
+                        <a
+                          href={getGoogleMapsUrl(ticket.location)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.68rem',
+                            fontWeight: 600,
+                            color: ticket.location.type === 'GPS' ? '#047857' : '#1d4ed8',
+                            background: ticket.location.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
+                            border: `1px solid ${ticket.location.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            marginBottom: '6px',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            cursor: 'pointer',
+                          }}
+                          title="Click to view submitter physical location on Google Maps"
+                        >
+                          <MapPin size={11} style={{ flexShrink: 0, color: ticket.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {ticket.location.type === 'GPS'
+                              ? (ticket.location.city || ticket.location.address || 'GPS Verified Pin')
+                              : (ticket.location.city || (ticket.location.ip === '::1' || ticket.location.ip === '127.0.0.1' ? 'Local Network (::1)' : `Network: ${ticket.location.ip}`))}
+                          </span>
+                          <ExternalLink size={10} style={{ opacity: 0.75, flexShrink: 0 }} />
+                        </a>
+                      ) : (
+                        <a
+                          href={getGoogleMapsUrl(ticket.location)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.68rem',
+                            fontWeight: 600,
+                            color: '#1d4ed8',
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            marginBottom: '6px',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            cursor: 'pointer',
+                          }}
+                          title="Locate submitter on Google Maps"
+                        >
+                          <MapPin size={11} style={{ flexShrink: 0, color: '#2563eb' }} />
+                          <span>Locate Submitter</span>
+                          <ExternalLink size={10} style={{ opacity: 0.75, flexShrink: 0 }} />
+                        </a>
+                      )}
+
                       {/* SLA Live Pill */}
                       <div
                         style={{
@@ -489,20 +547,22 @@ export const ComplaintKanban = ({
                             </button>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => onEdit(ticket)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#64748b',
-                              cursor: 'pointer',
-                              padding: '3px',
-                            }}
-                            title="Edit"
-                          >
-                            <Edit2 size={13} />
-                          </button>
+                          {!isResolved && (
+                            <button
+                              type="button"
+                              onClick={() => onEdit(ticket)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#64748b',
+                                cursor: 'pointer',
+                                padding: '3px',
+                              }}
+                              title="Edit"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

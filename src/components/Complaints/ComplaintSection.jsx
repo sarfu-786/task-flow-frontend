@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
 import { useAuth } from '../../context/AuthContext';
 import { ComplaintMetricDetailDialog } from './ComplaintMetricDetailDialog';
@@ -7,6 +7,7 @@ import { ComplaintMISModal } from './ComplaintMISModal';
 import { ComplaintDetailModal } from './ComplaintDetailModal';
 import {
   AlertCircle,
+  AlertTriangle,
   Plus,
   Flame,
   Clock,
@@ -36,6 +37,53 @@ export const ComplaintSection = () => {
 
   // Modal for detailed view
   const [complaintToView, setComplaintToView] = useState(null);
+
+  // Keep complaintToView in sync when allComplaints updates
+  useEffect(() => {
+    if (complaintToView && allComplaints) {
+      const updated = allComplaints.find((c) => c._id === complaintToView._id);
+      if (updated && updated !== complaintToView) {
+        setComplaintToView(updated);
+      }
+    }
+  }, [allComplaints, complaintToView]);
+
+  // Handle direct open event from notification click
+  useEffect(() => {
+    const handleOpenDetail = (e) => {
+      const { complaintId, ticketNumber } = e.detail || {};
+      if (!complaintId && !ticketNumber) return;
+      window.__pendingOpenComplaint = { complaintId, ticketNumber };
+      if (allComplaints && allComplaints.length > 0) {
+        const found = allComplaints.find(
+          (c) =>
+            (complaintId && (c._id?.toString() === complaintId.toString() || c.id?.toString() === complaintId.toString())) ||
+            (ticketNumber && c.ticketNumber === ticketNumber)
+        );
+        if (found) {
+          setComplaintToView(found);
+          window.__pendingOpenComplaint = null;
+        }
+      }
+    };
+    window.addEventListener('open-complaint-detail', handleOpenDetail);
+
+    // Also check if there was a pending open request once allComplaints loads/updates
+    if (window.__pendingOpenComplaint && allComplaints && allComplaints.length > 0) {
+      const { complaintId, ticketNumber } = window.__pendingOpenComplaint;
+      const found = allComplaints.find(
+        (c) =>
+          (complaintId && (c._id?.toString() === complaintId.toString() || c.id?.toString() === complaintId.toString())) ||
+          (ticketNumber && c.ticketNumber === ticketNumber)
+      );
+      if (found) {
+        setComplaintToView(found);
+        window.__pendingOpenComplaint = null;
+      }
+    }
+
+    return () => window.removeEventListener('open-complaint-detail', handleOpenDetail);
+  }, [allComplaints]);
 
   // Hover states for interactive cards
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -674,7 +722,7 @@ export const ComplaintSection = () => {
               userSelect: 'none',
               minHeight: '145px',
             }}
-            title="Click to launch Complaint Directory with Table, Kanban & Cards"
+            title="Click to launch Complaint Directory Table"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '12px' }}>
@@ -710,7 +758,7 @@ export const ComplaintSection = () => {
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <span>Open Directory</span>
+                  <span>Open Directory Table</span>
                   <ArrowUpRight size={14} />
                 </span>
               </div>
@@ -738,37 +786,25 @@ export const ComplaintSection = () => {
                     borderRadius: '6px',
                   }}
                 >
-                  Table Registry
+                  Interactive Table Registry
                 </span>
                 <span
                   style={{
                     fontSize: '0.72rem',
                     fontWeight: 600,
-                    color: '#1d4ed8',
-                    backgroundColor: '#eff6ff',
+                    color: '#059669',
+                    backgroundColor: '#ecfdf5',
                     padding: '2px 8px',
                     borderRadius: '6px',
                   }}
                 >
-                  Kanban Pipeline
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    color: '#1d4ed8',
-                    backgroundColor: '#eff6ff',
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                  }}
-                >
-                  Cards View
+                  Real-Time SLA & Geolocation
                 </span>
               </div>
             </div>
 
             <div style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>
-              Comprehensive complaint database, multi-stage workflow, SLA trackers, RCA & quick reassignments
+              Comprehensive complaint database table, multi-stage workflow, SLA trackers, RCA & quick reassignments
             </div>
           </div>
 
@@ -909,7 +945,7 @@ export const ComplaintSection = () => {
         canDelete={isSuperAdmin}
       />
 
-      {/* Pop-up Dialog 2: Complaint Directory Modal (Table, Kanban, Cards) */}
+      {/* Pop-up Dialog 2: Complaint Directory Modal (Table Registry) */}
       <ComplaintDirectoryModal
         isOpen={isDirectoryOpen}
         onClose={() => setIsDirectoryOpen(false)}

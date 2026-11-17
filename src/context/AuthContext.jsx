@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
+import { socketService } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -224,6 +225,9 @@ export const AuthProvider = ({ children }) => {
         } catch {}
         setToken(res.token);
         setUser(res.user);
+        try {
+          socketService.connect({ ...res.user, token: res.token });
+        } catch {}
         return { success: true, user: res.user };
       }
     } catch (err) {
@@ -270,6 +274,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    try {
+      socketService.disconnect();
+    } catch {}
     try {
       localStorage.removeItem('taskflow_token');
       localStorage.removeItem('taskflow_user');

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
+import { getGoogleMapsUrl } from '../../utils/locationService';
 import {
   AlertCircle,
   Clock,
@@ -17,6 +18,8 @@ import {
   Calendar,
   Check,
   MoreVertical,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
 
 export const ComplaintCards = ({
@@ -34,6 +37,22 @@ export const ComplaintCards = ({
     const totalHours = ticket.slaHours || 24;
 
     if (isResolved) {
+      const isBreached =
+        ticket.slaStatus === 'Breached' ||
+        (ticket.resolvedAt && ticket.slaDeadline && new Date(ticket.resolvedAt) > new Date(ticket.slaDeadline));
+      if (isBreached) {
+        return {
+          text: 'Resolved – Breached SLA',
+          subtext: ticket.resolvedAt ? `Resolved ${new Date(ticket.resolvedAt).toLocaleDateString()}` : 'Late closure',
+          color: '#dc2626',
+          bg: '#fef2f2',
+          border: '#fecaca',
+          progressColor: '#dc2626',
+          percentElapsed: 100,
+          isResolved: true,
+          icon: <AlertTriangle size={14} />,
+        };
+      }
       return {
         text: 'SLA Met & Resolved',
         subtext: ticket.resolvedAt ? `Resolved ${new Date(ticket.resolvedAt).toLocaleDateString()}` : 'Completed',
@@ -406,6 +425,53 @@ export const ComplaintCards = ({
                     {ticket.organization || 'Direct Customer'}
                   </span>
                 </div>
+                {ticket.location && (ticket.location.city || ticket.location.address || ticket.location.type || ticket.location.ip) ? (
+                  <a
+                    href={getGoogleMapsUrl(ticket.location)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 600,
+                      color: ticket.location.type === 'GPS' ? '#047857' : '#1d4ed8',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      marginTop: '2px',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                    title="Open submitter physical location in Google Maps"
+                  >
+                    <MapPin size={9} style={{ color: ticket.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
+                    <span>{ticket.location.city || (ticket.location.type === 'GPS' ? 'GPS Location' : (ticket.location.ip === '::1' ? 'Local Network' : `Network: ${ticket.location.ip}`))}</span>
+                    <ExternalLink size={8} style={{ opacity: 0.75 }} />
+                  </a>
+                ) : (
+                  <a
+                    href={getGoogleMapsUrl(ticket.location)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 600,
+                      color: '#1d4ed8',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      marginTop: '2px',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                    title="Locate submitter on Google Maps"
+                  >
+                    <MapPin size={9} style={{ color: '#2563eb' }} />
+                    <span>Locate Submitter</span>
+                    <ExternalLink size={8} style={{ opacity: 0.75 }} />
+                  </a>
+                )}
               </div>
             </div>
 
@@ -473,25 +539,27 @@ export const ComplaintCards = ({
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => onEdit(ticket)}
-                  style={{
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    color: '#475569',
-                    borderRadius: '8px',
-                    width: '30px',
-                    height: '30px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
-                  title="Edit Ticket"
-                >
-                  <Edit2 size={13} />
-                </button>
+                {!isResolved && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(ticket)}
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      color: '#475569',
+                      borderRadius: '8px',
+                      width: '30px',
+                      height: '30px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                    title="Edit Ticket"
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                )}
               </div>
             </div>
           </div>

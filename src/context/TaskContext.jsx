@@ -129,7 +129,7 @@ export const TaskProvider = ({ children }) => {
     const isManager = ['Manager', 'Executive', 'Administrator'].includes(user.role);
     const myName = (user.name || '').toLowerCase().trim();
     const myUsername = (user.username || '').toLowerCase().trim();
-    const myId = user._id ? user._id.toString() : (user.id ? user.id.toString() : '');
+    const myId = (user._id || user.id || '').toString();
 
     // 1. Listen for new real-time notifications
     const handleNewNotification = (data) => {
@@ -141,9 +141,21 @@ export const TaskProvider = ({ children }) => {
       const rName = (notif.recipientName || '').toLowerCase().trim();
       const rUser = notif.recipientUser ? notif.recipientUser.toString() : '';
 
-      const isDirectRecipient =
-        (rUser && rUser === myId) ||
-        (rName && (rName === myName || rName === myUsername || myName.includes(rName) || rName.includes(myName)));
+      const isDirectRecipient = Boolean(
+        (rUser && (rUser === myId || (user.id && rUser === user.id.toString()) || (user._id && rUser === user._id.toString()))) ||
+        (rName && (rName === myName || rName === myUsername || (myName && rName && (myName.includes(rName) || rName.includes(myName)))))
+      );
+
+      // Strict security: Escalations, task completions, and direct-only notifications MUST be direct recipient only
+      if (
+        notif.type === 'complaint_escalated' ||
+        notif.type === 'task_completed' ||
+        notif.forRole === 'DirectRecipientOnly'
+      ) {
+        if (!isDirectRecipient) {
+          return; // Ignore completely: notification is not addressed to current user
+        }
+      }
 
       if (isDirectRecipient) {
         isRelevant = true;
@@ -157,8 +169,11 @@ export const TaskProvider = ({ children }) => {
 
       if (isRelevant) {
         setNotifications((prev) => {
-          const exists = prev.some((n) => n._id === notif._id);
-          if (exists) return prev;
+          const notifId = notif._id || notif.id;
+          if (notifId) {
+            const exists = prev.some((n) => (n._id && n._id === notifId) || (n.id && n.id === notifId));
+            if (exists) return prev;
+          }
           return [notif, ...prev];
         });
         setUnreadCount((prev) => prev + 1);
@@ -170,12 +185,16 @@ export const TaskProvider = ({ children }) => {
           notif.taskType === 'lead' ||
           data.type === 'lead_assigned';
 
+        const isEscalationNotif =
+          notif.type === 'complaint_escalated' ||
+          notif.taskType === 'complaint';
+
         // Trigger Instant Live Toast Banner
         showLiveToast({
           title:
             data.title ||
             notif.title ||
-            (isLeadNotif ? '🎯 New Lead Received' : isManager ? 'Task Completed Alert' : 'New Task Assigned'),
+            (isEscalationNotif ? 'Complaint Escalated' : isLeadNotif ? '🎯 New Lead Received' : isManager ? 'Task Completed Alert' : 'New Task Assigned'),
           message: data.message || notif.message || notif.taskDescription,
           remark: data.remark || notif.remark || notif.completionRemark,
           type: data.type || notif.type,
@@ -183,9 +202,16 @@ export const TaskProvider = ({ children }) => {
           assignedBy: notif.assignedBy,
           leadId: notif.leadId || data.leadId,
           leadReadableId: notif.leadReadableId || data.leadReadableId,
+          complaintId: notif.complaintId || data.complaintId,
+          complaintTicketNumber: notif.complaintTicketNumber || data.complaintTicketNumber || notif.ticketNumber,
+          customerName: notif.customerName || data.customerName,
+          priority: notif.priority || data.priority,
+          escalatedBy: notif.escalatedBy || data.escalatedBy || notif.userName,
+          escalationReason: notif.escalationReason || data.escalationReason,
         });
 
-        // Instant silent background data update
+        // Instant silent background data update & sync
+        fetchNotifications();
         fetchTasks(true);
         fetchStats();
       }
@@ -204,6 +230,7 @@ export const TaskProvider = ({ children }) => {
     };
 
     const cleanupNotif = socketService.on('notification:new', handleNewNotification);
+    const cleanupNotifDirect = socketService.on('notification', handleNewNotification);
     const cleanupLeadAssigned = socketService.on('lead:assigned', handleNewNotification);
     const cleanupTasks = socketService.on('tasks:updated', handleTasksUpdated);
     const cleanupStats = socketService.on('stats:updated', () => fetchStats());
@@ -211,6 +238,7 @@ export const TaskProvider = ({ children }) => {
 
     return () => {
       cleanupNotif();
+      cleanupNotifDirect();
       cleanupLeadAssigned();
       cleanupTasks();
       cleanupStats();
@@ -218,6 +246,7 @@ export const TaskProvider = ({ children }) => {
     };
   }, [isAuthenticated, user, showLiveToast, fetchTasks, fetchStats, fetchNotifications]);
 
+  // Initial load and visibility change listener
   useEffect(() => {
     if (isAuthenticated) {
       fetchTasks();
@@ -239,6 +268,19 @@ export const TaskProvider = ({ children }) => {
       };
     }
   }, [isAuthenticated, fetchTasks, fetchStats, fetchNotifications]);
+
+  // Periodic background polling to guarantee timely notification delivery across all connection states
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchNotifications();
+      }
+    }, 6000); // Poll every 6 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, fetchNotifications]);
 
   // Reset to page 1 when search or filter criteria changes
   useEffect(() => {

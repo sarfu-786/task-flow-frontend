@@ -19,7 +19,13 @@ import {
   BarChart3,
 } from 'lucide-react';
 
-export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg = '' }) => {
+export const Login = ({
+  onSwitchToRegister,
+  onSwitchToSupport,
+  onSwitchToTrack,
+  initialEmail = '',
+  initialSuccessMsg = '',
+}) => {
   const { login } = useAuth();
 
   // Forgot password view toggle
@@ -662,6 +668,55 @@ export const Login = ({ onSwitchToRegister, initialEmail = '', initialSuccessMsg
               }}
             >
               Register
+            </button>
+          </div>
+
+          {/* Customer Support & Tracking Access */}
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: '0.8rem',
+              color: '#64748b',
+              marginBottom: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+            }}
+          >
+            <span>Need Customer Support?</span>
+            <button
+              type="button"
+              onClick={() => onSwitchToSupport && onSwitchToSupport()}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2563eb',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.8rem',
+                textDecoration: 'underline',
+              }}
+            >
+              Submit Ticket
+            </button>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <button
+              type="button"
+              onClick={() => onSwitchToTrack && onSwitchToTrack()}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#475569',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.8rem',
+                textDecoration: 'underline',
+              }}
+            >
+              Track Ticket
             </button>
           </div>
 

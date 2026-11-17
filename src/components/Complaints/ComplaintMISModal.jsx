@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { complaintApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { ComplaintExportModal } from './ComplaintExportModal';
+import { PRIMARY_CATEGORY_NAMES } from '../../utils/complaintCategories';
 import {
   FileSpreadsheet,
   Download,
@@ -662,12 +663,15 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
               }}
             >
               <option value="all">All Categories</option>
-              <option value="Technical Glitch">Technical Glitch</option>
-              <option value="Billing Issue">Billing Issue</option>
-              <option value="Service Delay">Service Delay</option>
-              <option value="Product Defect">Product Defect</option>
-              <option value="Customer Support">Customer Support</option>
-              <option value="Feature Request">Feature Request</option>
+              {PRIMARY_CATEGORY_NAMES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+              <option value="Technical Glitch">Technical Glitch (Legacy)</option>
+              <option value="Billing Issue">Billing Issue (Legacy)</option>
+              <option value="Service Delay">Service Delay (Legacy)</option>
+              <option value="Product Defect">Product Defect (Legacy)</option>
+              <option value="Customer Support">Customer Support (Legacy)</option>
+              <option value="Feature Request">Feature Request (Legacy)</option>
               <option value="Other">Other</option>
             </select>
 
