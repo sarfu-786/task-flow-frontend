@@ -150,17 +150,27 @@ export const AuditTrailModal = () => {
           <button
             type="button"
             onClick={closeAuditModal}
+            aria-label="Close modal"
             style={{
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
-              borderRadius: '8px',
-              width: '32px',
-              height: '32px',
+              borderRadius: '50%',
+              width: '34px',
+              height: '34px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#cbd5e1',
               cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#dc2626';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.color = '#cbd5e1';
             }}
           >
             <X size={18} />

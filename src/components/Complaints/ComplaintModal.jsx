@@ -4,7 +4,6 @@ import { useUserManagement } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 import { useOpportunities } from '../../context/OpportunityContext';
 import { useProjects } from '../../context/ProjectContext';
-import { captureSubmitterLocation } from '../../utils/locationService';
 import { AttachmentUploader } from './AttachmentUploader';
 import { getRankedAssignees, getRecommendedDepartment } from '../../utils/complaintRoutingHelper';
 import {
@@ -229,11 +228,10 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
     return users.filter((u) => u._id === myId || (currentUser?.name && u.name === currentUser.name));
   }, [users, isSuperAdmin, isManager, currentUser]);
 
-  // Smart Skill & Location Ranked Assignees
+  // Smart Department Ranked Assignees
   const rankedAssignees = useMemo(() => {
-    const loc = complaintToEdit?.location || null;
-    return getRankedAssignees(assignableUsers, formData.category, loc, allComplaints);
-  }, [assignableUsers, formData.category, complaintToEdit?.location, allComplaints]);
+    return getRankedAssignees(assignableUsers, formData.category, null, allComplaints);
+  }, [assignableUsers, formData.category, allComplaints]);
 
   const recommendedAssignees = useMemo(() => {
     return rankedAssignees.filter((r) => r.isRecommended);
@@ -457,11 +455,27 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
         }));
       }
     } else if (name === 'category') {
-      setFormData((prev) => ({
-        ...prev,
-        category: value,
-        subCategory: '',
-      }));
+      const nextRanked = getRankedAssignees(assignableUsers, value, null, allComplaints);
+      const bestMatch = nextRanked.find((r) => r.isRecommended);
+      if (bestMatch) {
+        setFormData((prev) => ({
+          ...prev,
+          category: value,
+          subCategory: '',
+          assignedTo: bestMatch.user._id || null,
+          assignedToName: bestMatch.user.name,
+          team: bestMatch.user.department || bestMatch.user.team || getRecommendedDepartment(value),
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          category: value,
+          subCategory: '',
+          assignedTo: null,
+          assignedToName: 'Unassigned',
+          team: getRecommendedDepartment(value),
+        }));
+      }
     } else if (name === 'priority') {
       const p = value;
       const policy = slaPolicy[p] || { resolutionHours: 24 };
@@ -572,15 +586,6 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
       setGeneralError('');
       setFieldErrors({});
 
-      let submitterLocation = null;
-      if (!isEdit) {
-        try {
-          submitterLocation = await captureSubmitterLocation();
-        } catch (_) {
-          submitterLocation = { type: 'IP' };
-        }
-      }
-
       const payload = {
         ...formData,
         customerName: nameTrimmed,
@@ -600,7 +605,7 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
           type: a.type,
           dataUrl: a.dataUrl,
         })),
-        ...(submitterLocation ? { location: submitterLocation } : {}),
+        location: null,
       };
 
       if (isEdit) {
@@ -1490,7 +1495,7 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
                   >
                     <option value="Unassigned">-- Select Coordinator / Owner --</option>
                     {recommendedAssignees.length > 0 && (
-                      <optgroup label="⭐ Recommended (Skill & Location Matched)">
+                      <optgroup label="⭐ Recommended (Department Specialists)">
                         {recommendedAssignees.map((item) => (
                           <option key={item.user._id} value={item.user.name}>
                             {item.user.name} ({item.user.department || 'Operations'}) — {item.availability?.badge || item.matchLabel}
@@ -1536,7 +1541,35 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
                     </div>
                   )}
 
-                  {/* Smart Skill & Location Match Assistant Badge */}
+                  {/* RED Warning when NO employee from the related department exists in user's team/workspace */}
+                  {recommendedAssignees.length === 0 && formData.category && (
+                    <div
+                      style={{
+                        marginTop: '6px',
+                        background: '#fef2f2',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '8px',
+                        padding: '7px 10px',
+                        fontSize: '0.75rem',
+                        color: '#b91c1c',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      <AlertCircle size={14} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                      <span>
+                        <strong>No Related-Field Employee Available:</strong> No user in your team belongs to{' '}
+                        <strong>{getRecommendedDepartment(formData.category)}</strong>.
+                        {selectedAssigneeInfo
+                          ? ` (${selectedAssigneeInfo.user.name} is in ${selectedAssigneeInfo.user.department || 'another department'}).`
+                          : ''}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Smart Skill & Location Match Assistant Badge (Only when truly skill-matched) */}
                   {selectedAssigneeInfo && selectedAssigneeInfo.isRecommended && (
                     <div
                       style={{
@@ -1560,25 +1593,25 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
                       </span>
                     </div>
                   )}
-                  {selectedAssigneeInfo && !selectedAssigneeInfo.isRecommended && (
+                  {selectedAssigneeInfo && !selectedAssigneeInfo.isRecommended && recommendedAssignees.length > 0 && (
                     <div
                       style={{
                         marginTop: '6px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
                         borderRadius: '8px',
                         padding: '6px 10px',
                         fontSize: '0.75rem',
-                        color: '#64748b',
+                        color: '#b91c1c',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                       }}
                     >
-                      <AlertCircle size={13} color="#f59e0b" style={{ flexShrink: 0 }} />
+                      <AlertCircle size={13} color="#dc2626" style={{ flexShrink: 0 }} />
                       <span>
-                        Notice: {selectedAssigneeInfo.user.name} is in{' '}
-                        <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong>. Recommended department for{' '}
+                        <strong>Department Mismatch:</strong> {selectedAssigneeInfo.user.name} is in{' '}
+                        <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong>. Recommended for{' '}
                         <strong>{formData.category}</strong> is{' '}
                         <strong>{getRecommendedDepartment(formData.category)}</strong>.
                       </span>

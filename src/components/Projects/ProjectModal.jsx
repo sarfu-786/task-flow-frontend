@@ -10,7 +10,7 @@ import {
   Sparkles,
   Layers,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Users,
   Copy,
   Plus,
@@ -30,6 +30,8 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
     setIsEditModalOpen,
     projectToEdit: ctxProjectToEdit,
     setProjectToEdit,
+    projectDraft,
+    setProjectDraft,
   } = useProjects();
   const { users, assignableUsers, fetchAssignableUsers } = useUserManagement ? useUserManagement() : { users: [], assignableUsers: [] };
   const { user: currentUser } = useAuth();
@@ -39,6 +41,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
   const isEdit = !!projectToEdit;
 
   const handleClose = () => {
+    if (setProjectDraft) setProjectDraft(null);
     if (propOnClose) {
       propOnClose();
     } else {
@@ -113,7 +116,9 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
   const [formData, setFormData] = useState({
     name: '',
     client: '',
-    projectType: 'Client Delivery',
+    leadId: '',
+    opportunityId: '',
+    projectType: 'Client Deliverable',
     department: 'Engineering',
     priority: 'Medium',
     status: 'Draft',
@@ -123,7 +128,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
     actualStartDate: '',
     actualEndDate: '',
     budget: 25000,
-    currency: 'USD',
+    currency: 'INR',
     budgetedHours: 160,
     billingType: 'Fixed Cost',
     billingMethod: 'Milestone Based',
@@ -162,7 +167,9 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
       setFormData({
         name: projectToEdit.name || projectToEdit.title || '',
         client: projectToEdit.client || projectToEdit.clientName || '',
-        projectType: projectToEdit.projectType || 'Client Delivery',
+        leadId: projectToEdit.leadId || '',
+        opportunityId: projectToEdit.opportunityId || '',
+        projectType: projectToEdit.projectType || 'Client Deliverable',
         department: projectToEdit.department || 'Engineering',
         priority: projectToEdit.priority || 'Medium',
         status: projectToEdit.status || 'Draft',
@@ -180,7 +187,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
           ? new Date(projectToEdit.actualEndDate).toISOString().split('T')[0]
           : '',
         budget: projectToEdit.budget || 0,
-        currency: projectToEdit.currency || 'USD',
+        currency: projectToEdit.currency || 'INR',
         budgetedHours: projectToEdit.budgetedHours || 0,
         billingType: projectToEdit.billingType || 'Fixed Cost',
         billingMethod: projectToEdit.billingMethod || 'Milestone Based',
@@ -196,25 +203,28 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
       });
       setActiveTab('basic');
     } else {
-      const defaultMgr = currentUser?.name || '';
+      const defaultMgr = projectDraft?.projectManager || currentUser?.name || '';
+      const draftBudget = projectDraft?.budget !== undefined ? Number(projectDraft.budget) : 25000;
       setFormData({
-        name: '',
-        client: '',
-        projectType: 'Client Delivery',
-        department: 'Engineering',
-        priority: 'Medium',
-        status: 'Draft',
-        description: '',
+        name: projectDraft?.name || '',
+        client: projectDraft?.client || '',
+        leadId: projectDraft?.leadId || '',
+        opportunityId: projectDraft?.opportunityId || '',
+        projectType: projectDraft?.projectType || 'Client Deliverable',
+        department: projectDraft?.department || 'Engineering',
+        priority: projectDraft?.priority || 'Medium',
+        status: projectDraft?.status === 'Active' ? 'In Progress' : (projectDraft?.status || 'Planning'),
+        description: projectDraft?.description || '',
         startDate: new Date().toISOString().split('T')[0],
         targetDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         actualStartDate: '',
         actualEndDate: '',
-        budget: 25000,
-        currency: 'USD',
+        budget: draftBudget,
+        currency: projectDraft?.currency || 'INR',
         budgetedHours: 160,
         billingType: 'Fixed Cost',
         billingMethod: 'Milestone Based',
-        estimatedCost: 20000,
+        estimatedCost: draftBudget > 0 ? Math.round(draftBudget * 0.8) : 0,
         projectOwner: defaultMgr,
         ownerName: defaultMgr,
         projectManager: defaultMgr,
@@ -224,23 +234,23 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
         ],
         phases: [
           { name: 'Phase 1: Planning & Scope', status: 'In Progress', order: 1 },
-          { name: 'Phase 2: UI/UX & Design', status: 'Pending', order: 2 },
-          { name: 'Phase 3: Core Development', status: 'Pending', order: 3 },
-          { name: 'Phase 4: QA & Testing', status: 'Pending', order: 4 },
-          { name: 'Phase 5: Production Handover', status: 'Pending', order: 5 },
+          { name: 'Phase 2: UI/UX & Design', status: 'Upcoming', order: 2 },
+          { name: 'Phase 3: Core Development', status: 'Upcoming', order: 3 },
+          { name: 'Phase 4: QA & Testing', status: 'Upcoming', order: 4 },
+          { name: 'Phase 5: Production Handover', status: 'Upcoming', order: 5 },
         ],
         milestones: [
-          { name: 'Kickoff & Requirements Approval', status: 'Completed', progress: 100 },
-          { name: 'UI/UX Interactive Prototypes', status: 'In Progress', progress: 50 },
-          { name: 'Backend API & Database Deployment', status: 'Pending', progress: 0 },
-          { name: 'Client Final Sign-off', status: 'Pending', progress: 0 },
+          { title: 'Kickoff & Requirements Approval', status: 'Completed', isCompleted: true, progress: 100 },
+          { title: 'UI/UX Interactive Prototypes', status: 'In Progress', isCompleted: false, progress: 50 },
+          { title: 'Backend API & Database Deployment', status: 'Upcoming', isCompleted: false, progress: 0 },
+          { title: 'Client Final Sign-off', status: 'Upcoming', isCompleted: false, progress: 0 },
         ],
         tasks: [],
       });
       setActiveTab('basic');
     }
     setError('');
-  }, [projectToEdit, currentUser, isOpen]);
+  }, [projectToEdit, projectDraft, currentUser, isOpen]);
 
   if (!isOpen) return null;
 
@@ -248,23 +258,23 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
     if (!tmpl) return;
     setFormData((prev) => ({
       ...prev,
-      projectType: tmpl.category || prev.projectType,
       budget: tmpl.defaultBudget || prev.budget,
       budgetedHours: tmpl.defaultEstimatedHours || prev.budgetedHours,
       phases: (tmpl.phases || []).map((p, idx) => ({
         name: p.name,
-        status: idx === 0 ? 'In Progress' : 'Pending',
+        status: idx === 0 ? 'In Progress' : 'Upcoming',
         order: p.order || idx + 1,
       })),
       milestones: (tmpl.milestones || []).map((m) => ({
-        name: m.name,
-        status: 'Pending',
+        title: m.title || m.name || 'Project Milestone',
+        status: 'Upcoming',
+        isCompleted: false,
         progress: 0,
-        phase: m.phase,
+        phaseName: m.phaseName || m.phase || '',
       })),
       tasks: (tmpl.tasks || []).map((t) => ({
-        taskName: t.name,
-        phase: t.phase,
+        title: t.title || t.name || 'Project Task',
+        phaseName: t.phaseName || t.phase || '',
         estimatedHours: t.estimatedHours || 8,
         priority: t.priority || 'Medium',
         status: 'To Do',
@@ -486,7 +496,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
           {[
             { id: 'basic', label: 'Basic Info', icon: FolderKanban },
             { id: 'timeline', label: 'Timeline & Phases', icon: Calendar },
-            { id: 'financial', label: 'Financial & Budget', icon: DollarSign },
+            { id: 'financial', label: 'Financial & Budget', icon: IndianRupee },
             { id: 'team', label: 'Team & Roles', icon: Users },
             ...(!isEdit ? [{ id: 'template', label: 'Templates', icon: Sparkles }] : []),
           ].map((tab) => {
@@ -622,12 +632,11 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                         outline: 'none',
                       }}
                     >
-                      <option value="Client Delivery">Client Delivery</option>
-                      <option value="Internal Product">Internal Product</option>
-                      <option value="Cloud Migration">Cloud Migration</option>
-                      <option value="Mobile App">Mobile App</option>
-                      <option value="Consulting & Audit">Consulting & Audit</option>
-                      <option value="Infrastructure">Infrastructure</option>
+                      <option value="Client Deliverable">Client Deliverable</option>
+                      <option value="Internal Project">Internal Project</option>
+                      <option value="Retainer Service">Retainer Service</option>
+                      <option value="Fixed Price Contract">Fixed Price Contract</option>
+                      <option value="Time & Material (T&M)">Time & Material (T&M)</option>
                     </select>
                     <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
                   </div>
@@ -772,7 +781,8 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                       <option value="Draft">Draft</option>
                       <option value="Planning">Planning</option>
                       <option value="Approved">Approved</option>
-                      <option value="Active / In Progress">Active / In Progress</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Under Review">Under Review</option>
                       <option value="On Hold">On Hold</option>
                       <option value="Completed">Completed</option>
                       <option value="Closed">Closed</option>
@@ -868,7 +878,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {formData.phases.map((ph, idx) => (
                     <div
-                      key={idx}
+                      key={`phase-${ph.phaseId || ph.name || idx}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -983,8 +993,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                       }}
                     >
                       <option value="Fixed Cost">Fixed Cost</option>
-                      <option value="Time and Material">Time and Material</option>
-                      <option value="Retainer">Retainer</option>
+                      <option value="Time & Material">Time & Material</option>
                       <option value="Non-Billable">Non-Billable</option>
                     </select>
                     <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
@@ -1015,9 +1024,9 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                       }}
                     >
                       <option value="Milestone Based">Milestone Based</option>
-                      <option value="Monthly Cycle">Monthly Cycle</option>
                       <option value="Hourly Rate">Hourly Rate</option>
-                      <option value="Upon Completion">Upon Completion</option>
+                      <option value="Fixed Monthly">Fixed Monthly</option>
+                      <option value="Deliverable Sign-Off">Deliverable Sign-Off</option>
                     </select>
                     <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
                   </div>
@@ -1132,7 +1141,7 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
                   {formData.teamMembers.map((member, idx) => (
                     <div
-                      key={idx}
+                      key={`member-${member.user || member.name || idx}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1269,9 +1278,9 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-                {(templates || []).map((tmpl) => (
+                {(templates || []).map((tmpl, tmplIdx) => (
                   <div
-                    key={tmpl.id}
+                    key={tmpl.templateId || tmpl.id || tmpl._id || `tpl-${tmplIdx}`}
                     onClick={() => handleApplyTemplate(tmpl)}
                     style={{
                       padding: '16px',

@@ -203,16 +203,27 @@ export const CRMDrilldownModal = ({
             type="button"
             className="btn-icon"
             onClick={onClose}
+            aria-label="Close modal"
             style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              background: '#f1f5f9',
+              border: 'none',
               cursor: 'pointer',
               color: '#64748b',
-              padding: '6px',
-              borderRadius: '8px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
             }}
           >
             <X size={18} />

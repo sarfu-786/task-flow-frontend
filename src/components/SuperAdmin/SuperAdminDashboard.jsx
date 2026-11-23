@@ -447,17 +447,17 @@ export const SuperAdminDashboard = ({ setActiveSection }) => {
           onClick={() => openEmployeeDrilldown('all', 'Regular Staff Directory', 'regular')}
         />
 
-        {/* Card 4: Service Coordinators */}
+        {/* Card 4: Overdue & SLA at Risk */}
         <MetricCard
-          title="Service Coordinators"
-          value={serviceCoordinators.length}
-          subtitle="Complaints & SLA Support"
+          title="Overdue & SLA at Risk"
+          value={overdueTasks.length}
+          subtitle={overdueTasks.length === 0 ? "All workflows on track" : "Critical deadlines missed"}
           icon={AlertCircle}
           color="#dc2626"
           bgLight="#fef2f2"
           isClickable={true}
           compact={true}
-          onClick={() => openEmployeeDrilldown('all', 'Service Coordinators Directory', 'service')}
+          onClick={() => openTasksDrilldown('overdue', 'Overdue & SLA at Risk Workflows')}
         />
 
         {/* Card 5: Total Assigned Tasks */}

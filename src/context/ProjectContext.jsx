@@ -83,7 +83,9 @@ export const ProjectProvider = ({ children }) => {
   // Selected Entities
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectForDetail, setProjectForDetail] = useState(null);
+  const [detailInitialTab, setDetailInitialTab] = useState('overview');
   const [projectToEdit, setProjectToEdit] = useState(null);
+  const [projectDraft, setProjectDraft] = useState(null);
   const [projectForMilestones, setProjectForMilestones] = useState(null);
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [targetProjectForSubEntity, setTargetProjectForSubEntity] = useState(null);
@@ -199,6 +201,7 @@ export const ProjectProvider = ({ children }) => {
       if (res && res.success) {
         await fetchProjects();
         setIsCreateModalOpen(false);
+        setProjectDraft(null);
         return res.project;
       }
     } catch (err) {
@@ -412,14 +415,21 @@ export const ProjectProvider = ({ children }) => {
   };
 
   // Modal helpers
-  const openCreateModal = () => {
+  const openCreateModal = (prefillData = null) => {
     setProjectToEdit(null);
+    const isValidDraft =
+      prefillData &&
+      typeof prefillData === 'object' &&
+      !prefillData.nativeEvent &&
+      !prefillData.currentTarget;
+    setProjectDraft(isValidDraft ? prefillData : null);
     setIsCreateModalOpen(true);
   };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
     setProjectToEdit(null);
+    setProjectDraft(null);
   };
 
   const openEditModal = (p) => {
@@ -434,9 +444,10 @@ export const ProjectProvider = ({ children }) => {
   };
 
   const openMilestonesModal = (p) => {
-    setProjectForMilestones(p);
+    setProjectForDetail(p);
     setSelectedProject(p);
-    setIsMilestonesModalOpen(true);
+    setDetailInitialTab('phases');
+    setIsDetailModalOpen(true);
   };
 
   const closeMilestonesModal = () => {
@@ -543,8 +554,12 @@ export const ProjectProvider = ({ children }) => {
         setSelectedProject,
         projectForDetail,
         setProjectForDetail,
+        detailInitialTab,
+        setDetailInitialTab,
         projectToEdit,
         setProjectToEdit,
+        projectDraft,
+        setProjectDraft,
         projectForMilestones,
         setProjectForMilestones,
         projectToDelete,

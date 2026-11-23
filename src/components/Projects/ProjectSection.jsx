@@ -24,7 +24,7 @@ import {
   Plus,
   TrendingUp,
   CheckCircle2,
-  DollarSign,
+  IndianRupee,
   Crown,
   ShieldCheck,
   Briefcase,
@@ -40,6 +40,7 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   AlertCircle,
+  X,
 } from 'lucide-react';
 
 export const ProjectSection = () => {
@@ -72,6 +73,8 @@ export const ProjectSection = () => {
     setIsTimesheetModalOpen,
     projectForDetail,
     setProjectForDetail,
+    detailInitialTab,
+    setDetailInitialTab,
     projectToEdit,
     setProjectToEdit,
     projectForMilestones,
@@ -107,11 +110,11 @@ export const ProjectSection = () => {
   // Active Metric Dialog: 'total' | 'in_progress' | 'completed' | 'budget' | null
   const [activeMetricDialog, setActiveMetricDialog] = useState(null);
 
-  // Health Card click handler to open Project Directory with filter applied
+  // Health Card click handler to open metric dialog popup
   const handleHealthCardClick = (healthStatus) => {
-    if (setStatusFilter) setStatusFilter(healthStatus);
-    if (setCurrentPage) setCurrentPage(1);
-    setIsDirectoryModalOpen(true);
+    if (healthStatus === 'On Track') setActiveMetricDialog('on_track');
+    else if (healthStatus === 'At Risk') setActiveMetricDialog('at_risk');
+    else if (healthStatus === 'Delayed') setActiveMetricDialog('delayed');
   };
 
   // Sub-modal specific project target
@@ -216,8 +219,8 @@ export const ProjectSection = () => {
         }}
       >
         {/* Header Left Info */}
-        <div style={{ flex: '1 1 500px', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+        <div style={{ flex: '1 1 450px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
             <div
               style={{
                 width: '38px',
@@ -271,10 +274,118 @@ export const ProjectSection = () => {
                 : 'Assigned Workspace Projects'}
             </span>
           </div>
+
+          <p
+            className="section-subtitle"
+            style={{
+              margin: '3px 0 0 0',
+              color: '#64748b',
+              fontSize: '0.82rem',
+              lineHeight: 1.4,
+            }}
+          >
+            Plan and track client projects, manage milestones, sprint velocity, budgets, and cross-functional teams.
+          </p>
         </div>
 
-        {/* Header Right Action: Create Project */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Header Right Actions: MIS Reports, Import, Export, Create Project */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            id="btn-projects-mis"
+            onClick={() => {
+              setReportsModalInitialTab('reports');
+              setIsReportsModalOpen(true);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '999px',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              backgroundColor: '#f0f9ff',
+              color: '#0284c7',
+              border: '1px solid #bae6fd',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e0f2fe';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f0f9ff';
+            }}
+          >
+            <FileSpreadsheet size={15} />
+            <span>MIS Reports</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-projects-import"
+            onClick={() => {
+              if (openImportModal) openImportModal();
+              else setIsImportModalOpen(true);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '999px',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              border: '1px solid #cbd5e1',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f8fafc';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffffff';
+            }}
+          >
+            <Upload size={14} />
+            <span>Import</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-projects-export"
+            onClick={() => {
+              if (openExportModal) openExportModal();
+              else setIsExportModalOpen(true);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '999px',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              border: '1px solid #cbd5e1',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f8fafc';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffffff';
+            }}
+          >
+            <Download size={14} />
+            <span>Export</span>
+          </button>
+
           {/* PRIMARY CREATE PROJECT CTA BUTTON */}
           <button
             type="button"
@@ -287,15 +398,15 @@ export const ProjectSection = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '8px 18px',
-              borderRadius: '10px',
+              padding: '8px 20px',
+              borderRadius: '999px',
               fontWeight: 700,
               fontSize: '0.86rem',
               backgroundColor: '#2563eb',
               color: '#ffffff',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 3px 10px rgba(37, 99, 235, 0.22)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
               transition: 'all 0.2s ease',
             }}
             onMouseEnter={(e) => {
@@ -368,7 +479,6 @@ export const ProjectSection = () => {
               userSelect: 'none',
               minHeight: '120px',
             }}
-            title="Click to view total projects registry"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
@@ -463,7 +573,6 @@ export const ProjectSection = () => {
               userSelect: 'none',
               minHeight: '120px',
             }}
-            title="Click to view active projects in execution"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
@@ -558,7 +667,6 @@ export const ProjectSection = () => {
               userSelect: 'none',
               minHeight: '120px',
             }}
-            title="Click to view delivered projects"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
@@ -653,7 +761,6 @@ export const ProjectSection = () => {
               userSelect: 'none',
               minHeight: '120px',
             }}
-            title="Click to view portfolio budget allocation"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
@@ -671,7 +778,7 @@ export const ProjectSection = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <DollarSign size={19} />
+                  <IndianRupee size={19} />
                 </div>
                 <span
                   style={{
@@ -722,7 +829,7 @@ export const ProjectSection = () => {
                     lineHeight: 1.15,
                   }}
                 >
-                  {stats.totalBudget ? `$${Number(stats.totalBudget).toLocaleString()}` : '$0'}
+                  {stats.totalBudget ? `₹${Number(stats.totalBudget).toLocaleString('en-IN')}` : '₹0'}
                 </div>
                 {financialMetrics.hasActualCost ? (
                   <span
@@ -734,9 +841,8 @@ export const ProjectSection = () => {
                       padding: '1.5px 6px',
                       borderRadius: '5px',
                     }}
-                    title={`Total Actual Spent: $${financialMetrics.totalActual.toLocaleString()}`}
                   >
-                    {financialMetrics.variance >= 0 ? `+$${financialMetrics.variance.toLocaleString()} Margin` : `-$${Math.abs(financialMetrics.variance).toLocaleString()} Over`}
+                    {financialMetrics.variance >= 0 ? `+₹${financialMetrics.variance.toLocaleString('en-IN')} Margin` : `-₹${Math.abs(financialMetrics.variance).toLocaleString('en-IN')} Over`}
                   </span>
                 ) : (
                   <span
@@ -788,14 +894,14 @@ export const ProjectSection = () => {
             </span>
           </div>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>
-            Click any status to filter Project Directory
+            Click any status to view details
           </span>
         </div>
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
             gap: '12px',
           }}
         >
@@ -826,7 +932,6 @@ export const ProjectSection = () => {
               transform: hoveredCard === 'health-on-track' ? 'translateY(-1.5px)' : 'none',
               transition: 'all 0.18s ease',
             }}
-            title="Click to view On Track projects in Directory"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -886,7 +991,6 @@ export const ProjectSection = () => {
               transform: hoveredCard === 'health-at-risk' ? 'translateY(-1.5px)' : 'none',
               transition: 'all 0.18s ease',
             }}
-            title="Click to view At Risk projects in Directory"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -946,7 +1050,6 @@ export const ProjectSection = () => {
               transform: hoveredCard === 'health-delayed' ? 'translateY(-1.5px)' : 'none',
               transition: 'all 0.18s ease',
             }}
-            title="Click to view Delayed projects in Directory"
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -981,282 +1084,195 @@ export const ProjectSection = () => {
         </div>
       </div>
 
-      {/* 3. SECTION B: Two Action Cards (Project Directory & Project Reports / Portfolio MIS) */}
-      <div style={{ marginBottom: '18px' }}>
+      {/* 3. SECTION B: DIRECT LIVE WORKSPACE (TABLE, KANBAN, GANTT, WORKLOAD) */}
+      <div style={{ marginTop: '20px', marginBottom: '24px' }}>
+        {/* Workspace Controls Header */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            marginBottom: '10px',
-            gap: '8px',
+            justifyContent: 'space-between',
+            marginBottom: '14px',
+            flexWrap: 'wrap',
+            gap: '12px',
           }}
         >
-          <Layers size={15} color="#475569" />
-          <span
-            style={{
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: '#475569',
-            }}
-          >
-            Project Operations & Reporting Hub
-          </span>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-            gap: '14px',
-          }}
-        >
-          {/* Action Card 1: Project Directory */}
-          <div
-            id="card-project-directory"
-            onClick={() => {
-              setIsDirectoryModalOpen(true);
-            }}
-            onMouseEnter={() => setHoveredCard('directory')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={{
-              backgroundColor: '#ffffff',
-              border: `1.5px solid ${hoveredCard === 'directory' ? '#4f46e5' : '#e2e8f0'}`,
-              borderRadius: '16px',
-              padding: '18px 20px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              position: 'relative',
-              boxShadow:
-                hoveredCard === 'directory'
-                  ? '0 10px 20px -4px rgba(79, 70, 229, 0.14), 0 2px 6px -2px rgba(0, 0, 0, 0.04)'
-                  : '0 2px 6px rgba(0, 0, 0, 0.02)',
-              transform: hoveredCard === 'directory' ? 'translateY(-2px)' : 'translateY(0)',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              overflow: 'hidden',
-              userSelect: 'none',
-              minHeight: '128px',
-            }}
-            title="Click to launch Project Directory pop-up"
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '11px',
-                    backgroundColor: '#eef2ff',
-                    color: '#4f46e5',
-                    border: '1px solid #c7d2fe',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <FolderKanban size={21} />
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      color: '#475569',
-                      backgroundColor: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
-                      padding: '2px 7px',
-                      borderRadius: '999px',
-                    }}
-                  >
-                    {totalProjectsCount} {totalProjectsCount === 1 ? 'Project' : 'Projects'}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      color: '#4f46e5',
-                      backgroundColor: '#eef2ff',
-                      border: '1px solid #c7d2fe',
-                      padding: '4px 10px',
-                      borderRadius: '999px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <span>Open Directory</span>
-                    <ArrowUpRight size={12} />
-                  </span>
-                </div>
-              </div>
-
-              <div
+          {/* Left Title + Active Filter Tag */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={17} color="#2563eb" />
+              <span style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a' }}>
+                Project Portfolio Directory
+              </span>
+              <span
                 style={{
-                  fontSize: '1.02rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  letterSpacing: '-0.01em',
-                  marginBottom: '5px',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: '#475569',
+                  backgroundColor: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
                 }}
               >
-                Project Directory
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    color: '#4338ca',
-                    backgroundColor: '#eef2ff',
-                    padding: '2px 7px',
-                    borderRadius: '5px',
-                  }}
-                >
-                  Table & Kanban
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    color: '#4338ca',
-                    backgroundColor: '#eef2ff',
-                    padding: '2px 7px',
-                    borderRadius: '5px',
-                  }}
-                >
-                  Gantt & Workload
-                </span>
-              </div>
+                {totalProjectsCount} {totalProjectsCount === 1 ? 'Project' : 'Projects'}
+              </span>
             </div>
 
-            <div style={{ fontSize: '0.74rem', color: '#64748b', lineHeight: 1.35 }}>
-              Manage projects, timelines, milestones, teams, resources, and project activities.
-            </div>
-          </div>
-
-          {/* Action Card 2: Project Reports & Portfolio MIS */}
-          <div
-            id="card-project-reports-mis"
-            onClick={() => {
-              setHoveredCard(null);
-              setReportsModalInitialTab('reports');
-              setIsReportsModalOpen(true);
-            }}
-            onMouseEnter={() => setHoveredCard('mis')}
-            onMouseLeave={() => setHoveredCard(null)}
-            style={{
-              backgroundColor: '#ffffff',
-              border: `1.5px solid ${hoveredCard === 'mis' ? '#0284c7' : '#e2e8f0'}`,
-              borderRadius: '16px',
-              padding: '18px 20px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              position: 'relative',
-              boxShadow:
-                hoveredCard === 'mis'
-                  ? '0 10px 20px -4px rgba(2, 132, 199, 0.14), 0 2px 6px -2px rgba(0, 0, 0, 0.04)'
-                  : '0 2px 6px rgba(0, 0, 0, 0.02)',
-              transform: hoveredCard === 'mis' ? 'translateY(-2px)' : 'translateY(0)',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              overflow: 'hidden',
-              userSelect: 'none',
-              minHeight: '128px',
-            }}
-            title="Click to launch Project Reports & Portfolio MIS pop-up"
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '11px',
-                    backgroundColor: '#f0f9ff',
-                    color: '#0284c7',
-                    border: '1px solid #bae6fd',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+            {statusFilter && statusFilter !== 'all' && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '3px 10px',
+                  borderRadius: '999px',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  backgroundColor: '#eff6ff',
+                  color: '#2563eb',
+                  border: '1px solid #bfdbfe',
+                }}
+              >
+                <span>Filtered by: {statusFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (setStatusFilter) setStatusFilter('all');
+                    if (setCurrentPage) setCurrentPage(1);
                   }}
-                >
-                  <FileSpreadsheet size={21} />
-                </div>
-
-                <span
                   style={{
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    color: '#0284c7',
-                    backgroundColor: '#f0f9ff',
-                    border: '1px solid #bae6fd',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
+                    background: '#dbeafe',
+                    border: 'none',
+                    borderRadius: '50%',
+                    color: '#2563eb',
+                    cursor: 'pointer',
+                    width: '18px',
+                    height: '18px',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.2s ease',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#bfdbfe';
+                    e.currentTarget.style.color = '#1d4ed8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#dbeafe';
+                    e.currentTarget.style.color = '#2563eb';
+                  }}
+                  title="Clear status filter"
                 >
-                  <span>View Reports & MIS</span>
-                  <ArrowUpRight size={12} />
-                </span>
+                  <X size={12} />
+                </button>
               </div>
+            )}
+          </div>
 
-              <div
+          {/* Right: View Switcher (Table | Kanban | Gantt | Workload) */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              backgroundColor: '#f1f5f9',
+              padding: '3px',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            {[
+              { id: 'table', label: 'Table' },
+              { id: 'kanban', label: 'Kanban' },
+              { id: 'gantt', label: 'Gantt' },
+              { id: 'workload', label: 'Workload' },
+            ].map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                id={`btn-workspace-view-${v.id}`}
+                onClick={() => setViewMode(v.id)}
                 style={{
-                  fontSize: '1.02rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  letterSpacing: '-0.01em',
-                  marginBottom: '5px',
+                  padding: '5px 13px',
+                  borderRadius: '7px',
+                  fontSize: '0.78rem',
+                  fontWeight: (viewMode || 'table') === v.id ? 800 : 600,
+                  color: (viewMode || 'table') === v.id ? '#2563eb' : '#64748b',
+                  backgroundColor: (viewMode || 'table') === v.id ? '#ffffff' : 'transparent',
+                  border: 'none',
+                  boxShadow: (viewMode || 'table') === v.id ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                Project Reports & Portfolio MIS
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    color: '#0369a1',
-                    backgroundColor: '#e0f2fe',
-                    padding: '2px 7px',
-                    borderRadius: '5px',
-                  }}
-                >
-                  Portfolio MIS
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    color: '#0369a1',
-                    backgroundColor: '#e0f2fe',
-                    padding: '2px 7px',
-                    borderRadius: '5px',
-                  }}
-                >
-                  Executive Reports
-                </span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '0.74rem', color: '#64748b', lineHeight: 1.35 }}>
-              Review project health, progress, workload, costs, and analytics.
-            </div>
+                {v.label}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Live Active View on the Page */}
+        {(!viewMode || viewMode === 'table') && (
+          <ProjectTable
+            onViewProject={(p) => {
+              setProjectForDetail(p);
+              if (setDetailInitialTab) setDetailInitialTab('overview');
+              setIsDetailModalOpen(true);
+            }}
+            onEditProject={(p) => {
+              if (openEditModal) openEditModal(p);
+              else {
+                setProjectToEdit(p);
+                setIsEditModalOpen(true);
+              }
+            }}
+            onOpenMilestones={(p) => {
+              setProjectForDetail(p);
+              if (setDetailInitialTab) setDetailInitialTab('phases');
+              setIsDetailModalOpen(true);
+            }}
+            onDeleteProject={(p) => {
+              if (openDeleteModal) openDeleteModal(p);
+              else {
+                setProjectToDelete(p);
+                setIsDeleteModalOpen(true);
+              }
+            }}
+            canDelete={isSuperAdmin || isManager}
+          />
+        )}
+
+        {viewMode === 'kanban' && (
+          <ProjectKanbanBoard
+            onViewProject={(p) => {
+              setProjectForDetail(p);
+              if (setDetailInitialTab) setDetailInitialTab('overview');
+              setIsDetailModalOpen(true);
+            }}
+            onOpenTaskModal={handleOpenTaskForProject}
+          />
+        )}
+
+        {viewMode === 'gantt' && (
+          <ProjectGanttView
+            onViewProject={(p) => {
+              setProjectForDetail(p);
+              if (setDetailInitialTab) setDetailInitialTab('overview');
+              setIsDetailModalOpen(true);
+            }}
+            onOpenTaskModal={handleOpenTaskForProject}
+          />
+        )}
+
+        {viewMode === 'workload' && (
+          <ProjectResourceWorkload
+            onViewProject={(p) => {
+              setProjectForDetail(p);
+              if (setDetailInitialTab) setDetailInitialTab('overview');
+              setIsDetailModalOpen(true);
+            }}
+          />
+        )}
       </div>
 
 
@@ -1266,6 +1282,11 @@ export const ProjectSection = () => {
         open={!!activeMetricDialog}
         onClose={() => setActiveMetricDialog(null)}
         metricType={activeMetricDialog || 'total'}
+        onViewProject={(p) => {
+          setProjectForDetail(p);
+          if (setDetailInitialTab) setDetailInitialTab('overview');
+          setIsDetailModalOpen(true);
+        }}
         onEditProject={(p) => {
           if (openEditModal) openEditModal(p);
           else {
@@ -1296,8 +1317,10 @@ export const ProjectSection = () => {
         onClose={() => {
           setIsDetailModalOpen(false);
           setProjectForDetail(null);
+          if (setDetailInitialTab) setDetailInitialTab('overview');
         }}
         project={projectForDetail}
+        initialTab={detailInitialTab || 'overview'}
         onEdit={(p) => {
           if (openEditModal) openEditModal(p);
           else {

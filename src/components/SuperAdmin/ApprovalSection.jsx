@@ -445,9 +445,9 @@ export const ApprovalSection = () => {
                   onClick={closeModal}
                   aria-label="Close modal"
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -455,6 +455,15 @@ export const ApprovalSection = () => {
                     border: 'none',
                     cursor: 'pointer',
                     color: '#64748b',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#fee2e2';
+                    e.currentTarget.style.color = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.color = '#64748b';
                   }}
                 >
                   <X size={18} />

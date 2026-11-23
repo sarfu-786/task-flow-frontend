@@ -21,6 +21,9 @@ import {
   Shield,
   AlertTriangle,
   ArrowRight,
+  MapPin,
+  IndianRupee,
+  CheckCircle2,
 } from 'lucide-react';
 
 const getSubordinateUserIds = (user, allUsers) => {
@@ -113,15 +116,78 @@ export const LeadModal = () => {
     assignableUsers = [currentUser, ...assignableUsers];
   }
 
+  // Smart Sales Department Matching & Live Lead Workload calculation
+  const isSalesDepartment = (dept = '') => {
+    const d = (dept || '').toLowerCase();
+    return (
+      d.includes('sales') ||
+      d.includes('sell') ||
+      d.includes('business development') ||
+      d.includes('marketing') ||
+      d.includes('commercial')
+    );
+  };
+
+  const getActiveLeadCount = (u) => {
+    const uName = (u?.name || u?.username || '').toLowerCase().trim();
+    if (!uName) return 0;
+    const closedStatuses = ['Converted', 'Not Interested', 'Invalid', 'Lost'];
+    return (leads || []).filter((l) => {
+      if (!l || closedStatuses.includes(l.status)) return false;
+      const lOwner = (l.assignedSalesUser || l.assignedTo || '').toLowerCase().trim();
+      return lOwner === uName;
+    }).length;
+  };
+
+  const resolveManagerNameForUser = (userName) => {
+    if (!userName) return 'Executive Leadership';
+    const target = activeUsers.find(
+      (u) => (u.name || '').toLowerCase() === userName.toLowerCase() || (u.username || '').toLowerCase() === userName.toLowerCase()
+    );
+    if (!target) return 'Executive Leadership';
+    if (target.reportsToName) return target.reportsToName;
+    if (target.reportsTo) {
+      const mgr = activeUsers.find((m) => (m._id || m.id || '').toString() === target.reportsTo.toString());
+      if (mgr) return `${mgr.name} (${mgr.role || 'Manager'})`;
+    }
+    return 'Executive Leadership';
+  };
+
+  const evaluatedAssignees = assignableUsers.map((u) => {
+    const activeCount = getActiveLeadCount(u);
+    const isSales = isSalesDepartment(u.department);
+    const loadLabel =
+      activeCount === 0
+        ? '🟢 Free'
+        : activeCount <= 4
+        ? `🟢 ${activeCount} active`
+        : `🟡 ${activeCount} active`;
+    return { user: u, isSales, activeCount, loadLabel };
+  });
+
+  const recommendedSalesReps = evaluatedAssignees
+    .filter((item) => item.isSales)
+    .sort((a, b) => a.activeCount - b.activeCount);
+
+  const otherTeamMembers = evaluatedAssignees
+    .filter((item) => !item.isSales)
+    .sort((a, b) => a.activeCount - b.activeCount);
+
+  const managerOptions = activeUsers.filter((u) =>
+    ['Super Admin', 'Administrator', 'Executive', 'Manager'].includes(u.role)
+  );
+
   const [formData, setFormData] = useState({
     contactPerson: '',
     company: '',
     mobileNumber: '',
     email: '',
+    city: '',
     source: 'Website',
     requirement: '',
     status: 'New',
     priority: 'Medium',
+    estimatedValue: '',
     assignedSalesUser: '',
     assignedManager: '',
     remarks: '',
@@ -211,15 +277,18 @@ export const LeadModal = () => {
         } catch {}
       }
 
+      const existingVal = selectedLead.estimatedValue || selectedLead.dealValue || selectedLead.pipeline_value || '';
       setFormData({
         contactPerson: selectedLead.contactPerson || selectedLead.name || '',
         company: selectedLead.company || '',
         mobileNumber: selectedLead.mobileNumber || selectedLead.phone || '',
         email: selectedLead.email || '',
+        city: selectedLead.city || '',
         source: selectedLead.source || 'Website',
         requirement: selectedLead.requirement || '',
         status: selectedLead.status || 'New',
         priority: selectedLead.priority || 'Medium',
+        estimatedValue: existingVal ? String(existingVal) : '',
         assignedSalesUser: selectedLead.assignedSalesUser || selectedLead.assignedTo || '',
         assignedManager: selectedLead.assignedManagerName || selectedLead.assignedManager || '',
         remarks: selectedLead.remarks || selectedLead.notes || '',
@@ -227,17 +296,20 @@ export const LeadModal = () => {
         nextFollowUpTime: selectedLead.nextFollowUpTime || '',
       });
     } else {
+      const defaultSalesRep = recommendedSalesReps[0]?.user?.name || currentUser?.name || '';
       setFormData({
         contactPerson: '',
         company: '',
         mobileNumber: '',
         email: '',
+        city: '',
         source: 'Website',
         requirement: '',
         status: 'New',
         priority: 'Medium',
-        assignedSalesUser: currentUser?.name || '',
-        assignedManager: currentUser?.reportsToName || 'Executive Leadership',
+        estimatedValue: '',
+        assignedSalesUser: defaultSalesRep,
+        assignedManager: resolveManagerNameForUser(defaultSalesRep),
         remarks: '',
         nextFollowUpDate: '',
         nextFollowUpTime: '',
@@ -281,10 +353,7 @@ export const LeadModal = () => {
     setServerError('');
 
     try {
-      const existingVal =
-        modalMode === 'edit' && selectedLead
-          ? selectedLead.estimatedValue || selectedLead.dealValue || 0
-          : 0;
+      const parsedVal = formData.estimatedValue !== '' ? Math.max(0, Number(formData.estimatedValue) || 0) : 0;
 
       const payload = {
         name: formData.contactPerson.trim(),
@@ -293,12 +362,13 @@ export const LeadModal = () => {
         phone: formData.mobileNumber.trim(),
         mobileNumber: formData.mobileNumber.trim(),
         email: formData.email.trim().toLowerCase(),
+        city: (formData.city || '').trim(),
         source: formData.source,
         requirement: formData.requirement.trim(),
         status: formData.status,
         priority: formData.priority,
-        estimatedValue: existingVal,
-        dealValue: existingVal,
+        estimatedValue: parsedVal,
+        dealValue: parsedVal,
         assignedTo: formData.assignedSalesUser || currentUser?.name || 'Current User',
         assignedSalesUser: formData.assignedSalesUser || currentUser?.name || 'Current User',
         assignedManager: formData.assignedManager || '',
@@ -575,6 +645,38 @@ export const LeadModal = () => {
               )}
             </div>
 
+            {/* Estimated Deal Value (₹) */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <IndianRupee size={14} color="#059669" />
+                <span>Estimated Deal Value (₹)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                className="form-control"
+                placeholder="e.g. 50000"
+                value={formData.estimatedValue}
+                onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
+              />
+            </div>
+
+            {/* City / Location */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                <MapPin size={14} color="#2563eb" />
+                <span>City / Territory</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Delhi, Noida, Patna, Mumbai"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              />
+            </div>
+
             {/* Lead Source */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
@@ -588,7 +690,6 @@ export const LeadModal = () => {
               >
                 <option value="Website">Website</option>
                 <option value="Justdial">Justdial</option>
-                <option value="Instamart">Instamart</option>
                 <option value="IndiaMART">IndiaMART</option>
                 <option value="TradeIndia">TradeIndia</option>
                 <option value="Google Search Ads">Google Search Ads</option>
@@ -616,6 +717,7 @@ export const LeadModal = () => {
               <select
                 className="form-control select-filter"
                 value={formData.status}
+                disabled={modalMode === 'edit' && selectedLead?.status === 'Converted'}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               >
                 <option value="New">New</option>
@@ -623,7 +725,9 @@ export const LeadModal = () => {
                 <option value="Follow-Up">Follow-Up</option>
                 <option value="Qualified">Qualified</option>
                 <option value="Interested">Interested</option>
-                <option value="Converted">Converted</option>
+                {modalMode === 'edit' && selectedLead?.status === 'Converted' && (
+                  <option value="Converted">Converted (Linked to Opportunity)</option>
+                )}
                 <option value="Not Interested">Not Interested</option>
                 <option value="Invalid">Invalid</option>
               </select>
@@ -647,7 +751,7 @@ export const LeadModal = () => {
               </select>
             </div>
 
-            {/* Assigned Sales User */}
+            {/* Assigned Sales User (Smart Sales Team Routing & Live Workload) */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <UserIcon size={14} color="#2563eb" />
@@ -656,32 +760,80 @@ export const LeadModal = () => {
               <select
                 className="form-control select-filter"
                 value={formData.assignedSalesUser}
-                onChange={(e) => setFormData({ ...formData, assignedSalesUser: e.target.value })}
+                onChange={(e) => {
+                  const nextRep = e.target.value;
+                  setFormData({
+                    ...formData,
+                    assignedSalesUser: nextRep,
+                    assignedManager: resolveManagerNameForUser(nextRep),
+                  });
+                }}
               >
-                {assignableUsers.map((u) => {
-                  const label = `${u.name || u.username} (${u.role || 'Member'})`;
-                  return (
+                {recommendedSalesReps.length > 0 && (
+                  <optgroup label="⭐ Recommended (Sales & BD Team)">
+                    {recommendedSalesReps.map(({ user: u, loadLabel }) => (
+                      <option key={u._id || u.id || u.email} value={u.name || u.username}>
+                        {u.name || u.username} ({u.department || 'Sales'}) — {loadLabel}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label={recommendedSalesReps.length > 0 ? 'Other Authorized Members' : 'All Authorized Members'}>
+                  {otherTeamMembers.map(({ user: u, loadLabel }) => (
                     <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                      {label}
+                      {u.name || u.username} ({u.department || u.role || 'Member'}) — {loadLabel}
                     </option>
-                  );
-                })}
+                  ))}
+                </optgroup>
               </select>
+              {(() => {
+                const selectedEval = evaluatedAssignees.find(
+                  (item) => (item.user.name || item.user.username) === formData.assignedSalesUser
+                );
+                if (!selectedEval) return null;
+                if (selectedEval.isSales) {
+                  return (
+                    <span style={{ fontSize: '0.71rem', color: '#059669', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                      <CheckCircle2 size={12} />
+                      <span>Sales Team Match ({selectedEval.loadLabel})</span>
+                    </span>
+                  );
+                }
+                return (
+                  <span style={{ fontSize: '0.71rem', color: '#b45309', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <AlertCircle size={12} />
+                    <span>Department: {selectedEval.user.department || 'General'} (Recommended: Sales & BD)</span>
+                  </span>
+                );
+              })()}
             </div>
 
-            {/* Assigned Manager */}
+            {/* Assigned Manager (Auto-derived from Hierarchy + Dropdown) */}
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
                 <Shield size={14} color="#2563eb" />
-                <span>Assigned Manager</span>
+                <span>Reporting Manager (Auto-synced from Hierarchy)</span>
               </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Executive Leadership"
+              <select
+                className="form-control select-filter"
                 value={formData.assignedManager}
                 onChange={(e) => setFormData({ ...formData, assignedManager: e.target.value })}
-              />
+              >
+                <option value="Executive Leadership">Executive Leadership (Root)</option>
+                {managerOptions.map((m) => {
+                  const mgrVal = `${m.name} (${m.role || 'Manager'})`;
+                  return (
+                    <option key={m._id || m.id || m.email} value={mgrVal}>
+                      {mgrVal}
+                    </option>
+                  );
+                })}
+                {formData.assignedManager &&
+                  formData.assignedManager !== 'Executive Leadership' &&
+                  !managerOptions.some((m) => `${m.name} (${m.role || 'Manager'})` === formData.assignedManager) && (
+                    <option value={formData.assignedManager}>{formData.assignedManager}</option>
+                  )}
+              </select>
             </div>
 
             {/* Requirement */}
@@ -721,9 +873,8 @@ export const LeadModal = () => {
                 <span>Next Follow-Up Time</span>
               </label>
               <input
-                type="text"
+                type="time"
                 className="form-control"
-                placeholder="e.g. 11:00 AM or 03:30 PM"
                 value={formData.nextFollowUpTime}
                 onChange={(e) => setFormData({ ...formData, nextFollowUpTime: e.target.value })}
               />

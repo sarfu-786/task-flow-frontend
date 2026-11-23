@@ -214,15 +214,15 @@ export const ComplaintSection = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '12px',
+              padding: '10px 22px',
+              borderRadius: '999px',
               fontWeight: 700,
               fontSize: '0.9rem',
               backgroundColor: '#2563eb',
               color: '#ffffff',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.22)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
               transition: 'all 0.2s ease',
             }}
           >
@@ -798,7 +798,7 @@ export const ComplaintSection = () => {
                     borderRadius: '6px',
                   }}
                 >
-                  Real-Time SLA & Geolocation
+                  Real-Time SLA Tracking
                 </span>
               </div>
             </div>

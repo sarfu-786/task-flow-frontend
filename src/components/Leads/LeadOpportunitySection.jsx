@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   TrendingUp,
@@ -48,27 +48,30 @@ const STAGE_DEFAULT_PROBABILITIES = {
 
 export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
   const { updateLeadOpportunityStage } = useLeads();
-  const { opportunities, updateOpportunityStage } = useOpportunities();
+  const { opportunities, updateOpportunityStage, createOpportunity } = useOpportunities();
 
   const [oppData, setOppData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [creatingMissingOpp, setCreatingMissingOpp] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const attemptedFetchKeyRef = useRef('');
 
   // Lost Reason Modal State
   const [showLostDialog, setShowLostDialog] = useState(false);
   const [lostReason, setLostReason] = useState('Price too high');
   const [lostRemarks, setLostRemarks] = useState('');
 
-  // Find linked opportunity from opportunities context or fetch via API
+  // Find linked opportunity from opportunities context or fetch once via API
   useEffect(() => {
     if (!lead) return;
 
     const leadIdStr = lead.leadId || lead.lead_id || (lead._id ? lead._id.toString() : '');
     const oppIdStr = lead.opportunityId || (lead.convertedOpportunityId ? lead.convertedOpportunityId.toString() : '');
+    const lookupKey = oppIdStr || leadIdStr;
 
-    // 1. Try finding in context first
+    // 1. Try finding in Opportunities context first (zero extra network calls)
     const matched = (opportunities || []).find((o) => {
       const oId = (o._id ? o._id.toString() : '') || o.opportunityId || o.opportunity_id;
       const oLeadId = o.originalLeadId || o.leadId || (o.relatedLead ? o.relatedLead.toString() : '');
@@ -80,28 +83,43 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
 
     if (matched) {
       setOppData(matched);
-    } else if (oppIdStr || leadIdStr) {
-      // 2. Fetch fresh from backend
-      setLoading(true);
-      const fetchPromise = api.getOpportunityById
-        ? api.getOpportunityById(oppIdStr || leadIdStr)
-        : api.getOpportunity
-        ? api.getOpportunity(oppIdStr || leadIdStr)
+      attemptedFetchKeyRef.current = lookupKey;
+      return;
+    }
+
+    // Only attempt a single backend fetch if the lead actually has a linked opportunity ID
+    // (avoids repeated 404 console spam on legacy converted leads with no opportunity record)
+    if (!oppIdStr) {
+      setOppData(null);
+      return;
+    }
+
+    if (attemptedFetchKeyRef.current === lookupKey) {
+      return;
+    }
+    attemptedFetchKeyRef.current = lookupKey;
+
+    setLoading(true);
+    const fetchPromise = api.getOpportunityById
+      ? api.getOpportunityById(oppIdStr)
+      : api.getOpportunity
+        ? api.getOpportunity(oppIdStr)
         : Promise.reject(new Error('Opportunity API not available'));
 
-      fetchPromise
-        .then((res) => {
-          if (res && res.success && res.opportunity) {
-            setOppData(res.opportunity);
-          }
-        })
-        .catch((err) => {
-          console.warn('Opportunity fetch for lead notice:', err?.message);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    fetchPromise
+      .then((res) => {
+        if (res && res.success && res.opportunity) {
+          setOppData(res.opportunity);
+        } else {
+          setOppData(null);
+        }
+      })
+      .catch(() => {
+        setOppData(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [lead, opportunities]);
 
   if (!lead) return null;
@@ -109,25 +127,117 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
   const isConverted = lead.status === 'Converted' || !!lead.opportunityId || !!lead.convertedOpportunityId;
   if (!isConverted) return null;
 
+  // Allow repairing legacy converted leads whose Opportunity record is missing / deleted
+  const handleCreateLinkedOpportunity = async () => {
+    if (!createOpportunity || creatingMissingOpp) return;
+    setCreatingMissingOpp(true);
+    setError('');
+    try {
+      const created = await createOpportunity({
+        name: `${lead.company || lead.contactPerson || 'Deal'} - Opportunity`,
+        company: lead.company || '',
+        contactPerson: lead.contactPerson || lead.name || '',
+        email: lead.email || '',
+        phone: lead.mobileNumber || lead.phone || '',
+        leadSource: lead.source || 'Website',
+        leadId: lead.leadId || '',
+        originalLeadId: lead.leadId || '',
+        relatedLead: lead._id || null,
+        relatedLeadName: lead.contactPerson || lead.name || '',
+        amount: Number(lead.estimatedValue || lead.dealValue || 0),
+        stage: 'New Opportunity',
+        priority: lead.priority || 'Medium',
+        assignedTo: lead.assignedSalesUser || lead.assignedTo || '',
+        notes: lead.remarks || lead.notes || '',
+      });
+      if (created) {
+        setOppData(created);
+        setSuccessMessage('Linked Opportunity created successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to create linked opportunity');
+    } finally {
+      setCreatingMissingOpp(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
+        Loading linked opportunity...
+      </div>
+    );
+  }
+
+  if (!oppData) {
+    return (
+      <div
+        style={{
+          background: '#f8fafc',
+          border: '1px dashed #cbd5e1',
+          borderRadius: '12px',
+          padding: '24px',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
+        <AlertTriangle size={24} color="#d97706" />
+        <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1e293b' }}>
+          No linked Opportunity found for {lead.leadId || 'this lead'}
+        </div>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', maxWidth: '420px' }}>
+          This lead was marked Converted without an active Opportunity record (or its deal was deleted).
+        </p>
+        {error && (
+          <div style={{ color: '#dc2626', fontSize: '0.78rem', fontWeight: 600 }}>{error}</div>
+        )}
+        {createOpportunity && (
+          <button
+            type="button"
+            disabled={creatingMissingOpp}
+            onClick={handleCreateLinkedOpportunity}
+            style={{
+              marginTop: '4px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#7c3aed',
+              color: '#ffffff',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: creatingMissingOpp ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {creatingMissingOpp ? 'Creating Opportunity...' : '+ Create Linked Opportunity'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   // Resolve current active stage
-  const rawStage = oppData?.stage || 'New Opportunity';
+  const rawStage = oppData.stage || 'New Opportunity';
   const currentStage = normalizeStage ? normalizeStage(rawStage) : rawStage;
 
-  const currentProb = oppData?.probability !== undefined ? oppData.probability : STAGE_DEFAULT_PROBABILITIES[currentStage] || 10;
-  const dealValue = oppData?.amount !== undefined ? oppData.amount : (lead.estimatedValue || lead.dealValue || 0);
-  const expectedDate = oppData?.expectedCloseDate ? new Date(oppData.expectedCloseDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not specified';
-  const dealOwner = oppData?.assignedTo || lead.assignedSalesUser || lead.assignedTo || 'Unassigned';
-  const remarksText = oppData?.notes || oppData?.remarks || lead.remarks || lead.notes || 'Converted from qualified lead.';
-  const oppReadableId = oppData?.opportunityId || lead.opportunityId || 'OP-001';
+  const currentProb = oppData.probability !== undefined ? oppData.probability : STAGE_DEFAULT_PROBABILITIES[currentStage] || 10;
+  const dealValue = oppData.amount !== undefined ? oppData.amount : (lead.estimatedValue || lead.dealValue || 0);
+  const expectedDate = oppData.expectedCloseDate ? new Date(oppData.expectedCloseDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not specified';
+  const dealOwner = oppData.assignedTo || lead.assignedSalesUser || lead.assignedTo || 'Unassigned';
+  const remarksText = oppData.notes || oppData.remarks || lead.remarks || lead.notes || '';
+  const oppReadableId = oppData.opportunityId || lead.opportunityId || 'Deal';
 
   const isWon = currentStage === 'Won';
   const isLost = currentStage === 'Lost';
-  const currentLostReason = oppData?.lostReason || '';
-  const currentLostDetails = oppData?.lostReasonDetails || '';
+  const currentLostReason = oppData.lostReason || '';
+  const currentLostDetails = oppData.lostReasonDetails || '';
 
   // Handle stage change
   const handleStageSelect = async (targetStage) => {
-    if (targetStage === currentStage || updating) return;
+    if (targetStage === currentStage || updating || isWon || isLost || !oppData?._id) return;
 
     if (targetStage === 'Lost') {
       setShowLostDialog(true);
@@ -139,7 +249,7 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
     setSuccessMessage('');
 
     try {
-      const oppIdentifier = oppData?._id || lead.convertedOpportunityId || lead.opportunityId || lead.leadId || lead._id;
+      const oppIdentifier = oppData._id || oppData.opportunityId;
       if (updateOpportunityStage) {
         await updateOpportunityStage(oppIdentifier, targetStage);
       } else {
@@ -168,12 +278,13 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
   // Submit Lost reason
   const handleConfirmLost = async (e) => {
     if (e) e.preventDefault();
+    if (!oppData?._id) return;
     setUpdating(true);
     setError('');
     setShowLostDialog(false);
 
     try {
-      const oppIdentifier = oppData?._id || lead.convertedOpportunityId || lead.opportunityId || lead.leadId || lead._id;
+      const oppIdentifier = oppData._id || oppData.opportunityId;
       if (updateOpportunityStage) {
         await updateOpportunityStage(oppIdentifier, 'Lost', lostReason, lostRemarks);
       } else {
@@ -256,24 +367,24 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
         gap: '16px',
       }}
     >
-      {/* 1. Header with Opportunity Status & Identification */}
+      {/* 1. Compact Header with Deal ID, Status & Mark Lost */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
-          paddingBottom: '14px',
+          gap: '10px',
+          paddingBottom: '12px',
           borderBottom: '1px solid #f1f5f9',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
               background: isWon ? '#ecfdf5' : isLost ? '#fef2f2' : '#f5f3ff',
               color: isWon ? '#059669' : isLost ? '#dc2626' : '#7c3aed',
               display: 'flex',
@@ -281,47 +392,42 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
               justifyContent: 'center',
             }}
           >
-            <Sparkles size={18} />
+            <Sparkles size={16} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
-                Opportunity Details
-              </h4>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  background: '#eff6ff',
-                  color: '#2563eb',
-                  border: '1px solid #bfdbfe',
-                }}
-              >
-                {oppReadableId}
-              </span>
-            </div>
-            <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-              Post-conversion pipeline workflow linked to Lead {lead.leadId || 'LD-001'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
+              Opportunity
+            </h4>
+            <span
+              style={{
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: '6px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: '1px solid #bfdbfe',
+              }}
+            >
+              {oppReadableId}
+            </span>
           </div>
         </div>
 
-        {/* Status Pill & Stage Switcher */}
+        {/* Status Pill & Mark Lost Action (Active Deals Only) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span
             style={{
-              fontSize: '0.76rem',
+              fontSize: '0.75rem',
               fontWeight: 700,
-              padding: '4px 12px',
+              padding: '4px 10px',
               borderRadius: '999px',
               background: isWon ? '#ecfdf5' : isLost ? '#fef2f2' : '#f5f3ff',
               color: isWon ? '#059669' : isLost ? '#dc2626' : '#7c3aed',
               border: isWon ? '1px solid #a7f3d0' : isLost ? '1px solid #fecaca' : '1px solid #ddd6fe',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '5px',
             }}
           >
             <span
@@ -332,39 +438,28 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
                 backgroundColor: isWon ? '#059669' : isLost ? '#dc2626' : '#7c3aed',
               }}
             />
-            Status: {isWon ? 'Won (Deal Closed)' : isLost ? 'Lost (Deal Closed)' : 'Active Opportunity'}
+            {isWon ? 'Won (Locked)' : isLost ? 'Lost (Locked)' : `${currentStage} (${currentProb}%)`}
           </span>
 
-          {/* Quick Stage Switcher Dropdown */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#475569', margin: 0 }}>
-              Update Stage:
-            </label>
-            <select
-              className="form-control select-filter"
-              value={currentStage}
+          {!isWon && !isLost && (
+            <button
+              type="button"
               disabled={updating}
-              onChange={(e) => handleStageSelect(e.target.value)}
+              onClick={() => handleStageSelect('Lost')}
               style={{
-                fontSize: '0.78rem',
                 padding: '4px 10px',
-                height: 'auto',
-                minWidth: '150px',
-                fontWeight: 600,
-                borderColor: '#cbd5e1',
                 borderRadius: '6px',
-                cursor: 'pointer',
+                border: '1px solid #fecaca',
+                background: '#fef2f2',
+                color: '#dc2626',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: updating ? 'not-allowed' : 'pointer',
               }}
             >
-              <option value="New Opportunity">New Opportunity</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Requirement Understanding">Requirement Understanding</option>
-              <option value="Proposal / Quotation">Proposal / Quotation</option>
-              <option value="Negotiation">Negotiation</option>
-              <option value="Won">Won</option>
-              <option value="Lost">Lost</option>
-            </select>
-          </div>
+              Mark Lost
+            </button>
+          )}
         </div>
       </div>
 
@@ -386,11 +481,8 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
       {/* 2. Visual Stage Progress Lifecycle UI */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Opportunity Lifecycle & Progress
-          </div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: isWon ? '#059669' : isLost ? '#dc2626' : '#2563eb' }}>
-            Current: {currentStage} ({currentProb}%)
+          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Pipeline Stage {isWon || isLost ? '' : '— Click a stage to update'}
           </div>
         </div>
 
@@ -398,7 +490,7 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(98px, 1fr))',
             gap: '6px',
             background: '#f8fafc',
             padding: '10px',
@@ -408,7 +500,8 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
         >
           {pipelineSteps.map((step, idx) => {
             const status = getStepStatus(step.key, idx);
-            const isClickable = step.key !== 'Converted';
+            const isClosedDeal = isWon || isLost;
+            const isClickable = step.key !== 'Converted' && !isClosedDeal && !updating;
 
             let bg = '#ffffff';
             let color = '#64748b';
@@ -451,7 +544,13 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
               <div
                 key={step.key}
                 onClick={() => isClickable && handleStageSelect(step.key)}
-                title={isClickable ? `Click to advance opportunity to ${step.label}` : 'Source Lead Converted'}
+                title={
+                  isClosedDeal
+                    ? 'Deal is closed and locked'
+                    : isClickable
+                      ? `Move stage to ${step.label}`
+                      : 'Source Lead Converted'
+                }
                 style={{
                   background: bg,
                   border: `1.5px solid ${borderColor}`,
@@ -463,6 +562,7 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
                   justifyContent: 'center',
                   textAlign: 'center',
                   cursor: isClickable ? 'pointer' : 'default',
+                  opacity: isClosedDeal && !status.startsWith('current') ? 0.72 : 1,
                   transition: 'all 0.15s ease',
                   boxShadow: status.startsWith('current') ? '0 2px 4px rgba(59, 130, 246, 0.12)' : 'none',
                 }}
@@ -473,7 +573,7 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
                     {idx === 0 ? 'Start' : `0${idx}`}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.74rem', fontWeight: 700, color, lineHeight: 1.2 }}>
+                <div style={{ fontSize: '0.73rem', fontWeight: 700, color, lineHeight: 1.2 }}>
                   {step.label}
                 </div>
               </div>
@@ -549,80 +649,68 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
         </div>
       )}
 
-      {/* 4. Opportunity Key Details Grid */}
+      {/* 4. Compact Opportunity Summary Row */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '14px',
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
-          borderRadius: '10px',
-          padding: '14px 16px',
-        }}
-      >
-        {/* Deal Value */}
-        <div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <DollarSign size={12} color="#059669" />
-            <span>EXPECTED / DEAL VALUE</span>
-          </div>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
-            ₹{Number(dealValue).toLocaleString('en-IN')}
-          </div>
-        </div>
-
-        {/* Current Stage */}
-        <div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Flag size={12} color="#2563eb" />
-            <span>CURRENT STAGE</span>
-          </div>
-          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-            {currentStage}
-          </div>
-        </div>
-
-        {/* Expected Closing Date */}
-        <div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Calendar size={12} color="#d97706" />
-            <span>EXPECTED CLOSING DATE</span>
-          </div>
-          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#334155', marginTop: '2px' }}>
-            {expectedDate}
-          </div>
-        </div>
-
-        {/* Assigned Sales Representative / Owner */}
-        <div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <UserIcon size={12} color="#7c3aed" />
-            <span>ASSIGNED SALES OWNER</span>
-          </div>
-          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#334155', marginTop: '2px' }}>
-            {dealOwner}
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Opportunity Remarks / Conversion Notes */}
-      <div
-        style={{
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '12px',
           background: '#f8fafc',
           border: '1px solid #e2e8f0',
           borderRadius: '10px',
           padding: '12px 16px',
         }}
       >
-        <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <FileText size={12} color="#64748b" />
-          <span>OPPORTUNITY REMARKS & DEAL NOTES</span>
+        <div>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <DollarSign size={12} color="#059669" />
+            <span>DEAL VALUE</span>
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+            ₹{Number(dealValue).toLocaleString('en-IN')}
+          </div>
         </div>
-        <p style={{ margin: 0, fontSize: '0.84rem', color: '#334155', lineHeight: 1.4 }}>
-          {remarksText}
-        </p>
+
+        <div>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Calendar size={12} color="#d97706" />
+            <span>EXPECTED CLOSE</span>
+          </div>
+          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#334155', marginTop: '2px' }}>
+            {expectedDate}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <UserIcon size={12} color="#7c3aed" />
+            <span>SALES OWNER</span>
+          </div>
+          <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#334155', marginTop: '2px' }}>
+            {dealOwner}
+          </div>
+        </div>
       </div>
+
+      {/* 5. Opportunity Remarks (Only shown if notes exist) */}
+      {remarksText && (
+        <div
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '12px 16px',
+          }}
+        >
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <FileText size={12} color="#64748b" />
+            <span>DEAL NOTES</span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.84rem', color: '#334155', lineHeight: 1.4 }}>
+            {remarksText}
+          </p>
+        </div>
+      )}
 
       {/* 6. Lost Reason Capture Dialog Modal */}
       {showLostDialog && (
@@ -662,7 +750,28 @@ export const LeadOpportunitySection = ({ lead, onStageUpdated }) => {
               <button
                 type="button"
                 onClick={() => setShowLostDialog(false)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                aria-label="Close dialog"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: '#f1f5f9',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fee2e2';
+                  e.currentTarget.style.color = '#dc2626';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                  e.currentTarget.style.color = '#64748b';
+                }}
               >
                 <X size={18} />
               </button>

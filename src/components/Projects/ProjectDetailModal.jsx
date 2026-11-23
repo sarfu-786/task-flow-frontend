@@ -7,7 +7,7 @@ import {
   Building,
   User,
   Calendar,
-  DollarSign,
+  IndianRupee,
   CheckCircle2,
   Clock,
   Edit2,
@@ -38,6 +38,7 @@ export const ProjectDetailModal = ({
   isOpen,
   onClose,
   project,
+  initialTab = 'overview',
   onEdit,
   onOpenTaskModal,
   onOpenIssueModal,
@@ -52,10 +53,12 @@ export const ProjectDetailModal = ({
     approveTimesheet,
     rejectTimesheet,
     selectedProject,
+    detailInitialTab,
   } = useProjects();
   const { isSuperAdmin, isManager, user: currentUser } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const effectiveInitialTab = initialTab || detailInitialTab || 'overview';
+  const [activeTab, setActiveTab] = useState(effectiveInitialTab);
   const [newComment, setNewComment] = useState('');
   const [commenting, setCommenting] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
@@ -75,9 +78,9 @@ export const ProjectDetailModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setActiveTab('overview');
+      setActiveTab(effectiveInitialTab);
     }
-  }, [isOpen, project?._id]);
+  }, [isOpen, project?._id, effectiveInitialTab]);
 
   if (!isOpen || !currentProj) return null;
 
@@ -364,7 +367,6 @@ export const ProjectDetailModal = ({
                   e.currentTarget.style.backgroundColor = '#ffffff';
                   e.currentTarget.style.borderColor = '#cbd5e1';
                 }}
-                title="Edit Project"
               >
                 <Edit2 size={16} />
               </button>
@@ -374,10 +376,8 @@ export const ProjectDetailModal = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete project ${currentProj.name}?`)) {
-                    onDelete(currentProj);
-                    onClose();
-                  }
+                  onDelete(currentProj);
+                  onClose();
                 }}
                 style={{
                   width: '38px',
@@ -400,7 +400,6 @@ export const ProjectDetailModal = ({
                   e.currentTarget.style.backgroundColor = '#ffffff';
                   e.currentTarget.style.borderColor = '#fecaca';
                 }}
-                title="Delete Project"
               >
                 <Trash2 size={16} />
               </button>
@@ -432,7 +431,6 @@ export const ProjectDetailModal = ({
                 e.currentTarget.style.backgroundColor = '#f1f5f9';
                 e.currentTarget.style.color = '#64748b';
               }}
-              title="Close"
             >
               <X size={18} />
             </button>
@@ -605,7 +603,7 @@ export const ProjectDetailModal = ({
                 {/* Financial Summary */}
                 <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
                   <h4 style={{ margin: '0 0 14px 0', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <DollarSign size={16} style={{ color: '#059669' }} /> Commercial & Billing Details
+                    <IndianRupee size={16} style={{ color: '#059669' }} /> Commercial & Billing Details
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -627,7 +625,7 @@ export const ProjectDetailModal = ({
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
                       <span style={{ color: '#64748b' }}>Remaining Budget:</span>
                       <span style={{ fontWeight: 800, color: '#059669' }}>
-                        ${((currentProj.budget || 0) - (currentProj.actualCost || 0)).toLocaleString()}
+                        {currentProj.currency === 'USD' ? '$' : '₹'}{((currentProj.budget || 0) - (currentProj.actualCost || 0)).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -756,7 +754,7 @@ export const ProjectDetailModal = ({
                       padding: '0 16px',
                       backgroundColor: '#2563eb',
                       color: '#ffffff',
-                      borderRadius: '10px',
+                      borderRadius: '999px',
                       fontSize: '12px',
                       fontWeight: 700,
                       border: 'none',
@@ -1015,7 +1013,7 @@ export const ProjectDetailModal = ({
                       padding: '0 16px',
                       backgroundColor: '#2563eb',
                       color: '#ffffff',
-                      borderRadius: '10px',
+                      borderRadius: '999px',
                       fontSize: '12px',
                       fontWeight: 700,
                       border: 'none',

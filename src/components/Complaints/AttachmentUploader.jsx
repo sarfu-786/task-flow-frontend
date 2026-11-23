@@ -211,13 +211,25 @@ export const AttachmentUploader = ({
                     handleRemove(idx);
                   }}
                   style={{
-                    background: 'none',
+                    background: '#f1f5f9',
                     border: 'none',
+                    borderRadius: '50%',
                     cursor: 'pointer',
                     color: '#94a3b8',
-                    padding: '2px',
+                    width: '22px',
+                    height: '22px',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#fee2e2';
+                    e.currentTarget.style.color = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.color = '#94a3b8';
                   }}
                   title="Remove file"
                 >

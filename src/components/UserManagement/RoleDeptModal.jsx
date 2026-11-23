@@ -141,13 +141,27 @@ export const RoleDeptModal = ({
             type="button"
             className="btn-icon"
             onClick={onClose}
+            aria-label="Close modal"
             style={{
-              background: 'transparent',
+              background: '#f1f5f9',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--text-muted)',
-              padding: '6px',
-              borderRadius: '8px',
+              color: '#64748b',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
             }}
           >
             <X size={18} />

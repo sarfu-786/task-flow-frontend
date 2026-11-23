@@ -830,7 +830,7 @@ button, input, select, textarea {
 }
 
 .btn-curvy-action {
-  border-radius: 12px;
+  border-radius: 9999px;
   padding: 10px 20px;
   font-weight: 600;
   font-size: 0.88rem;
@@ -1115,8 +1115,8 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 16px;
-  border-radius: var(--radius-md);
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -1124,6 +1124,26 @@ button, input, select, textarea {
   border: 1px solid transparent;
   outline: none;
   white-space: nowrap;
+}
+
+/* Global Pill-Shaped Action Buttons (Matching Add Task in Task Management) */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-curvy-action,
+.modal-footer button,
+.modal-footer .btn,
+button.btn,
+#btn-add-new-task,
+#btn-create-project,
+#btn-log-complaint-top,
+#btn-add-lead-top,
+#btn-add-new-user,
+#btn-projects-mis,
+#btn-projects-import,
+#btn-projects-export {
+  border-radius: 9999px !important;
 }
 
 .btn-primary {
@@ -1163,22 +1183,111 @@ button, input, select, textarea {
 }
 
 .btn-icon {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   color: var(--text-secondary);
   padding: 6px;
-  border-radius: var(--radius-sm);
+  border-radius: 50% !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition-fast);
+  aspect-ratio: 1 / 1;
 }
 
 .btn-icon:hover {
-  background: #f8fafc;
-  color: var(--text-primary);
-  border-color: #94a3b8;
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: transparent;
+}
+
+/* ==========================================================================
+   Universal Circular Modal Close / Cross Buttons
+   Ensures ALL cross buttons (X) across modals, dialogs, drawers, popups,
+   and toasts are uniformly circular with matching smooth hover aesthetics.
+   ========================================================================== */
+.modal-header .btn-icon,
+.modal-header button:not(.btn-text):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-curvy-action),
+.org-drawer-header .btn-icon,
+button.btn-close,
+button.modal-close-btn,
+button.close-btn,
+button[aria-label*="Close" i],
+button[aria-label*="close" i],
+button[title*="Close" i],
+button[title*="close" i],
+button[title*="Dismiss" i],
+button[aria-label*="Dismiss" i],
+#btn-close-metric-detail-dialog,
+#btn-close-project-modal,
+#btn-close-project-detail-modal,
+#btn-close-project-dir-modal,
+#btn-close-project-export-modal,
+#btn-close-project-import-modal,
+#btn-close-project-reports-modal,
+#btn-close-complaint-detail-modal,
+#btn-close-complaint-dir-modal,
+#btn-close-complaint-excel-modal,
+#btn-close-complaint-export-modal,
+#btn-close-complaint-import-modal,
+#btn-close-complaint-mis-modal,
+#btn-close-lead-detail-modal,
+#btn-close-lead-dir-modal,
+#btn-close-lead-export-modal,
+#btn-close-lead-import-modal,
+#btn-close-lead-mis-modal {
+  border-radius: 50% !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  aspect-ratio: 1 / 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  background-color: #f1f5f9 !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.modal-header .btn-icon:hover,
+.modal-header button:not(.btn-text):not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-curvy-action):hover,
+.org-drawer-header .btn-icon:hover,
+button.btn-close:hover,
+button.modal-close-btn:hover,
+button.close-btn:hover,
+button[aria-label*="Close" i]:hover,
+button[aria-label*="close" i]:hover,
+button[title*="Close" i]:hover,
+button[title*="close" i]:hover,
+button[title*="Dismiss" i]:hover,
+button[aria-label*="Dismiss" i]:hover,
+#btn-close-metric-detail-dialog:hover,
+#btn-close-project-modal:hover,
+#btn-close-project-detail-modal:hover,
+#btn-close-project-dir-modal:hover,
+#btn-close-project-export-modal:hover,
+#btn-close-project-import-modal:hover,
+#btn-close-project-reports-modal:hover,
+#btn-close-complaint-detail-modal:hover,
+#btn-close-complaint-dir-modal:hover,
+#btn-close-complaint-excel-modal:hover,
+#btn-close-complaint-export-modal:hover,
+#btn-close-complaint-import-modal:hover,
+#btn-close-complaint-mis-modal:hover,
+#btn-close-lead-detail-modal:hover,
+#btn-close-lead-dir-modal:hover,
+#btn-close-lead-export-modal:hover,
+#btn-close-lead-import-modal:hover,
+#btn-close-lead-mis-modal:hover {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  border-color: transparent !important;
 }
 
 .btn:disabled {

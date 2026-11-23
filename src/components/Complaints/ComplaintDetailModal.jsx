@@ -3,7 +3,6 @@ import { useComplaints } from '../../context/ComplaintContext';
 import { useAuth } from '../../context/AuthContext';
 import { useUserManagement } from '../../context/UserContext';
 import { useTasks } from '../../context/TaskContext';
-import { getGoogleMapsUrl } from '../../utils/locationService';
 import { getRankedAssignees, getRecommendedDepartment, getUserAvailability } from '../../utils/complaintRoutingHelper';
 import {
   X,
@@ -47,8 +46,6 @@ import {
   Layers,
   ListChecks,
   Info,
-  MapPin,
-  Globe,
   Paperclip,
   Download,
   Image as ImageIcon,
@@ -1404,134 +1401,6 @@ export const ComplaintDetailModal = ({
                   </div>
                   <div style={{ fontSize: '0.88rem', color: '#334155', marginTop: '2px' }}>
                     {complaint.customerPhone || '—'}
-                  </div>
-                </div>
-
-                {/* 10/10 Submitter Physical Location at Submission Time */}
-                <div
-                  style={{
-                    gridColumn: '1 / -1',
-                    marginTop: '4px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid #e2e8f0',
-                  }}
-                >
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.04em' }}>
-                    Submitter Physical Location (Recorded at Time of Complaint)
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '10px',
-                    }}
-                  >
-                    <a
-                      href={getGoogleMapsUrl(complaint.location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        flex: '1 1 auto',
-                        minWidth: 0,
-                        textDecoration: 'none',
-                      }}
-                      title="Click to view submitter physical location on Google Maps"
-                    >
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          letterSpacing: '0.02em',
-                          background: complaint.location?.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
-                          color: complaint.location?.type === 'GPS' ? '#047857' : '#1d4ed8',
-                          border: `1px solid ${complaint.location?.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {complaint.location?.type === 'GPS' ? (
-                          <>
-                            <MapPin size={12} />
-                            GPS Verified Pin
-                          </>
-                        ) : (
-                          <>
-                            <Globe size={12} />
-                            Network Origin
-                          </>
-                        )}
-                        {complaint.location?.accuracy ? ` (${complaint.location.accuracy})` : ''}
-                      </span>
-
-                      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                        <span
-                          style={{
-                            fontSize: '0.84rem',
-                            fontWeight: 600,
-                            color: '#1e293b',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {complaint.location?.address ||
-                            [complaint.location?.city, complaint.location?.state, complaint.location?.country].filter(Boolean).join(', ') ||
-                            (complaint.location?.ip ? `Network IP: ${complaint.location.ip}` : 'Device Location Logged')}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.68rem', color: '#64748b' }}>
-                          {complaint.location?.latitude && complaint.location?.longitude && (
-                            <span style={{ color: '#047857', fontWeight: 600 }}>
-                              Coordinates: {complaint.location.latitude.toFixed(5)}, {complaint.location.longitude.toFixed(5)}
-                            </span>
-                          )}
-                          {complaint.location?.ip && (
-                            <span>IP: {complaint.location.ip}</span>
-                          )}
-                          {complaint.location?.capturedAt && (
-                            <span>• Logged at: {new Date(complaint.location.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          )}
-                        </div>
-                      </div>
-                    </a>
-
-                    {/* Direct Google Maps Action Button (Locates submitter's exact coordinates) */}
-                    <a
-                      href={getGoogleMapsUrl(complaint.location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      id="btn-view-google-maps"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        color: '#1d4ed8',
-                        textDecoration: 'none',
-                        padding: '6px 14px',
-                        borderRadius: '8px',
-                        background: '#eff6ff',
-                        border: '1.5px solid #bfdbfe',
-                        boxShadow: '0 1px 3px rgba(37, 99, 235, 0.12)',
-                        flexShrink: 0,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                      title="Open submitter physical coordinates on Google Maps"
-                    >
-                      <MapPin size={13} color="#2563eb" />
-                      <span>Locate Submitter on Google Maps</span>
-                      <ExternalLink size={12} color="#2563eb" />
-                    </a>
                   </div>
                 </div>
               </div>
@@ -3060,7 +2929,7 @@ export const ComplaintDetailModal = ({
                 >
                   <option value="Unassigned">Unassigned</option>
                   {recommendedAssignees.length > 0 && (
-                    <optgroup label="⭐ Recommended (Skill & Location Matched)">
+                    <optgroup label="⭐ Recommended (Department Specialists)">
                       {recommendedAssignees.map((item) => (
                         <option key={item.user._id} value={item.user.name}>
                           {item.user.name} ({item.user.department || 'Operations'}) — {item.availability?.badge || item.matchLabel}
@@ -3100,6 +2969,34 @@ export const ComplaintDetailModal = ({
                   </div>
                 )}
 
+                {/* RED Warning when NO employee from the related department exists in user's team */}
+                {recommendedAssignees.length === 0 && complaint?.category && (
+                  <div
+                    style={{
+                      marginTop: '6px',
+                      background: '#fef2f2',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '8px',
+                      padding: '7px 11px',
+                      fontSize: '0.76rem',
+                      color: '#b91c1c',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '6px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <AlertCircle size={14} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <span>
+                      <strong>No Related-Field Employee Available:</strong> No user in your team belongs to{' '}
+                      <strong>{getRecommendedDepartment(complaint?.category)}</strong>.
+                      {selectedAssigneeInfo
+                        ? ` (${selectedAssigneeInfo.user.name} is in ${selectedAssigneeInfo.user.department || 'another department'}).`
+                        : ''}
+                    </span>
+                  </div>
+                )}
+
                 {/* Smart Skill & Location Match Assistant Badge */}
                 {selectedAssigneeInfo && selectedAssigneeInfo.isRecommended && (
                   <div
@@ -3119,33 +3016,30 @@ export const ComplaintDetailModal = ({
                     <CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0 }} />
                     <span>
                       <strong>Smart Match:</strong> {selectedAssigneeInfo.user.name} is in{' '}
-                      <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong> department
-                      {selectedAssigneeInfo.isLocationMatch && complaint?.location?.city
-                        ? ` and matches submitter area (${complaint.location.city})`
-                        : ''}
-                      , ideal for <strong>{complaint?.category || 'this ticket'}</strong>.
+                      <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong> department,
+                      ideal for <strong>{complaint?.category || 'this ticket'}</strong>.
                     </span>
                   </div>
                 )}
-                {selectedAssigneeInfo && !selectedAssigneeInfo.isRecommended && (
+                {selectedAssigneeInfo && !selectedAssigneeInfo.isRecommended && recommendedAssignees.length > 0 && (
                   <div
                     style={{
                       marginTop: '6px',
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
                       borderRadius: '8px',
                       padding: '7px 11px',
                       fontSize: '0.76rem',
-                      color: '#64748b',
+                      color: '#b91c1c',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
                     }}
                   >
-                    <AlertCircle size={13} color="#f59e0b" style={{ flexShrink: 0 }} />
+                    <AlertCircle size={13} color="#dc2626" style={{ flexShrink: 0 }} />
                     <span>
-                      Notice: {selectedAssigneeInfo.user.name} is in{' '}
-                      <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong>. Recommended department for{' '}
+                      <strong>Department Mismatch:</strong> {selectedAssigneeInfo.user.name} is in{' '}
+                      <strong>{selectedAssigneeInfo.user.department || 'Operations'}</strong>. Recommended for{' '}
                       <strong>{complaint?.category}</strong> is{' '}
                       <strong>{getRecommendedDepartment(complaint?.category)}</strong>.
                     </span>
@@ -3466,8 +3360,9 @@ export const ComplaintDetailModal = ({
                     border: 'none',
                     color: '#15803d',
                     cursor: 'pointer',
-                    padding: '2px',
-                    borderRadius: '4px',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

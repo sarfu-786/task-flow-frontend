@@ -39,7 +39,7 @@ export const ProjectExportModal = ({ isOpen, onClose }) => {
         { key: 'status', label: 'Status' },
         { key: 'priority', label: 'Priority' },
         { key: 'progress', label: 'Progress', formatter: (val) => `${val || 0}%` },
-        { key: 'budget', label: 'Total Budget', formatter: (val, item) => `${item.currency || 'USD'} ${Number(val || 0).toLocaleString()}` },
+        { key: 'budget', label: 'Total Budget', formatter: (val, item) => `${item.currency || 'INR'} ${Number(val || 0).toLocaleString('en-IN')}` },
         { key: 'managerName', label: 'Project Manager' },
         { key: 'targetDate', label: 'Target Completion Date', formatter: (val) => val ? new Date(val).toISOString().slice(0, 10) : '—' },
       ];
@@ -54,7 +54,7 @@ export const ProjectExportModal = ({ isOpen, onClose }) => {
             { label: 'Total Projects', value: filtered.length, color: '#2563eb' },
             { label: 'In Execution', value: filtered.filter((p) => p.status === 'In Progress').length, color: '#0284c7' },
             { label: 'Delivered', value: filtered.filter((p) => p.status === 'Completed').length, color: '#059669' },
-            { label: 'Portfolio Value', value: `$${filtered.reduce((a, b) => a + (Number(b.budget) || 0), 0).toLocaleString()}`, color: '#7c3aed' },
+            { label: 'Portfolio Value', value: `₹${filtered.reduce((a, b) => a + (Number(b.budget) || 0), 0).toLocaleString('en-IN')}`, color: '#7c3aed' },
           ]
         );
       } else if (format === 'csv') {

@@ -818,9 +818,30 @@ export const LeadMetricDetailDialog = ({
                 <button
                   type="button"
                   onClick={() => setSearchTerm('')}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+                  style={{
+                    border: 'none',
+                    background: '#f1f5f9',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    width: '22px',
+                    height: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#fee2e2';
+                    e.currentTarget.style.color = '#dc2626';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }}
+                  aria-label="Clear search"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>

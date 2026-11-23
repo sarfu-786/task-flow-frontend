@@ -130,7 +130,8 @@ export const ProjectTimesheetModal = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>

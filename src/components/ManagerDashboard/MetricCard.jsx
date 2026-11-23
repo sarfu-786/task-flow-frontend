@@ -88,14 +88,15 @@ export const MetricCard = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? '2px' : '6px', gap: '6px' }}>
           <span
             style={{
-              fontSize: compact ? '0.74rem' : '0.82rem',
+              fontSize: compact ? '0.72rem' : '0.78rem',
               fontWeight: 700,
               color: 'var(--text-muted, #64748b)',
               textTransform: 'uppercase',
-              letterSpacing: '0.025em',
+              letterSpacing: '0.02em',
               lineHeight: 1.25,
               whiteSpace: 'normal',
-              wordBreak: 'break-word',
+              wordBreak: 'keep-all',
+              overflowWrap: 'normal',
             }}
             title={title}
           >

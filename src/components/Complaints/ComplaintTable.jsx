@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
-import { getGoogleMapsUrl } from '../../utils/locationService';
 import { getCategoryBadgeStyle, PRIMARY_CATEGORY_NAMES, CORE_DEPARTMENTS } from '../../utils/complaintCategories';
 import {
   AlertCircle,
@@ -24,8 +23,6 @@ import {
   X,
   Filter,
   RotateCcw,
-  MapPin,
-  ExternalLink,
 } from 'lucide-react';
 
 export const ComplaintTable = ({
@@ -831,71 +828,6 @@ export const ComplaintTable = ({
                             <Building size={10} />
                             <span>{item.organization || 'Direct Customer'}</span>
                           </div>
-                          {item.location && (item.location.city || item.location.address || item.location.type || item.location.ip) ? (
-                            <a
-                              href={getGoogleMapsUrl(item.location)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                fontSize: '0.67rem',
-                                fontWeight: 600,
-                                color: item.location.type === 'GPS' ? '#047857' : '#1d4ed8',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                                marginTop: '2px',
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                background: item.location.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
-                                border: `1px solid ${item.location.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
-                                maxWidth: '175px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                textDecoration: 'none',
-                                cursor: 'pointer',
-                              }}
-                              title="Click to view submitter physical location on Google Maps"
-                            >
-                              <MapPin size={9} style={{ flexShrink: 0, color: item.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {item.location.city || (item.location.type === 'GPS' ? 'GPS Location' : (item.location.ip === '::1' || item.location.ip === '127.0.0.1' ? 'Local Network' : `IP: ${item.location.ip}`))}
-                              </span>
-                              <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
-                            </a>
-                          ) : (
-                            <a
-                              href={getGoogleMapsUrl(item.location)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                fontSize: '0.67rem',
-                                fontWeight: 600,
-                                color: '#1d4ed8',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                                marginTop: '2px',
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                background: '#eff6ff',
-                                border: '1px solid #bfdbfe',
-                                maxWidth: '175px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                textDecoration: 'none',
-                                cursor: 'pointer',
-                              }}
-                              title="Locate submitter on Google Maps"
-                            >
-                              <MapPin size={9} style={{ flexShrink: 0, color: '#2563eb' }} />
-                              <span>Locate Submitter</span>
-                              <ExternalLink size={8} style={{ opacity: 0.75, flexShrink: 0 }} />
-                            </a>
-                          )}
                         </div>
                       </div>
                     </td>

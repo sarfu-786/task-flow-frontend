@@ -9,7 +9,7 @@ import {
   Building,
   User,
   Calendar,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   CheckCircle2,
   ListTodo,
@@ -452,7 +452,7 @@ export const ProjectTable = ({
           </div>
 
           {/* User / Manager Filter */}
-          <div style={{ position: 'relative', maxWidth: '180px' }}>
+          <div style={{ position: 'relative' }}>
             <select
               id="filter-project-user"
               value={managerFilter}
@@ -474,6 +474,7 @@ export const ProjectTable = ({
                 WebkitAppearance: 'none',
                 cursor: 'pointer',
                 outline: 'none',
+                boxSizing: 'border-box',
               }}
             >
               <option value="all">All Managers / Owners</option>
@@ -705,7 +706,6 @@ export const ProjectTable = ({
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = '#2563eb')}
                         onMouseLeave={(e) => (e.currentTarget.style.color = '#0f172a')}
-                        title="Click to view full project specifications"
                       >
                         {projName}
                       </div>
@@ -846,8 +846,8 @@ export const ProjectTable = ({
 
                     {/* Actions */}
                     <td style={{ padding: '14px 18px', verticalAlign: 'middle', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-                        {/* View Button */}
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        {/* 1. View 360° Specs (Primary View Button matching Leads 10/10) */}
                         <button
                           type="button"
                           onClick={() => onViewProject(project)}
@@ -855,24 +855,59 @@ export const ProjectTable = ({
                             width: '32px',
                             height: '32px',
                             borderRadius: '8px',
-                            border: '1px solid #e2e8f0',
-                            backgroundColor: '#ffffff',
-                            color: '#2563eb',
+                            border: '1px solid #e0e7ff',
+                            backgroundColor: '#eef2ff',
+                            color: '#4f46e5',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'pointer',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                            boxShadow: '0 1px 2px rgba(79, 70, 229, 0.08)',
                             transition: 'all 0.15s ease',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#eff6ff')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
-                          title="View 360° Project Overview"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e0e7ff';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#eef2ff';
+                            e.currentTarget.style.transform = 'none';
+                          }}
                         >
                           <Eye size={15} />
                         </button>
 
-                        {/* Edit Button */}
+                        {/* 2. Milestones & Gates Lifecycle */}
+                        <button
+                          type="button"
+                          onClick={() => onOpenMilestones(project)}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            border: '1px solid #d1fae5',
+                            backgroundColor: '#ecfdf5',
+                            color: '#059669',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(5, 150, 105, 0.06)',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#d1fae5';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#ecfdf5';
+                            e.currentTarget.style.transform = 'none';
+                          }}
+                        >
+                          <ListTodo size={14} />
+                        </button>
+
+                        {/* 3. Edit Project */}
                         <button
                           type="button"
                           onClick={() => onEditProject(project)}
@@ -890,121 +925,49 @@ export const ProjectTable = ({
                             boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                             transition: 'all 0.15s ease',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
-                          title="Edit Project"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#ffffff';
+                            e.currentTarget.style.transform = 'none';
+                          }}
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={13} />
                         </button>
 
-                        {/* More Menu */}
-                        <div style={{ position: 'relative' }}>
+                        {/* 4. Delete Project (if authorized) */}
+                        {canDelete && (
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownId(isDropdownOpen ? null : project._id);
-                            }}
+                            onClick={() => onDeleteProject(project)}
                             style={{
                               width: '32px',
                               height: '32px',
                               borderRadius: '8px',
-                              border: '1px solid #e2e8f0',
-                              backgroundColor: isDropdownOpen ? '#f1f5f9' : '#ffffff',
-                              color: '#475569',
+                              border: '1px solid #fecaca',
+                              backgroundColor: '#ffffff',
+                              color: '#dc2626',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'pointer',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                              boxShadow: '0 1px 2px rgba(220, 38, 38, 0.05)',
                               transition: 'all 0.15s ease',
                             }}
-                            title="More Actions"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fef2f2';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#ffffff';
+                              e.currentTarget.style.transform = 'none';
+                            }}
                           >
-                            <MoreVertical size={14} />
+                            <Trash2 size={13} />
                           </button>
-
-                          {/* Dropdown Menu */}
-                          {isDropdownOpen && (
-                            <div
-                              ref={dropdownRef}
-                              style={{
-                                position: 'absolute',
-                                right: 0,
-                                top: '38px',
-                                zIndex: 50,
-                                backgroundColor: '#ffffff',
-                                borderRadius: '14px',
-                                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                                border: '1px solid #e2e8f0',
-                                padding: '6px',
-                                minWidth: '190px',
-                                textAlign: 'left',
-                              }}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenDropdownId(null);
-                                  onOpenMilestones(project);
-                                }}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: '8px',
-                                  fontSize: '0.82rem',
-                                  fontWeight: 600,
-                                  color: '#334155',
-                                  backgroundColor: 'transparent',
-                                  border: 'none',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  cursor: 'pointer',
-                                  transition: 'background-color 0.15s ease',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                <ListTodo size={15} color="#059669" />
-                                <span>Milestones & Gates</span>
-                              </button>
-
-                              {canDelete && (
-                                <>
-                                  <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '4px 0' }} />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownId(null);
-                                      onDeleteProject(project);
-                                    }}
-                                    style={{
-                                      width: '100%',
-                                      padding: '8px 12px',
-                                      borderRadius: '8px',
-                                      fontSize: '0.82rem',
-                                      fontWeight: 600,
-                                      color: '#dc2626',
-                                      backgroundColor: 'transparent',
-                                      border: 'none',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '8px',
-                                      cursor: 'pointer',
-                                      transition: 'background-color 0.15s ease',
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                  >
-                                    <Trash2 size={15} color="#dc2626" />
-                                    <span>Delete Project</span>
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </td>
                   </tr>

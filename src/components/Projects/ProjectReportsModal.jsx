@@ -248,7 +248,6 @@ export const ProjectReportsModal = ({ isOpen, onClose, initialTab = 'reports', o
                 e.currentTarget.style.backgroundColor = '#ffffff';
                 e.currentTarget.style.borderColor = '#a7f3d0';
               }}
-              title="Export Projects Dataset"
             >
               <Download size={14} color="#059669" />
               <span>Export</span>
@@ -285,7 +284,6 @@ export const ProjectReportsModal = ({ isOpen, onClose, initialTab = 'reports', o
                 e.currentTarget.style.color = '#64748b';
               }}
               aria-label="Close modal"
-              title="Close modal"
             >
               <X size={17} />
             </button>

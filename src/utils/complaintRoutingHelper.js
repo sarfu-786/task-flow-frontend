@@ -5,30 +5,32 @@
  */
 
 // Comprehensive Category to Department keyword mappings
+// IMPORTANT: Specific categories MUST come before generic "Customer Support & Helpdesk"
+// so phrases like "IT Support" or "Legacy Support" never leak into Customer Support.
 const CATEGORY_DEPARTMENT_MAP = [
   {
     categoryKeywords: ['technical', 'it support', 'backend', 'system', 'glitch', 'crash', 'freeze', 'sync', 'api', 'database', 'server', 'code', 'bug', 'hardware', 'access', '2fa', 'saml'],
-    departmentKeywords: ['backend', 'technical', 'it support', 'systems', 'internet', 'engineer', 'development', 'tech'],
+    departmentKeywords: ['backend', 'technical', 'it support', 'systems', 'engineer', 'development', 'tech', 'it '],
     recommendedDeptName: 'Technical & IT Support (Backend & Systems)',
   },
   {
-    categoryKeywords: ['customer support', 'helpdesk', 'support', 'help', 'service', 'inquiry', 'grievance', 'assistance', 'feedback', 'communication', 'general support'],
-    departmentKeywords: ['customer support', 'helpdesk', 'support', 'service', 'client', 'social'],
-    recommendedDeptName: 'Customer Support & Helpdesk',
+    categoryKeywords: ['internet', 'network', 'wifi', 'broadband', 'bandwidth', 'dns', 'vpn', 'router', 'modem', 'firewall', 'latency'],
+    departmentKeywords: ['internet', 'network', 'infrastructure', 'telecom'],
+    recommendedDeptName: 'Internet & Network Work (Legacy Support)',
   },
   {
     categoryKeywords: ['sales', 'sells', 'sell', 'sale', 'pricing', 'quote', 'quotation', 'commercial', 'contract', 'deal', 'demo', 'proposal', 'lead'],
-    departmentKeywords: ['sales', 'sells', 'sell', 'sale', 'business development', 'commercial', 'marketing'],
+    departmentKeywords: ['sales', 'sells', 'sell', 'sale', 'business development', 'commercial'],
     recommendedDeptName: 'Sales & Business Development (Sells)',
   },
   {
     categoryKeywords: ['operations', 'field', 'logistics', 'delivery', 'shipment', 'dispatch', 'tracking', 'on-site', 'installation', 'transit', 'defect', 'product', 'damage', 'physical'],
-    departmentKeywords: ['operations', 'logistics', 'field', 'dispatch', 'supply chain', 'quality'],
+    departmentKeywords: ['operations', 'logistics', 'field', 'dispatch', 'supply chain'],
     recommendedDeptName: 'Operations & Field Logistics',
   },
   {
     categoryKeywords: ['account', 'accounts', 'billing', 'bill', 'finance', 'invoice', 'payment', 'refund', 'charge', 'tax', 'gst', 'subscription', 'deduction'],
-    departmentKeywords: ['accounts', 'account', 'billing', 'finance', 'invoicing', 'audit'],
+    departmentKeywords: ['accounts', 'account', 'billing', 'finance', 'invoicing'],
     recommendedDeptName: 'Accounts & Billing (Finance)',
   },
   {
@@ -38,18 +40,18 @@ const CATEGORY_DEPARTMENT_MAP = [
   },
   {
     categoryKeywords: ['social media', 'social', 'marketing', 'campaign', 'pr', 'public relations', 'brand', 'promotional'],
-    departmentKeywords: ['social media', 'social', 'marketing', 'pr', 'communication'],
+    departmentKeywords: ['social media', 'social', 'marketing', 'pr', 'brand'],
     recommendedDeptName: 'Social Media & Marketing',
   },
   {
-    categoryKeywords: ['internet', 'network', 'wifi', 'broadband', 'bandwidth', 'dns', 'vpn', 'router', 'modem', 'firewall', 'latency'],
-    departmentKeywords: ['internet', 'network', 'infrastructure', 'it support', 'telecom'],
-    recommendedDeptName: 'Internet & Network Work (Legacy Support)',
+    categoryKeywords: ['customer support', 'helpdesk', 'general support', 'help', 'service', 'inquiry', 'grievance', 'assistance', 'feedback', 'communication', 'support'],
+    departmentKeywords: ['customer support', 'helpdesk', 'customer service', 'client support', 'client care'],
+    recommendedDeptName: 'Customer Support & Helpdesk',
   },
 ];
 
 /**
- * Checks if a user's department matches a complaint's category
+ * Checks if a user's department strictly matches a complaint's category (1-to-1, no cross-department leakage)
  */
 export const matchDepartmentCategory = (category = '', department = '') => {
   const cat = (category || '').toLowerCase().trim();
@@ -62,21 +64,23 @@ export const matchDepartmentCategory = (category = '', department = '') => {
   // Strip brackets / extra notes for clean comparison: e.g. "Accounts & Billing (Finance)" -> "Accounts & Billing"
   const cleanCat = cat.replace(/\s*\([^)]*\)/g, '').trim();
   const cleanDept = dept.replace(/\s*\([^)]*\)/g, '').trim();
-  if (cleanCat && cleanDept && (cleanCat === cleanDept || cleanCat.includes(cleanDept) || cleanDept.includes(cleanCat))) {
+  if (cleanCat && cleanDept && cleanCat === cleanDept) {
     return true;
   }
 
-  // Keyword-based department mapping
-  for (const mapping of CATEGORY_DEPARTMENT_MAP) {
-    const catMatches = mapping.categoryKeywords.some((kw) => cleanCat.includes(kw) || cat.includes(kw));
-    if (catMatches) {
-      const deptMatches = mapping.departmentKeywords.some((kw) => cleanDept.includes(kw) || dept.includes(kw));
-      if (deptMatches) return true;
-    }
+  // Find the SINGLE most specific category rule first (strict 1-to-1 match, never fall through)
+  const matchedRule = CATEGORY_DEPARTMENT_MAP.find((mapping) =>
+    mapping.categoryKeywords.some((kw) => cleanCat.includes(kw) || cat.includes(kw))
+  );
+
+  if (matchedRule) {
+    return matchedRule.departmentKeywords.some(
+      (kw) => cleanDept.includes(kw) || dept.includes(kw)
+    );
   }
 
-  // Generic fallback: check direct substring overlap
-  return cat.includes(dept) || dept.includes(cat);
+  // Fallback only if category is completely custom/unmapped
+  return cleanCat.length >= 4 && cleanDept.length >= 4 && (cleanCat.includes(cleanDept) || cleanDept.includes(cleanCat));
 };
 
 /**
@@ -223,10 +227,10 @@ export const getUserAvailability = (user = null, complaints = []) => {
 };
 
 /**
- * Ranks authorized users by Skill, Location, and Live Availability match against a complaint
+ * Ranks authorized users by Skill and Live Availability match against a complaint
  * @param {Array} users - list of user objects
  * @param {string} category - complaint category
- * @param {Object} location - complaint location object
+ * @param {Object} location - ignored (kept for signature compatibility)
  * @param {Array} complaints - list of all complaints (for live workload & availability)
  * @returns {Array} sorted array with match metadata
  */
@@ -235,21 +239,14 @@ export const getRankedAssignees = (users = [], category = '', location = null, c
 
   const evaluated = users.map((u) => {
     const isSkillMatch = matchDepartmentCategory(category, u.department);
-    const isLocationMatch = matchLocation(location, u);
     const availability = getUserAvailability(u, complaints);
 
     let matchLabel = '';
     let score = 0;
 
-    if (isSkillMatch && isLocationMatch) {
-      score += 35;
-      matchLabel = `⭐ Best Match (${u.department || 'Dept'} & Nearby)`;
-    } else if (isSkillMatch) {
+    if (isSkillMatch) {
       score += 20;
-      matchLabel = `⭐ Skill Match (${u.department || 'Dept'})`;
-    } else if (isLocationMatch) {
-      score += 15;
-      matchLabel = `📍 Nearby (${u.city || u.location || location?.city || 'Location'})`;
+      matchLabel = `⭐ Department Match (${u.department || 'Dept'})`;
     } else {
       score += 0;
       matchLabel = u.department || 'Customer Support';
@@ -267,8 +264,8 @@ export const getRankedAssignees = (users = [], category = '', location = null, c
     return {
       user: u,
       isSkillMatch,
-      isLocationMatch,
-      isRecommended: isSkillMatch || isLocationMatch,
+      isLocationMatch: false,
+      isRecommended: isSkillMatch,
       availability,
       matchLabel,
       score,

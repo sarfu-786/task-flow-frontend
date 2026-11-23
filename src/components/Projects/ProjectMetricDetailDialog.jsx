@@ -3,7 +3,7 @@ import {
   FolderKanban,
   CheckCircle2,
   TrendingUp,
-  DollarSign,
+  IndianRupee,
   Search,
   X,
   Plus,
@@ -19,6 +19,8 @@ import {
   Layers,
   Sparkles,
   Loader2,
+  AlertTriangle,
+  Eye,
 } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { projectApi } from '../../services/api';
@@ -26,7 +28,8 @@ import { projectApi } from '../../services/api';
 export const ProjectMetricDetailDialog = ({
   open,
   onClose,
-  metricType = 'total', // 'total' | 'in_progress' | 'completed' | 'budget'
+  metricType = 'total', // 'total' | 'in_progress' | 'completed' | 'budget' | 'on_track' | 'at_risk' | 'delayed'
+  onViewProject,
   onEditProject,
   onOpenMilestones,
   onDeleteProject,
@@ -104,12 +107,45 @@ export const ProjectMetricDetailDialog = ({
         return {
           title: 'Portfolio Budget & Financials',
           subtitle: 'Detailed budget allocation, total project contract values, and financial tracking.',
-          icon: DollarSign,
+          icon: IndianRupee,
           primaryColor: '#7c3aed',
           bgLight: '#f5f3ff',
           borderColor: '#ddd6fe',
           badgeText: 'Portfolio Budget',
           emptyMessage: 'No budgeted projects found.',
+        };
+      case 'on_track':
+        return {
+          title: 'On Track Projects',
+          subtitle: 'Active and delivered client deliverables running on schedule with healthy sprint velocity.',
+          icon: CheckCircle2,
+          primaryColor: '#059669',
+          bgLight: '#ecfdf5',
+          borderColor: '#a7f3d0',
+          badgeText: 'On Track',
+          emptyMessage: 'No on-track projects currently.',
+        };
+      case 'at_risk':
+        return {
+          title: 'At Risk Projects',
+          subtitle: 'Projects with high risk factors, impending deadlines (< 7 days), or on-hold status.',
+          icon: AlertTriangle,
+          primaryColor: '#d97706',
+          bgLight: '#fffbeb',
+          borderColor: '#fde68a',
+          badgeText: 'At Risk',
+          emptyMessage: 'No at-risk projects identified.',
+        };
+      case 'delayed':
+        return {
+          title: 'Delayed & Overdue Projects',
+          subtitle: 'Projects that have breached their target delivery date requiring immediate management intervention.',
+          icon: Calendar,
+          primaryColor: '#dc2626',
+          bgLight: '#fef2f2',
+          borderColor: '#fecaca',
+          badgeText: 'Delayed',
+          emptyMessage: 'No delayed projects currently.',
         };
       case 'total':
       default:
@@ -129,6 +165,9 @@ export const ProjectMetricDetailDialog = ({
   // Filter projects according to metricType and local filters
   const filteredProjects = useMemo(() => {
     const list = metricProjects.length > 0 ? metricProjects : (contextProjects || []);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
     return list.filter((p) => {
       // 1. Metric Type base filter
       if (metricType === 'in_progress') {
@@ -136,6 +175,35 @@ export const ProjectMetricDetailDialog = ({
       } else if (metricType === 'completed') {
         const isDelivered = ['Completed', 'Closed', 'Delivered'].includes(p.status) || Number(p.progress) === 100;
         if (!isDelivered) return false;
+      } else if (metricType === 'on_track') {
+        const isCompleted = ['Completed', 'Closed', 'Delivered'].includes(p.status);
+        if (isCompleted) return true;
+        const targetDate = p.targetDate ? new Date(p.targetDate) : null;
+        const isOverdue = targetDate && targetDate < now;
+        const isCancelled = p.status === 'Cancelled';
+        const isOnHold = p.status === 'On Hold';
+        const isHighRisk = ['Critical', 'Urgent', 'High'].includes(p.priority) || p.status === 'Under Review';
+        const isNearDeadline = targetDate && Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24)) <= 7 && Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24)) >= 0;
+        if (isOverdue || isCancelled || p.status === 'Overdue' || isOnHold || isHighRisk || isNearDeadline) return false;
+        return true;
+      } else if (metricType === 'at_risk') {
+        const isCompleted = ['Completed', 'Closed', 'Delivered'].includes(p.status);
+        if (isCompleted) return false;
+        const targetDate = p.targetDate ? new Date(p.targetDate) : null;
+        const isOverdue = targetDate && targetDate < now;
+        const isCancelled = p.status === 'Cancelled';
+        const isOnHold = p.status === 'On Hold';
+        const isHighRisk = ['Critical', 'Urgent', 'High'].includes(p.priority) || p.status === 'Under Review';
+        const isNearDeadline = targetDate && Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24)) <= 7 && Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24)) >= 0;
+        if (isOverdue || isCancelled || p.status === 'Overdue') return false;
+        return isOnHold || isHighRisk || isNearDeadline;
+      } else if (metricType === 'delayed') {
+        const isCompleted = ['Completed', 'Closed', 'Delivered'].includes(p.status);
+        if (isCompleted) return false;
+        const targetDate = p.targetDate ? new Date(p.targetDate) : null;
+        const isOverdue = targetDate && targetDate < now;
+        const isCancelled = p.status === 'Cancelled';
+        return isOverdue || isCancelled || p.status === 'Overdue';
       }
 
       // 2. Sub-tab filter
@@ -336,7 +404,6 @@ export const ProjectMetricDetailDialog = ({
               e.currentTarget.style.backgroundColor = '#f1f5f9';
               e.currentTarget.style.color = '#64748b';
             }}
-            title="Close"
           >
             <X size={17} />
           </button>
@@ -429,7 +496,7 @@ export const ProjectMetricDetailDialog = ({
         </div>
 
         {/* Table Body */}
-        <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '0' }}>
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'auto', padding: '0' }}>
           {loadingProjects ? (
             <div style={{ padding: '60px 24px', textAlign: 'center' }}>
               <Loader2 size={32} className="animate-spin" style={{ color: config.primaryColor, margin: '0 auto 12px' }} />
@@ -494,8 +561,18 @@ export const ProjectMetricDetailDialog = ({
                   return (
                     <tr
                       key={project._id}
-                      style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.15s ease' }}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'background-color 0.15s ease',
+                        cursor: onViewProject ? 'pointer' : 'default',
+                      }}
                       className="table-row-hover"
+                      onClick={() => {
+                        if (onViewProject) {
+                          onClose();
+                          onViewProject(project);
+                        }
+                      }}
                     >
                       {/* Project Code & Name */}
                       <td style={{ padding: '14px 20px', verticalAlign: 'middle' }}>
@@ -563,8 +640,8 @@ export const ProjectMetricDetailDialog = ({
                       {/* Budget & Priority */}
                       <td style={{ padding: '14px 20px', verticalAlign: 'middle' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
-                          {project.currency === 'INR' ? '₹' : '$'}
-                          {Number(project.budget || 0).toLocaleString()}
+                          {project.currency === 'USD' ? '$' : '₹'}
+                          {Number(project.budget || 0).toLocaleString('en-IN')}
                         </div>
                         <span
                           style={{
@@ -601,8 +678,36 @@ export const ProjectMetricDetailDialog = ({
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', textAlign: 'right' }}>
+                      <td
+                        style={{ padding: '14px 20px', verticalAlign: 'middle', textAlign: 'right' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {onViewProject && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onClose();
+                                onViewProject(project);
+                              }}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: '1px solid #c7d2fe',
+                                background: '#eef2ff',
+                                color: '#4f46e5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                              }}
+                              title="View Project Details"
+                            >
+                              <Eye size={13} />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {
@@ -622,7 +727,6 @@ export const ProjectMetricDetailDialog = ({
                               alignItems: 'center',
                               gap: '4px',
                             }}
-                            title="Manage Milestones"
                           >
                             <ListTodo size={13} />
                             <span>Milestones</span>
@@ -646,7 +750,6 @@ export const ProjectMetricDetailDialog = ({
                               justifyContent: 'center',
                               cursor: 'pointer',
                             }}
-                            title="Edit Project"
                           >
                             <Edit2 size={13} />
                           </button>
@@ -670,7 +773,6 @@ export const ProjectMetricDetailDialog = ({
                                 justifyContent: 'center',
                                 cursor: 'pointer',
                               }}
-                              title="Delete Project"
                             >
                               <Trash2 size={13} />
                             </button>

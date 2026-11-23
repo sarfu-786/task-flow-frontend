@@ -40,6 +40,7 @@ export const LeadProvider = ({ children }) => {
   const [temperatureFilter, setTemperatureFilter] = useState('all');
   const [followUpStatusFilter, setFollowUpStatusFilter] = useState('all');
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' });
+  const [minValueFilter, setMinValueFilter] = useState('');
   const [followUpDateFilter, setFollowUpDateFilter] = useState('');
   const [slaTierFilter, setSlaTierFilter] = useState('all');
   const [dispositionFilter, setDispositionFilter] = useState('all');
@@ -581,6 +582,11 @@ export const LeadProvider = ({ children }) => {
       if (new Date(lead.createdAt).getTime() > end) return false;
     }
 
+    if (minValueFilter && Number(minValueFilter) > 0) {
+      const val = Number(lead.estimatedValue || lead.dealValue || lead.pipeline_value || 0);
+      if (val < Number(minValueFilter)) return false;
+    }
+
     if (slaTierFilter !== 'all' && Number(lead.sla_tier || 0) !== Number(slaTierFilter)) {
       return false;
     }
@@ -603,6 +609,7 @@ export const LeadProvider = ({ children }) => {
     setTemperatureFilter('all');
     setFollowUpStatusFilter('all');
     setDateRangeFilter({ start: '', end: '' });
+    setMinValueFilter('');
     setFollowUpDateFilter('');
     setSlaTierFilter('all');
     setDispositionFilter('all');
@@ -632,6 +639,7 @@ export const LeadProvider = ({ children }) => {
     followUpStatusFilter,
     followUpDateFilter,
     dateRangeFilter,
+    minValueFilter,
     slaTierFilter,
     dispositionFilter,
   ]);
@@ -675,6 +683,8 @@ export const LeadProvider = ({ children }) => {
         setFollowUpStatusFilter,
         dateRangeFilter,
         setDateRangeFilter,
+        minValueFilter,
+        setMinValueFilter,
         followUpDateFilter,
         setFollowUpDateFilter,
         slaTierFilter,

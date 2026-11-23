@@ -157,88 +157,8 @@ export const ProjectDirectoryModal = ({
             </div>
           </div>
 
-          {/* Top-Right Action Controls: Import, Export, View Switcher + Close */}
+          {/* Top-Right Action Controls: View Switcher + Close */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            {/* Import & Export Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                id="btn-dir-modal-import"
-                onClick={() => {
-                  if (onOpenImport) onOpenImport();
-                  else if (openImportModal) openImportModal();
-                  else setIsImportModalOpen(true);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 13px',
-                  borderRadius: '9px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  backgroundColor: '#ffffff',
-                  color: '#334155',
-                  border: '1.5px solid #cbd5e1',
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8fafc';
-                  e.currentTarget.style.borderColor = '#94a3b8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                }}
-                title="Import projects from Excel spreadsheet"
-              >
-                <Upload size={13} color="#4f46e5" />
-                <span>Import</span>
-              </button>
-
-              <button
-                type="button"
-                id="btn-dir-modal-export"
-                onClick={() => {
-                  if (onOpenExport) onOpenExport();
-                  else if (openExportModal) openExportModal();
-                  else setIsExportModalOpen(true);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 13px',
-                  borderRadius: '9px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  backgroundColor: '#ffffff',
-                  color: '#334155',
-                  border: '1.5px solid #cbd5e1',
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8fafc';
-                  e.currentTarget.style.borderColor = '#94a3b8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                }}
-                title="Export projects to Excel / CSV / JSON"
-              >
-                <Download size={13} color="#059669" />
-                <span>Export</span>
-              </button>
-            </div>
-
-            {/* Separator */}
-            <div style={{ width: '1px', height: '22px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
-
             {/* View Mode Toggle Pill */}
             <div
               style={{

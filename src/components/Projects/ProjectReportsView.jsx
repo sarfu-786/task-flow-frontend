@@ -9,7 +9,7 @@ import {
   Layers,
   CheckCircle2,
   Clock,
-  DollarSign,
+  IndianRupee,
   AlertTriangle,
   RefreshCw,
   Search,
@@ -588,7 +588,7 @@ export const ProjectReportsView = () => {
     { id: 'project', name: 'Project Reports', icon: Layers },
     { id: 'task', name: 'Task Reports', icon: CheckCircle2 },
     { id: 'resource', name: 'Resource Reports', icon: Clock },
-    { id: 'financial', name: 'Financial Reports', icon: DollarSign },
+    { id: 'financial', name: 'Financial Reports', icon: IndianRupee },
     { id: 'issue', name: 'Issue & Bug Reports', icon: AlertTriangle },
   ];
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { complaintApi } from '../../services/api';
-import { captureSubmitterLocation } from '../../utils/locationService';
 import { AttachmentUploader } from './AttachmentUploader';
 import { PublicTicketTracker } from './PublicTicketTracker';
 import {
@@ -18,7 +17,6 @@ import {
   Phone,
   HelpCircle,
   ShieldCheck,
-  MapPin,
 } from 'lucide-react';
 
 import { COMPLAINT_CATEGORIES, PRIMARY_CATEGORY_NAMES } from '../../utils/complaintCategories';
@@ -45,27 +43,6 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [createdTicket, setCreatedTicket] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [capturedLocation, setCapturedLocation] = useState(null);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-
-  const handleDetectLocation = async () => {
-    setIsDetectingLocation(true);
-    try {
-      const loc = await captureSubmitterLocation(9000);
-      if (loc && loc.type === 'GPS') {
-        setCapturedLocation(loc);
-      } else if (loc) {
-        setCapturedLocation(loc);
-      }
-    } catch (_) {
-    } finally {
-      setIsDetectingLocation(false);
-    }
-  };
-
-  useEffect(() => {
-    handleDetectLocation();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -104,7 +81,7 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
     const phoneTrimmed = formData.customerPhone.trim();
     const phoneDigits = phoneTrimmed.replace(/\D/g, '');
     if (!phoneTrimmed || phoneDigits.length < 7 || phoneDigits.length > 15) {
-      errors.customerPhone = 'Please enter a valid Phone number (7-15 digits).';
+      errors.customerPhone = 'Please enter a valid Phone number (10-12 digits).';
     }
 
     const subjectTrimmed = formData.subject.trim();
@@ -123,22 +100,6 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
       setSubmitting(true);
       setErrorMsg('');
 
-      // High-precision Submitter Location capture
-      let locationData = capturedLocation;
-      if (!locationData || locationData.type !== 'GPS') {
-        try {
-          const fresh = await captureSubmitterLocation(6000);
-          if (fresh && fresh.type === 'GPS') {
-            locationData = fresh;
-            setCapturedLocation(fresh);
-          } else if (!locationData) {
-            locationData = fresh;
-          }
-        } catch (_) {
-          locationData = locationData || { type: 'IP' };
-        }
-      }
-
       const payload = {
         ...formData,
         customerName: nameTrimmed,
@@ -147,7 +108,7 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
         customerPhone: phoneTrimmed,
         subject: subjectTrimmed,
         description: descTrimmed,
-        location: locationData,
+        location: null,
         attachments: attachments.map((a) => ({
           name: a.name,
           size: a.size,
@@ -778,79 +739,6 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
                 />
               </div>
 
-              {/* Submitter Real-Time Location Status (Shows submitter where they are registering from) */}
-              <div
-                style={{
-                  background: capturedLocation?.type === 'GPS' ? '#f0fdf4' : '#f8fafc',
-                  border: `1.5px solid ${capturedLocation?.type === 'GPS' ? '#86efac' : '#e2e8f0'}`,
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '10px',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: capturedLocation?.type === 'GPS' ? '#dcfce7' : '#eff6ff',
-                      color: capturedLocation?.type === 'GPS' ? '#16a34a' : '#2563eb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <MapPin size={16} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>
-                      {capturedLocation?.type === 'GPS'
-                        ? 'Submitter Location Verified (GPS Live Fix)'
-                        : isDetectingLocation
-                        ? 'Detecting Submitter Location...'
-                        : 'Submitter Location at Submission Time'}
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {capturedLocation?.type === 'GPS'
-                        ? `${capturedLocation.address || capturedLocation.city} (${capturedLocation.accuracy || 'High Precision'})`
-                        : isDetectingLocation
-                        ? 'Requesting browser GPS location coordinates...'
-                        : 'Click detect to attach exact physical location to this ticket'}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleDetectLocation}
-                  disabled={isDetectingLocation}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    color: capturedLocation?.type === 'GPS' ? '#16a34a' : '#2563eb',
-                    fontSize: '0.76rem',
-                    fontWeight: 700,
-                    cursor: isDetectingLocation ? 'wait' : 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <MapPin size={12} />
-                  <span>{capturedLocation?.type === 'GPS' ? 'GPS Captured ✓' : isDetectingLocation ? 'Detecting...' : 'Detect Exact Location'}</span>
-                </button>
-              </div>
-
               {/* Submit Button & Assurance note */}
               <div
                 style={{
@@ -868,25 +756,6 @@ export const PublicComplaintPortal = ({ onGoToLogin }) => {
                     <ShieldCheck size={16} color="#059669" />
                     <span>Secure 256-bit encrypted</span>
                   </div>
-                  {capturedLocation && (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        background: capturedLocation.type === 'GPS' ? '#ecfdf5' : '#eff6ff',
-                        color: capturedLocation.type === 'GPS' ? '#047857' : '#1d4ed8',
-                        border: `1px solid ${capturedLocation.type === 'GPS' ? '#a7f3d0' : '#bfdbfe'}`,
-                      }}
-                    >
-                      <MapPin size={11} />
-                      <span>{capturedLocation.city ? `Origin: ${capturedLocation.city}` : capturedLocation.type === 'GPS' ? 'GPS Active' : 'Network Detected'}</span>
-                    </span>
-                  )}
                 </div>
 
                 <button

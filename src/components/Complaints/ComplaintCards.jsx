@@ -1,6 +1,5 @@
 import React from 'react';
 import { useComplaints } from '../../context/ComplaintContext';
-import { getGoogleMapsUrl } from '../../utils/locationService';
 import {
   AlertCircle,
   Clock,
@@ -18,8 +17,6 @@ import {
   Calendar,
   Check,
   MoreVertical,
-  MapPin,
-  ExternalLink,
 } from 'lucide-react';
 
 export const ComplaintCards = ({
@@ -425,53 +422,6 @@ export const ComplaintCards = ({
                     {ticket.organization || 'Direct Customer'}
                   </span>
                 </div>
-                {ticket.location && (ticket.location.city || ticket.location.address || ticket.location.type || ticket.location.ip) ? (
-                  <a
-                    href={getGoogleMapsUrl(ticket.location)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: ticket.location.type === 'GPS' ? '#047857' : '#1d4ed8',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      marginTop: '2px',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                    }}
-                    title="Open submitter physical location in Google Maps"
-                  >
-                    <MapPin size={9} style={{ color: ticket.location.type === 'GPS' ? '#059669' : '#2563eb' }} />
-                    <span>{ticket.location.city || (ticket.location.type === 'GPS' ? 'GPS Location' : (ticket.location.ip === '::1' ? 'Local Network' : `Network: ${ticket.location.ip}`))}</span>
-                    <ExternalLink size={8} style={{ opacity: 0.75 }} />
-                  </a>
-                ) : (
-                  <a
-                    href={getGoogleMapsUrl(ticket.location)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: '#1d4ed8',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      marginTop: '2px',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                    }}
-                    title="Locate submitter on Google Maps"
-                  >
-                    <MapPin size={9} style={{ color: '#2563eb' }} />
-                    <span>Locate Submitter</span>
-                    <ExternalLink size={8} style={{ opacity: 0.75 }} />
-                  </a>
-                )}
               </div>
             </div>
 

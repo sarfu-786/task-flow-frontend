@@ -140,9 +140,15 @@ export const ManagerTasksDrilldownModal = ({
   // Filter tasks dynamically
   let filtered = [...scopedTasks];
 
-  // Status Filter (Completed, In Progress, To Do)
+  // Status Filter (Completed, In Progress, To Do, Overdue)
   if (statusFilter && statusFilter !== 'all') {
-    filtered = filtered.filter((t) => t.status === statusFilter);
+    if (statusFilter === 'overdue' || statusFilter === 'Overdue') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((t) => t.status !== 'Completed' && t.dueDate && new Date(t.dueDate) < today);
+    } else {
+      filtered = filtered.filter((t) => t.status === statusFilter);
+    }
   }
 
   // Member Filter
@@ -170,6 +176,12 @@ export const ManagerTasksDrilldownModal = ({
   const totalCompleted = scopedTasks.filter((t) => t.status === 'Completed').length;
   const totalInProgress = scopedTasks.filter((t) => t.status === 'In Progress').length;
   const totalToDo = scopedTasks.filter((t) => t.status === 'To Do' || !t.status).length;
+  const totalOverdue = scopedTasks.filter((t) => {
+    if (t.status === 'Completed' || !t.dueDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(t.dueDate) < today;
+  }).length;
 
   const getTaskTypeBadge = (type) => {
     switch (type) {
@@ -314,6 +326,22 @@ export const ManagerTasksDrilldownModal = ({
                 style={{ fontSize: '0.8rem', padding: '6px 14px' }}
               >
                 To Do ({totalToDo})
+              </button>
+              <button
+                type="button"
+                className={`btn ${statusFilter === 'overdue' ? 'btn-danger' : 'btn-secondary'}`}
+                onClick={() => setStatusFilter('overdue')}
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '6px 14px',
+                  ...(statusFilter === 'overdue'
+                    ? {}
+                    : totalOverdue > 0
+                    ? { color: '#dc2626', borderColor: '#fca5a5' }
+                    : {}),
+                }}
+              >
+                Overdue ({totalOverdue})
               </button>
             </div>
 

@@ -295,301 +295,191 @@ export const LeadDetailModal = () => {
             </div>
           </div>
 
-          {/* If already converted, show banner with Opportunity ID */}
-          {isConverted && (
+          {/* Action Toolbar (Hidden for Converted/Locked Leads to keep View-Only clean) */}
+          {!isConverted && (
             <div
               style={{
-                marginTop: '12px',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                background: '#f5f3ff',
-                border: '1px solid #ddd6fe',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: '8px',
+                marginTop: '12px',
+                paddingTop: '10px',
+                borderTop: '1px solid #e2e8f0',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={18} color="#7c3aed" />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#5b21b6' }}>
-                  This Lead has been converted to Opportunity{' '}
-                  <span style={{ textDecoration: 'underline' }}>{lead.opportunityId || 'OP-001'}</span>.
-                </span>
+              {/* Quick Status Switcher */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#475569' }}>Status:</span>
+                <select
+                  className="form-control select-filter"
+                  style={{ fontSize: '0.78rem', padding: '4px 8px', height: 'auto', maxWidth: '130px' }}
+                  value={lead.status || 'New'}
+                  disabled={statusUpdating}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                >
+                  <option value="New">New</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Follow-Up">Follow-Up</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Interested">Interested</option>
+                  <option value="Not Interested">Not Interested</option>
+                  <option value="Invalid">Invalid</option>
+                </select>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab('opportunity')}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: '6px',
-                  background: '#7c3aed',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <span>View Opportunity Details</span>
-                <ExternalLink size={12} />
-              </button>
-            </div>
-          )}
 
-          {/* Action Toolbar */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '10px',
-              marginTop: '16px',
-              paddingTop: '12px',
-              borderTop: '1px solid #e2e8f0',
-            }}
-          >
-            {/* Quick Status Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>Change Status:</span>
-              <select
-                className="form-control select-filter"
-                style={{ fontSize: '0.8rem', padding: '4px 10px', height: 'auto', minWidth: '130px' }}
-                value={lead.status || 'New'}
-                disabled={statusUpdating || isConverted}
-                onChange={(e) => handleStatusChange(e.target.value)}
-              >
-                <option value="New">New</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Follow-Up">Follow-Up</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Interested">Interested</option>
-                <option value="Converted" disabled={!isConverted}>Converted</option>
-                <option value="Not Interested">Not Interested</option>
-                <option value="Invalid">Invalid</option>
-              </select>
-            </div>
-
-            {/* Main Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => openAddCallModal(lead)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#1d4ed8',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                }}
-              >
-                <PhoneCall size={14} />
-                <span>Add Call Log</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => openScheduleFollowUpModal(lead)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: '#fffbeb',
-                  border: '1px solid #fde68a',
-                  color: '#b45309',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                }}
-              >
-                <Clock3 size={14} />
-                <span>Schedule Follow-Up</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => openEditModal(lead)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  color: '#334155',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                }}
-              >
-                <Edit2 size={14} />
-                <span>Edit Lead</span>
-              </button>
-
-              {/* Audit History Button */}
-              <button
-                type="button"
-                onClick={() => openAuditModal(lead)}
-                title="View complete immutable compliance audit trail for this lead"
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  color: '#334155',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                }}
-              >
-                <ShieldCheck size={14} color="#059669" />
-                <span>Audit History</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  closeLeadDetailModal();
-                  openDeleteModal(lead);
-                }}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  color: '#dc2626',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                }}
-              >
-                <Trash2 size={14} />
-                <span>Delete</span>
-              </button>
-
-              {/* Qualify Lead Button */}
-              {canQualify && (
+              {/* Main Action Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  id="btn-qualify-lead"
-                  onClick={() => openQualifyModal(lead)}
+                  onClick={() => openAddCallModal(lead)}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    color: '#059669',
-                    fontSize: '0.8rem',
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#1d4ed8',
+                    fontSize: '0.76rem',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                  }}
-                >
-                  <CheckCircle2 size={14} />
-                  <span>Qualify Lead</span>
-                </button>
-              )}
-
-              {/* Convert to Opportunity Button */}
-              {canConvert ? (
-                <button
-                  type="button"
-                  id="btn-convert-lead"
-                  onClick={() => openConvertModal(lead)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    background: '#059669',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 4px rgba(5, 150, 105, 0.25)',
-                  }}
-                >
-                  <Sparkles size={14} />
-                  <span>Convert to Opportunity</span>
-                </button>
-              ) : isConverted ? (
-                <span
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#ede9fe',
-                    color: '#6d28d9',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
                   }}
                 >
-                  <Check size={14} />
-                  <span>Converted ({lead.opportunityId || 'OP-001'})</span>
-                </span>
-              ) : (
+                  <PhoneCall size={13} />
+                  <span>Call Log</span>
+                </button>
+
                 <button
                   type="button"
-                  disabled
-                  title="Lead can only be converted when status is Qualified or Interested"
+                  onClick={() => openScheduleFollowUpModal(lead)}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#f1f5f9',
-                    border: '1px solid #e2e8f0',
-                    color: '#94a3b8',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'not-allowed',
-                    display: 'flex',
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    color: '#b45309',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '4px',
                   }}
                 >
-                  <Sparkles size={14} />
-                  <span>Convert to Opportunity</span>
+                  <Clock3 size={13} />
+                  <span>Follow-Up</span>
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={() => openEditModal(lead)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#334155',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Edit2 size={13} />
+                  <span>Edit</span>
+                </button>
+
+                {canQualify && (
+                  <button
+                    type="button"
+                    id="btn-qualify-lead"
+                    onClick={() => openQualifyModal(lead)}
+                    style={{
+                      padding: '5px 10px',
+                      borderRadius: '7px',
+                      background: '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      color: '#059669',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <CheckCircle2 size={13} />
+                    <span>Qualify</span>
+                  </button>
+                )}
+
+                {canConvert && (
+                  <button
+                    type="button"
+                    id="btn-convert-lead"
+                    onClick={() => openConvertModal(lead)}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '7px',
+                      background: '#059669',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                  >
+                    <Sparkles size={13} />
+                    <span>Convert</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeLeadDetailModal();
+                    openDeleteModal(lead);
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#dc2626',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Trash2 size={13} />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* 5 Tab Navigation Bar */}
+        {/* Compact Tab Navigation Bar (Zero Horizontal Overflow) */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             padding: '8px 24px',
             borderBottom: '1px solid #e2e8f0',
             background: '#ffffff',
-            overflowX: 'auto',
+            flexWrap: 'wrap',
             flexShrink: 0,
           }}
         >
@@ -597,65 +487,65 @@ export const LeadDetailModal = () => {
             type="button"
             onClick={() => setActiveTab('info')}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
+              padding: '6px 12px',
+              borderRadius: '7px',
               border: 'none',
               background: activeTab === 'info' ? '#eff6ff' : 'transparent',
               color: activeTab === 'info' ? '#2563eb' : '#64748b',
               fontWeight: 700,
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               whiteSpace: 'nowrap',
             }}
           >
-            <User size={14} />
-            <span>Lead Information</span>
+            <User size={13} />
+            <span>Lead Info</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('calls')}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
+              padding: '6px 12px',
+              borderRadius: '7px',
               border: 'none',
               background: activeTab === 'calls' ? '#eff6ff' : 'transparent',
               color: activeTab === 'calls' ? '#2563eb' : '#64748b',
               fontWeight: 700,
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               whiteSpace: 'nowrap',
             }}
           >
-            <PhoneCall size={14} />
-            <span>Communication History ({callLogs.length})</span>
+            <PhoneCall size={13} />
+            <span>Calls ({callLogs.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('followups')}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
+              padding: '6px 12px',
+              borderRadius: '7px',
               border: 'none',
               background: activeTab === 'followups' ? '#eff6ff' : 'transparent',
               color: activeTab === 'followups' ? '#2563eb' : '#64748b',
               fontWeight: 700,
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               whiteSpace: 'nowrap',
             }}
           >
-            <Clock3 size={14} />
+            <Clock3 size={13} />
             <span>Follow-Ups ({followups.length})</span>
           </button>
 
@@ -663,22 +553,22 @@ export const LeadDetailModal = () => {
             type="button"
             onClick={() => setActiveTab('timeline')}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
+              padding: '6px 12px',
+              borderRadius: '7px',
               border: 'none',
               background: activeTab === 'timeline' ? '#eff6ff' : 'transparent',
               color: activeTab === 'timeline' ? '#2563eb' : '#64748b',
               fontWeight: 700,
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               whiteSpace: 'nowrap',
             }}
           >
-            <History size={14} />
-            <span>Timeline Journey ({timeline.length})</span>
+            <History size={13} />
+            <span>Timeline ({timeline.length})</span>
           </button>
 
           {isConverted && (
@@ -686,22 +576,22 @@ export const LeadDetailModal = () => {
               type="button"
               onClick={() => setActiveTab('opportunity')}
               style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
+                padding: '6px 12px',
+                borderRadius: '7px',
                 border: 'none',
                 background: activeTab === 'opportunity' ? '#f5f3ff' : 'transparent',
                 color: activeTab === 'opportunity' ? '#7c3aed' : '#64748b',
                 fontWeight: 700,
-                fontSize: '0.82rem',
+                fontSize: '0.78rem',
                 cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
                 whiteSpace: 'nowrap',
               }}
             >
-              <Sparkles size={14} />
-              <span>Opportunity Linkage ({lead.opportunityId || 'OP-001'})</span>
+              <Sparkles size={13} />
+              <span>Deal ({lead.opportunityId || 'OP-001'})</span>
             </button>
           )}
         </div>
@@ -710,115 +600,12 @@ export const LeadDetailModal = () => {
         <div style={{ padding: '20px 24px', overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
           {/* TAB 1: LEAD INFORMATION */}
           {activeTab === 'info' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Lead Scoring & Quality Intelligence Card */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: `1.5px solid ${tempInfo.border}`,
-                  borderRadius: '14px',
-                  padding: '18px 20px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div
-                      style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
-                        background: tempInfo.bg,
-                        color: tempInfo.color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.2rem',
-                        border: `1px solid ${tempInfo.border}`,
-                      }}
-                    >
-                      {tempInfo.icon}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
-                        Lead Scoring & Conversion Intelligence
-                      </div>
-                      <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                        Dynamic qualification algorithm assessing channel quality, deal value, engagement, and follow-up velocity.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        padding: '4px 10px',
-                        borderRadius: '8px',
-                        background: tempInfo.bg,
-                        color: tempInfo.color,
-                        border: `1px solid ${tempInfo.border}`,
-                      }}
-                    >
-                      {tempInfo.label}
-                    </span>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e293b' }}>
-                      {score} <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>/ 100</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Visual Score Bar */}
-                <div style={{ width: '100%', height: '8px', borderRadius: '999px', background: '#f1f5f9', overflow: 'hidden', marginBottom: '14px' }}>
-                  <div
-                    style={{
-                      width: `${Math.min(100, Math.max(0, score))}%`,
-                      height: '100%',
-                      borderRadius: '999px',
-                      background: score >= 70 ? 'linear-gradient(90deg, #f97316, #ea580c)' : score >= 40 ? 'linear-gradient(90deg, #fbbf24, #d97706)' : 'linear-gradient(90deg, #60a5fa, #2563eb)',
-                      transition: 'width 0.4s ease',
-                    }}
-                  />
-                </div>
-
-                {/* Metric Factors Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
-                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>SOURCE WEIGHT</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                      {lead.source || 'Website'}
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>PRIORITY WEIGHT</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                      {lead.priority || 'Medium'}
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>CALL ENGAGEMENT</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                      {callLogs.length} Logged Calls
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '8px 12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>FOLLOW-UP STATUS</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
-                      {lead.followUpStatus || 'None'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '16px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '14px',
                   background: '#ffffff',
                   border: '1px solid #e2e8f0',
                   borderRadius: '12px',
@@ -928,19 +715,16 @@ export const LeadDetailModal = () => {
               )}
 
               {/* Remarks / Notes Card */}
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileText size={14} color="#2563eb" />
-                  <span>REMARKS & CONTEXT</span>
+              {(lead.remarks || lead.notes) && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FileText size={14} color="#2563eb" />
+                    <span>REMARKS & NOTES</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.86rem', color: '#475569', lineHeight: 1.5 }}>
+                    {lead.remarks || lead.notes}
+                  </p>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
-                  {lead.remarks || lead.notes || 'No remarks added yet.'}
-                </p>
-              </div>
-
-              {/* Opportunity Workflow Section (Only for Converted Leads) */}
-              {isConverted && (
-                <LeadOpportunitySection lead={lead} />
               )}
             </div>
           )}
@@ -948,50 +732,48 @@ export const LeadDetailModal = () => {
           {/* TAB 2: COMMUNICATION HISTORY / CALL LOGS */}
           {activeTab === 'calls' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }}>
-                    Complete Communication History
-                  </h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-                    All telephonic, video, and direct sales interactions recorded in chronological sequence.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openAddCallModal(lead)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#2563eb',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <Plus size={14} />
-                  <span>Add Call Log</span>
-                </button>
-              </div>
-
-              {callLogs.length === 0 ? (
-                <div style={{ padding: '36px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                  <PhoneCall size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />
-                  <p style={{ margin: 0, fontWeight: 700, color: '#475569' }}>No call interactions recorded yet.</p>
-                  <p style={{ margin: '4px 0 12px', fontSize: '0.8rem', color: '#94a3b8' }}>Click "Add Call Log" to log your first client call attempt.</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
+                  Call Logs ({callLogs.length})
+                </h4>
+                {!isConverted && (
                   <button
                     type="button"
                     onClick={() => openAddCallModal(lead)}
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      background: '#2563eb',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
                   >
-                    Add First Call Log
+                    <Plus size={14} />
+                    <span>Add Call Log</span>
                   </button>
+                )}
+              </div>
+
+              {callLogs.length === 0 ? (
+                <div style={{ padding: '28px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <PhoneCall size={28} color="#94a3b8" style={{ marginBottom: '6px' }} />
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '0.88rem', color: '#475569' }}>No call logs recorded.</p>
+                  {!isConverted && (
+                    <button
+                      type="button"
+                      onClick={() => openAddCallModal(lead)}
+                      className="btn btn-primary"
+                      style={{ fontSize: '0.78rem', padding: '6px 14px', marginTop: '10px' }}
+                    >
+                      Add Call Log
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1129,49 +911,48 @@ export const LeadDetailModal = () => {
           {/* TAB 3: FOLLOW-UPS */}
           {activeTab === 'followups' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }}>
-                    Scheduled Follow-Ups
-                  </h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-                    Track pending and completed customer follow-ups and callbacks.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openScheduleFollowUpModal(lead)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: '#d97706',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <Plus size={14} />
-                  <span>Schedule Follow-Up</span>
-                </button>
-              </div>
-
-              {followups.length === 0 ? (
-                <div style={{ padding: '36px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                  <Clock3 size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />
-                  <p style={{ margin: 0, fontWeight: 700, color: '#475569' }}>No follow-ups scheduled for this lead.</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, color: '#1e293b' }}>
+                  Follow-Ups ({followups.length})
+                </h4>
+                {!isConverted && (
                   <button
                     type="button"
                     onClick={() => openScheduleFollowUpModal(lead)}
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.8rem', padding: '6px 14px', marginTop: '10px' }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      background: '#d97706',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
                   >
-                    Schedule Follow-Up
+                    <Plus size={14} />
+                    <span>Schedule Follow-Up</span>
                   </button>
+                )}
+              </div>
+
+              {followups.length === 0 ? (
+                <div style={{ padding: '28px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <Clock3 size={28} color="#94a3b8" style={{ marginBottom: '6px' }} />
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '0.88rem', color: '#475569' }}>No follow-ups scheduled.</p>
+                  {!isConverted && (
+                    <button
+                      type="button"
+                      onClick={() => openScheduleFollowUpModal(lead)}
+                      className="btn btn-primary"
+                      style={{ fontSize: '0.78rem', padding: '6px 14px', marginTop: '10px' }}
+                    >
+                      Schedule Follow-Up
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1229,8 +1010,8 @@ export const LeadDetailModal = () => {
                             </div>
                           </div>
 
-                          {/* 1-click status actions */}
-                          {isPending && (
+                          {/* 1-click status actions (Active Leads Only) */}
+                          {isPending && !isConverted && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <button
                                 type="button"

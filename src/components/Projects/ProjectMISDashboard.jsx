@@ -7,7 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   Clock,
-  DollarSign,
+  IndianRupee,
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
@@ -184,9 +184,9 @@ export const ProjectMISDashboard = ({ onViewProject }) => {
   };
 
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0,
     }).format(val || 0);
   };
@@ -410,7 +410,7 @@ export const ProjectMISDashboard = ({ onViewProject }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#ecfdf5', color: '#059669' }}>
-                <DollarSign size={20} />
+                <IndianRupee size={20} />
               </div>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
                 Financial & Budget Health

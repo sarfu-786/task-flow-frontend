@@ -118,15 +118,25 @@ export const RealtimeToast = ({ toast, onClose, onAction }) => {
           type="button"
           onClick={onClose}
           style={{
-            background: 'none',
+            background: '#f1f5f9',
             border: 'none',
-            color: '#94a3b8',
+            color: '#64748b',
             cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '6px',
+            width: '26px',
+            height: '26px',
+            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#fee2e2';
+            e.currentTarget.style.color = '#dc2626';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#f1f5f9';
+            e.currentTarget.style.color = '#64748b';
           }}
           aria-label="Close notification"
         >

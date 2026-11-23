@@ -399,16 +399,6 @@ export const LeadDirectoryModal = ({ isOpen, onClose }) => {
           {viewMode === 'matrix' && <DispositionMatrixTab />}
         </div>
       </div>
-
-      {/* Nested CRM Import & Export Modals */}
-      <LeadImportModal
-        isOpen={isImportModalOpen}
-        onClose={closeImportModal}
-      />
-      <LeadExportModal
-        isOpen={isExportModalOpen}
-        onClose={closeExportModal}
-      />
     </div>
   );
 };
