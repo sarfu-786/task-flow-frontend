@@ -215,6 +215,9 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
   // Category Collapsing State (all expanded by default)
   const [collapsedCategories, setCollapsedCategories] = useState({});
 
+  // Mobile Report Catalog Drawer Toggle
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false);
+
   // Export Modal state (Single export action)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -345,6 +348,47 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
           animation: 'slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
+        {/* Scoped CSS for 10/10 Mobile Responsiveness */}
+        <style>{`
+          @media (max-width: 860px) {
+            .complaint-mis-workspace {
+              flex-direction: column !important;
+            }
+            .complaint-mis-sidebar {
+              width: 100% !important;
+              max-height: 280px !important;
+              border-right: none !important;
+              border-bottom: 1.5px solid #e2e8f0 !important;
+              display: ${mobileCatalogOpen ? 'flex' : 'none'} !important;
+            }
+            .complaint-mis-content {
+              width: 100% !important;
+              padding: 12px 14px !important;
+            }
+            .complaint-mis-mobile-bar {
+              display: flex !important;
+            }
+            .complaint-mis-filter-bar {
+              padding: 8px 12px !important;
+              gap: 8px !important;
+            }
+            .complaint-mis-filter-group {
+              width: 100% !important;
+            }
+            .complaint-mis-search-box {
+              width: 100% !important;
+            }
+          }
+          @media (min-width: 861px) {
+            .complaint-mis-sidebar {
+              display: flex !important;
+            }
+            .complaint-mis-mobile-bar {
+              display: none !important;
+            }
+          }
+        `}</style>
+
         {/* ================================================================= */}
         {/* 1. COMPACT TOP HEADER */}
         {/* ================================================================= */}
@@ -359,9 +403,11 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
             flexWrap: 'wrap',
             gap: '10px',
             flexShrink: 0,
+            position: 'relative',
+            paddingRight: '56px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div
               style={{
                 width: '36px',
@@ -493,49 +539,51 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-blue-600' : ''} />
             </button>
-
-            {/* Separator */}
-            <div style={{ width: '1px', height: '20px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
-
-            {/* Dedicated Top-Right Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              id="btn-close-complaint-mis-modal"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fee2e2';
-                e.currentTarget.style.color = '#dc2626';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                e.currentTarget.style.color = '#64748b';
-              }}
-              aria-label="Close MIS Modal"
-              title="Close modal"
-            >
-              <X size={16} />
-            </button>
           </div>
+
+          {/* Dedicated Top-Right Cut/Close Button - Permanently Locked to Top Right Corner */}
+          <button
+            type="button"
+            onClick={onClose}
+            id="btn-close-complaint-mis-modal"
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '14px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            aria-label="Close MIS Modal"
+            title="Close modal"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* ================================================================= */}
         {/* 2. COMPACT GLOBAL FILTER BAR */}
         {/* ================================================================= */}
         <div
+          className="complaint-mis-filter-bar"
           style={{
             padding: '8px 22px',
             backgroundColor: '#f8fafc',
@@ -548,7 +596,7 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
+          <div className="complaint-mis-filter-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
             <span
               style={{
                 fontSize: '0.72rem',
@@ -565,14 +613,16 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
               <Filter size={13} /> Filters:
             </span>
 
-            {/* Date Range Start */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {/* Date Range Start & End - Fully Responsive */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: '1 1 200px' }}>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 title="Start Date"
                 style={{
+                  flex: 1,
+                  minWidth: '95px',
                   padding: '4px 6px',
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
@@ -589,6 +639,8 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
                 onChange={(e) => setEndDate(e.target.value)}
                 title="End Date"
                 style={{
+                  flex: 1,
+                  minWidth: '95px',
                   padding: '4px 6px',
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
@@ -701,7 +753,7 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Quick in-table search input */}
-          <div style={{ position: 'relative', width: '190px' }}>
+          <div className="complaint-mis-search-box" style={{ position: 'relative', width: '190px', minWidth: '160px', flexShrink: 0 }}>
             <Search
               size={13}
               style={{
@@ -730,12 +782,79 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
+        {/* Mobile Quick Report Switcher Bar */}
+        <div
+          className="complaint-mis-mobile-bar"
+          style={{
+            display: 'none',
+            padding: '8px 12px',
+            backgroundColor: '#eff6ff',
+            borderBottom: '1px solid #bfdbfe',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+            <FileSpreadsheet size={15} color="#2563eb" style={{ flexShrink: 0 }} />
+            <select
+              value={selectedReportId}
+              onChange={(e) => {
+                setSelectedReportId(e.target.value);
+                setSearchFilter('');
+                setMobileCatalogOpen(false);
+              }}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                padding: '6px 8px',
+                borderRadius: '7px',
+                border: '1.5px solid #93c5fd',
+                backgroundColor: '#ffffff',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#1e3a8a',
+                outline: 'none',
+              }}
+            >
+              {REPORT_CATEGORIES.map((cat) => (
+                <optgroup key={cat.id} label={cat.title}>
+                  {cat.reports.map((rep) => (
+                    <option key={rep.id} value={rep.id}>
+                      {rep.id}: {rep.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileCatalogOpen(!mobileCatalogOpen)}
+            style={{
+              padding: '5px 9px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: mobileCatalogOpen ? '#2563eb' : '#ffffff',
+              color: mobileCatalogOpen ? '#ffffff' : '#475569',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            {mobileCatalogOpen ? 'Close Menu' : 'Browse All (17)'}
+          </button>
+        </div>
+
         {/* ================================================================= */}
         {/* 3. MAIN WORKSPACE (Left Fixed-Width Sidebar + Right Report Content) */}
         {/* ================================================================= */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="complaint-mis-workspace" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Sidebar: 6 Collapsible Categories with 17 Compact Reports */}
           <div
+            className="complaint-mis-sidebar"
             style={{
               width: '265px',
               borderRight: '1px solid #e2e8f0',
@@ -848,6 +967,7 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
                             onClick={() => {
                               setSelectedReportId(report.id);
                               setSearchFilter('');
+                              setMobileCatalogOpen(false);
                             }}
                             title={report.title}
                             style={{
@@ -928,6 +1048,7 @@ export const ComplaintMISModal = ({ isOpen, onClose }) => {
 
           {/* Right Content: Selected Report Viewer */}
           <div
+            className="complaint-mis-content"
             style={{
               flex: 1,
               minWidth: 0,

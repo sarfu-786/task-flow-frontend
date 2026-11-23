@@ -110,6 +110,8 @@ export const UserDetailModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             flexShrink: 0,
+            position: 'relative',
+            paddingRight: '60px',
             background: isSuperAdmin
               ? 'linear-gradient(135deg, #fffbeb, #fef3c7)'
               : isManager
@@ -148,6 +150,9 @@ export const UserDetailModal = ({
             onClick={onClose}
             aria-label="Close modal"
             style={{
+              position: 'absolute',
+              top: '16px',
+              right: '18px',
               background: '#f1f5f9',
               border: 'none',
               cursor: 'pointer',
@@ -158,6 +163,7 @@ export const UserDetailModal = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              zIndex: 10,
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {

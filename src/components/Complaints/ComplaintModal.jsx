@@ -727,6 +727,8 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
             justifyContent: 'space-between',
             background: '#ffffff',
             flexShrink: 0,
+            position: 'relative',
+            paddingRight: '52px',
           }}
         >
           <div>
@@ -751,6 +753,9 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
             onClick={handleClose}
             aria-label="Close dialog"
             style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: '50%',
@@ -761,6 +766,7 @@ export const ComplaintModal = ({ isOpen: propIsOpen, onClose: propOnClose, compl
               justifyContent: 'center',
               color: '#64748b',
               cursor: 'pointer',
+              zIndex: 10,
               transition: 'all 0.15s',
             }}
           >

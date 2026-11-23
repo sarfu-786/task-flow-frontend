@@ -423,8 +423,8 @@ export const ComplaintTable = ({
           <div
             style={{
               position: 'relative',
-              width: '210px',
-              flexShrink: 0,
+              flex: '1 1 180px',
+              minWidth: '160px',
             }}
           >
             <Search
@@ -673,7 +673,7 @@ export const ComplaintTable = ({
         <div
           style={{
             flex: 1,
-            minHeight: 0,
+            minHeight: '250px',
             overflowY: 'auto',
             overflowX: 'auto',
             width: '100%',

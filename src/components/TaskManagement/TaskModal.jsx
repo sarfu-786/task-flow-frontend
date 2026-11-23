@@ -223,7 +223,7 @@ export const TaskModal = () => {
   return (
     <div className="modal-backdrop" onClick={closeTaskModal}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div className="modal-header" style={{ flexShrink: 0 }}>
+        <div className="modal-header" style={{ position: 'relative', paddingRight: '56px', flexShrink: 0 }}>
           <div>
             <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isSuperAdmin ? (
@@ -256,6 +256,7 @@ export const TaskModal = () => {
             className="btn-icon"
             onClick={closeTaskModal}
             aria-label="Close modal"
+            style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}
           >
             <X size={18} />
           </button>

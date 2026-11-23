@@ -3197,7 +3197,9 @@ html, body {
   }
 
   .modal-header {
+    position: relative;
     padding: 14px 16px;
+    padding-right: 56px;
   }
 
   .modal-body {
@@ -3336,7 +3338,9 @@ html, body {
   }
 
   .modal-header {
+    position: relative;
     padding: 12px 14px;
+    padding-right: 52px;
   }
 
   .modal-title {

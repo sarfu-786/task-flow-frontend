@@ -311,7 +311,7 @@ export const EmployeeDrilldownModal = ({
         style={{ maxWidth: '960px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Header */}
-        <div className="modal-header" style={{ padding: '18px 24px', flexShrink: 0 }}>
+        <div className="modal-header" style={{ position: 'relative', padding: '18px 24px', paddingRight: '60px', flexShrink: 0 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h3 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>
@@ -333,7 +333,13 @@ export const EmployeeDrilldownModal = ({
             </div>
           </div>
 
-          <button type="button" className="btn-icon" onClick={onClose} aria-label="Close modal">
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{ position: 'absolute', top: '16px', right: '18px', zIndex: 10 }}
+          >
             <X size={18} />
           </button>
         </div>

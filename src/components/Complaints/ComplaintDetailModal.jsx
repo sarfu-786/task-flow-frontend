@@ -1142,6 +1142,8 @@ export const ComplaintDetailModal = ({
             borderRadius: '20px 20px 0 0',
             flexShrink: 0,
             gap: '12px',
+            position: 'relative',
+            paddingRight: '56px',
           }}
           className="responsive-header"
         >
@@ -1240,38 +1242,41 @@ export const ComplaintDetailModal = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button
-              type="button"
-              id="btn-close-complaint-detail-modal"
-              onClick={onClose}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fee2e2';
-                e.currentTarget.style.color = '#dc2626';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                e.currentTarget.style.color = '#64748b';
-              }}
-              title="Close Modal (Done)"
-            >
-              <X size={17} />
-            </button>
-          </div>
+          {/* Permanently Locked Top-Right Cut/Close Button */}
+          <button
+            type="button"
+            id="btn-close-complaint-detail-modal"
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '14px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            title="Close Modal (Done)"
+          >
+            <X size={17} />
+          </button>
         </div>
 
         {/* QUICK SLA STATUS STRIP */}

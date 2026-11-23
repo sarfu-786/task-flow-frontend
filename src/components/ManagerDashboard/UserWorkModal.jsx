@@ -137,7 +137,7 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
         style={{ maxWidth: '820px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {/* Modal Header with User Bio */}
-        <div className="modal-header" style={{ padding: '18px 24px', flexShrink: 0 }}>
+        <div className="modal-header" style={{ position: 'relative', padding: '18px 24px', paddingRight: '56px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {user.avatar ? (
               <img
@@ -193,7 +193,13 @@ export const UserWorkModal = ({ user, initialFilter = 'all', isOpen, onClose }) 
             </div>
           </div>
 
-          <button type="button" className="btn-icon" onClick={onClose} aria-label="Close dialog">
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={onClose}
+            aria-label="Close dialog"
+            style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}
+          >
             <X size={18} />
           </button>
         </div>

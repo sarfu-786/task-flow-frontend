@@ -87,9 +87,11 @@ export const ComplaintDirectoryModal = ({
             flexWrap: 'wrap',
             gap: '10px',
             flexShrink: 0,
+            position: 'relative',
+            paddingRight: '56px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div
               style={{
                 width: '38px',
@@ -167,53 +169,54 @@ export const ComplaintDirectoryModal = ({
               <TableIcon size={14} />
               <span>Table Registry</span>
             </div>
-
-            {/* Separator */}
-            <div style={{ width: '1px', height: '22px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
-
-            {/* Dedicated Top-Right Cut/Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              id="btn-close-complaint-dir-modal"
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fee2e2';
-                e.currentTarget.style.color = '#dc2626';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                e.currentTarget.style.color = '#64748b';
-              }}
-              aria-label="Close Directory Modal"
-              title="Close modal"
-            >
-              <X size={16} />
-            </button>
           </div>
+
+          {/* Permanently Locked Top-Right Cut/Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            id="btn-close-complaint-dir-modal"
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '14px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            aria-label="Close Directory Modal"
+            title="Close modal"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        {/* Modal Scrollable Body - Pure Table View */}
+        {/* Modal Scrollable Body - Pure Table View with Full Vertical & Horizontal Scrolling */}
         <div
           style={{
             flex: '1 1 auto',
             minHeight: 0,
-            overflowY: 'hidden',
-            overflowX: 'hidden',
-            padding: '14px 18px',
+            overflowY: 'auto',
+            overflowX: 'auto',
+            padding: '12px 14px',
             backgroundColor: '#f8fafc',
             display: 'flex',
             flexDirection: 'column',

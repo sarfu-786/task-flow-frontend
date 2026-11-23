@@ -154,7 +154,9 @@ export const LeadDetailModal = () => {
         {/* Top Header Card */}
         <div
           style={{
+            position: 'relative',
             padding: '20px 24px 16px',
+            paddingRight: '60px',
             borderBottom: '1px solid #e2e8f0',
             background: '#f8fafc',
             flexShrink: 0,
@@ -268,6 +270,10 @@ export const LeadDetailModal = () => {
                 onClick={closeLeadDetailModal}
                 aria-label="Close modal"
                 style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  zIndex: 10,
                   width: '34px',
                   height: '34px',
                   borderRadius: '50%',

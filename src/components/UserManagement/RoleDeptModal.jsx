@@ -99,7 +99,9 @@ export const RoleDeptModal = ({
         {/* Header */}
         <div
           style={{
+            position: 'relative',
             padding: '18px 24px',
+            paddingRight: '56px',
             borderBottom: '1px solid #f1f5f9',
             display: 'flex',
             alignItems: 'center',
@@ -143,12 +145,16 @@ export const RoleDeptModal = ({
             onClick={onClose}
             aria-label="Close modal"
             style={{
+              position: 'absolute',
+              top: '14px',
+              right: '16px',
+              zIndex: 10,
               background: '#f1f5f9',
               border: 'none',
               cursor: 'pointer',
               color: '#64748b',
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',

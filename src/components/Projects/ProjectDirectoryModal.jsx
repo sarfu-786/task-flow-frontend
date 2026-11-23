@@ -100,6 +100,8 @@ export const ProjectDirectoryModal = ({
             flexShrink: 0,
             flexWrap: 'wrap',
             gap: '14px',
+            position: 'relative',
+            paddingRight: '60px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -266,43 +268,44 @@ export const ProjectDirectoryModal = ({
                 <span>Workload</span>
               </button>
             </div>
-
-            {/* Separator */}
-            <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0', margin: '0 2px' }} />
-
-            {/* Dedicated Top-Right Cut/Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              id="btn-close-project-dir-modal"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#f1f5f9',
-                color: '#64748b',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fee2e2';
-                e.currentTarget.style.color = '#dc2626';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                e.currentTarget.style.color = '#64748b';
-              }}
-              aria-label="Close modal"
-              title="Close modal"
-            >
-              <X size={18} />
-            </button>
           </div>
+
+          {/* Permanently Locked Top-Right Cut/Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            id="btn-close-project-dir-modal"
+            style={{
+              position: 'absolute',
+              top: '14px',
+              right: '16px',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: '#f1f5f9',
+              color: '#64748b',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.color = '#64748b';
+            }}
+            aria-label="Close modal"
+            title="Close modal"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Modal Body */}

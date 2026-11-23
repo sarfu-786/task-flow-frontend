@@ -216,7 +216,9 @@ export const TaskDetailModal = () => {
         {/* Header */}
         <div
           style={{
+            position: 'relative',
             padding: '20px 24px',
+            paddingRight: '56px',
             borderBottom: '1px solid #f1f5f9',
             display: 'flex',
             alignItems: 'center',
@@ -257,6 +259,10 @@ export const TaskDetailModal = () => {
             type="button"
             onClick={closeViewModal}
             style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              zIndex: 10,
               width: '32px',
               height: '32px',
               borderRadius: '50%',

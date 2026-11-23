@@ -118,7 +118,9 @@ export const SuperiorDetailModal = ({
         {/* Header */}
         <div
           style={{
+            position: 'relative',
             padding: '18px 24px',
+            paddingRight: '56px',
             borderBottom: '1px solid #f1f5f9',
             display: 'flex',
             alignItems: 'center',
@@ -158,6 +160,10 @@ export const SuperiorDetailModal = ({
             onClick={onClose}
             aria-label="Close modal"
             style={{
+              position: 'absolute',
+              top: '14px',
+              right: '16px',
+              zIndex: 10,
               background: '#f1f5f9',
               border: 'none',
               cursor: 'pointer',
