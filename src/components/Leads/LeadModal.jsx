@@ -773,7 +773,7 @@ export const LeadModal = () => {
                   <optgroup label="⭐ Recommended (Sales & BD Team)">
                     {recommendedSalesReps.map(({ user: u, loadLabel }) => (
                       <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                        {u.name || u.username} ({u.department || 'Sales'}) — {loadLabel}
+                        {u.name || u.email || 'User'} ({u.department || 'Sales'}) — {loadLabel}
                       </option>
                     ))}
                   </optgroup>
@@ -781,7 +781,7 @@ export const LeadModal = () => {
                 <optgroup label={recommendedSalesReps.length > 0 ? 'Other Authorized Members' : 'All Authorized Members'}>
                   {otherTeamMembers.map(({ user: u, loadLabel }) => (
                     <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                      {u.name || u.username} ({u.department || u.role || 'Member'}) — {loadLabel}
+                      {u.name || u.email || 'User'} ({u.department || u.role || 'Member'}) — {loadLabel}
                     </option>
                   ))}
                 </optgroup>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   AlertCircle,
   Flame,
@@ -35,15 +35,14 @@ export const ComplaintMetricDetailDialog = ({
 }) => {
   const { allComplaints, fetchComplaints } = useComplaints();
 
-  // Local state for tickets and filters
+  // Local state for tickets, filters and scroll ref
+  const tableContainerRef = useRef(null);
   const [localTickets, setLocalTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [copiedId, setCopiedId] = useState(null);
-  const [page, setPage] = useState(0);
-  const rowsPerPage = 7;
 
   // Lock body scroll and handle ESC key
   useEffect(() => {
@@ -88,11 +87,15 @@ export const ComplaintMetricDetailDialog = ({
         isMounted = false;
       };
     }
-    setPage(0);
     setSearch('');
     setCategoryFilter('all');
     setPriorityFilter('all');
-  }, [open, allComplaints]);
+
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollTop = 0;
+      tableContainerRef.current.scrollLeft = 0;
+    }
+  }, [open, allComplaints, metricType]);
 
   const handleCopy = (ticketNumber, e) => {
     e.stopPropagation();
@@ -298,8 +301,6 @@ export const ComplaintMetricDetailDialog = ({
 
   if (!open) return null;
 
-  const paginatedTickets = filteredTickets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  const totalPages = Math.ceil(filteredTickets.length / rowsPerPage) || 1;
   const IconComponent = config.icon;
 
   return (
@@ -464,7 +465,6 @@ export const ComplaintMetricDetailDialog = ({
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setPage(0);
               }}
               style={{
                 width: '100%',
@@ -505,7 +505,6 @@ export const ComplaintMetricDetailDialog = ({
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
-                setPage(0);
               }}
               style={{
                 padding: '6px 8px',
@@ -536,7 +535,6 @@ export const ComplaintMetricDetailDialog = ({
               value={priorityFilter}
               onChange={(e) => {
                 setPriorityFilter(e.target.value);
-                setPage(0);
               }}
               style={{
                 padding: '6px 8px',
@@ -565,7 +563,6 @@ export const ComplaintMetricDetailDialog = ({
                   setSearch('');
                   setCategoryFilter('all');
                   setPriorityFilter('all');
-                  setPage(0);
                 }}
                 style={{
                   display: 'inline-flex',
@@ -613,34 +610,57 @@ export const ComplaintMetricDetailDialog = ({
               border: '1px solid #e2e8f0',
               overflow: 'hidden',
               boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: '1 1 auto',
+              minHeight: 0,
             }}
           >
-            <div style={{ overflowX: 'auto', maxHeight: '480px' }}>
+            <div
+              ref={tableContainerRef}
+              style={{
+                overflowX: 'auto',
+                overflowY: 'auto',
+                width: '100%',
+                maxHeight: '480px',
+                scrollbarWidth: 'thin',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 2 }}>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', width: '120px' }}>
+                  <tr
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      borderBottom: '1.5px solid #e2e8f0',
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 10,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', width: '120px', backgroundColor: '#f8fafc' }}>
                       Ticket ID
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Customer & Org
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Subject & Category
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Priority
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Status
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Live SLA Countdown
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#f8fafc' }}>
                       Assignee
                     </th>
-                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', width: '130px' }}>
+                    <th style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', width: '130px', backgroundColor: '#f8fafc' }}>
                       Actions
                     </th>
                   </tr>
@@ -657,7 +677,7 @@ export const ComplaintMetricDetailDialog = ({
                         </div>
                       </td>
                     </tr>
-                  ) : paginatedTickets.length === 0 ? (
+                  ) : filteredTickets.length === 0 ? (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b' }}>
                         <AlertCircle size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />
@@ -670,7 +690,7 @@ export const ComplaintMetricDetailDialog = ({
                       </td>
                     </tr>
                   ) : (
-                    paginatedTickets.map((ticket) => {
+                    filteredTickets.map((ticket) => {
                       const slaInfo = formatSlaRemaining(ticket.slaDeadline, ticket.status, ticket.slaStatus, ticket.resolvedAt);
                       const isResolved = ['Resolved', 'Closed'].includes(ticket.status);
 
@@ -941,65 +961,25 @@ export const ComplaintMetricDetailDialog = ({
               </table>
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div
-                style={{
-                  padding: '12px 20px',
-                  borderTop: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  backgroundColor: '#f8fafc',
-                }}
-              >
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                  Showing {page * rowsPerPage + 1} to{' '}
-                  {Math.min((page + 1) * rowsPerPage, filteredTickets.length)} of {filteredTickets.length} tickets
-                </span>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    disabled={page === 0}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      backgroundColor: '#ffffff',
-                      color: '#334155',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: page === 0 ? 'not-allowed' : 'pointer',
-                      opacity: page === 0 ? 0.5 : 1,
-                    }}
-                  >
-                    Previous
-                  </button>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
-                    Page {page + 1} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      backgroundColor: '#ffffff',
-                      color: '#334155',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
-                      opacity: page >= totalPages - 1 ? 0.5 : 1,
-                    }}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Table Footer Status */}
+            <div
+              style={{
+                padding: '10px 18px',
+                borderTop: '1px solid #e2e8f0',
+                backgroundColor: '#f8fafc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                Showing all {filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'} on scroll
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>
+                Specification: {config.badgeText}
+              </span>
+            </div>
           </div>
         </div>
 

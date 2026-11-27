@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   User,
@@ -13,15 +13,23 @@ import {
   EyeOff,
   ArrowLeft,
   Lock,
+  Camera,
+  Trash2,
+  Loader2,
+  Phone,
+  Shield,
 } from 'lucide-react';
 
 const DEPARTMENTS = [
-  'Internet Work',
-  'Documentation',
-  'Social Media',
-  'Backend Work',
-  'Operations',
   'Executive Leadership',
+  'Customer Support & Helpdesk',
+  'Operations & Field Logistics',
+  'Sales & Business Development',
+  'Technical & IT Support (Backend & Systems)',
+  'Accounts & Billing (Finance)',
+  'Documentation & Quality',
+  'Social Media & Marketing',
+  'Internet Work',
   'Design & Media',
 ];
 
@@ -39,10 +47,15 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     name: '',
     username: '',
     email: '',
-    department: 'Internet Work',
+    phone: '',
+    department: 'Executive Leadership',
+    avatar: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  const fileInputRef = useRef(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -60,7 +73,9 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
         name: user.name || '',
         username: user.username || '',
         email: user.email || '',
-        department: user.department || 'Internet Work',
+        phone: user.phone || '',
+        department: isSuperAdmin ? 'Executive Leadership' : (user.department || 'Customer Support & Helpdesk'),
+        avatar: user.avatar || '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -79,7 +94,7 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
     };
-  }, [isOpen, user]);
+  }, [isOpen, user, isSuperAdmin]);
 
   if (!isOpen || !user) return null;
 
@@ -88,9 +103,6 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     const errors = {};
     if (!formData.name.trim()) {
       errors.name = 'Full name is required';
-    }
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
     }
     if (!formData.email.trim()) {
       errors.email = 'Email address is required';
@@ -118,6 +130,93 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     return Object.keys(errors).length === 0;
   };
 
+  // Helper for image compression
+  const processImageFile = (file, callback) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Selected image must be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 280;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        callback(compressedBase64);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload Avatar handler
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    setErrorMessage('');
+
+    processImageFile(file, async (base64Image) => {
+      try {
+        setFormData((prev) => ({ ...prev, avatar: base64Image }));
+        if (updateProfile) {
+          const res = await updateProfile({ avatar: base64Image });
+          if (res && res.success) {
+            setSuccessMessage('Profile photo updated successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+          }
+        }
+      } catch (err) {
+        setErrorMessage(err.message || 'Failed to update profile photo.');
+      } finally {
+        setIsUploadingPhoto(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    });
+  };
+
+  // Remove Avatar handler
+  const handleRemovePhoto = async (e) => {
+    if (e) e.stopPropagation();
+    setIsUploadingPhoto(true);
+    setErrorMessage('');
+    try {
+      setFormData((prev) => ({ ...prev, avatar: '' }));
+      if (updateProfile) {
+        const res = await updateProfile({ avatar: '' });
+        if (res && res.success) {
+          setSuccessMessage('Profile photo removed.');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        }
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to remove profile photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   // Submit profile details update
   const handleSaveProfile = async (e) => {
     if (e) e.preventDefault();
@@ -132,9 +231,11 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
     try {
       const payload = {
         name: formData.name.trim(),
-        username: formData.username.trim(),
+        username: formData.username?.trim() || user.username || (formData.email ? formData.email.split('@')[0] : 'user'),
         email: formData.email.trim().toLowerCase(),
-        department: formData.department,
+        phone: formData.phone?.trim() || '',
+        department: isSuperAdmin ? 'Executive Leadership' : (user?.department || 'Operations'),
+        avatar: formData.avatar !== undefined ? formData.avatar : (user.avatar || ''),
       };
 
       const res = await updateProfile(payload);
@@ -334,25 +435,120 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {/* Clean Initial Letter Avatar */}
-                  <div
-                    style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '50%',
-                      background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
-                      color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
-                      fontSize: '1.4rem',
-                      fontWeight: 800,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                  {/* Avatar / Profile Initials Circle with Camera Upload Option */}
+                  <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleImageUpload}
+                      disabled={isUploadingPhoto}
+                    />
+
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Click to upload profile picture"
+                      style={{
+                        width: '58px',
+                        height: '58px',
+                        borderRadius: '50%',
+                        background: isSuperAdmin ? '#fef3c7' : isManager ? '#eff6ff' : '#ecfdf5',
+                        color: isSuperAdmin ? '#b45309' : isManager ? '#1d4ed8' : '#047857',
+                        fontSize: '1.45rem',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `2px solid ${isSuperAdmin ? '#fde68a' : isManager ? '#bfdbfe' : '#a7f3d0'}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        userSelect: 'none',
+                        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.03)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      {(formData.avatar || user.avatar) ? (
+                        <img
+                          src={formData.avatar || user.avatar}
+                          alt={formData.name || 'Profile'}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        formData.name ? formData.name.charAt(0).toUpperCase() : 'U'
+                      )}
+
+                      {/* Loading state overlay */}
+                      {isUploadingPhoto && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(15, 23, 42, 0.45)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%',
+                          }}
+                        >
+                          <Loader2 size={20} color="#ffffff" style={{ animation: 'spin 1s linear infinite' }} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Camera Badge Icon Button at bottom-right */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      title="Upload Profile Picture"
+                      disabled={isUploadingPhoto}
+                      style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: '#2563eb',
+                        border: '2px solid #ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        padding: 0,
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+                        color: '#ffffff',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#1d4ed8';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#2563eb';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <Camera size={12} strokeWidth={2.2} />
+                    </button>
                   </div>
 
                   {/* Identity & Badges */}
@@ -374,10 +570,76 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                       >
                         {user.role}
                       </span>
+                      <span
+                        style={{
+                          fontSize: '0.70rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          background: '#ecfdf5',
+                          color: '#047857',
+                          border: '1px solid #a7f3d0',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span>
+                        Active
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                      @{formData.username || user.username} • {formData.email || user.email}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.78rem', color: '#64748b', marginTop: '3px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Mail size={12} color="#94a3b8" />
+                        {formData.email || user.email}
+                      </span>
+                      {(formData.phone || user.phone) ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Phone size={12} color="#94a3b8" />
+                          {formData.phone || user.phone}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.73rem' }}>
+                          (No phone added)
+                        </span>
+                      )}
                     </div>
+
+                    {isSuperAdmin ? (
+                      <div style={{ fontSize: '0.73rem', color: '#b45309', marginTop: '3px', fontWeight: 600 }}>
+                        ⭐ Organization Head • Executive Leadership
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.73rem', color: '#475569', marginTop: '3px', fontWeight: 500 }}>
+                        <span style={{ color: '#94a3b8' }}>Whom to Report:</span>{' '}
+                        <strong style={{ color: '#2563eb' }}>{user.reportsToName || 'Executive Leadership (Super Admin)'}</strong>
+                      </div>
+                    )}
+
+                    {(formData.avatar || user.avatar) && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        disabled={isUploadingPhoto}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          fontSize: '0.73rem',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          marginTop: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 600,
+                        }}
+                        title="Remove uploaded photo"
+                      >
+                        <Trash2 size={11} /> Remove photo
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -435,27 +697,35 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     )}
                   </div>
 
-                  {/* Username */}
+                  {/* Contact / Phone Number */}
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px', display: 'block' }}>
-                      Username <span style={{ color: '#ef4444' }}>*</span>
+                      Contact / Phone Number
                     </label>
-                    <input
-                      type="text"
-                      className={`form-control ${fieldErrors.username ? 'is-invalid' : ''}`}
-                      value={formData.username}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, username: e.target.value }));
-                        if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: '' }));
-                      }}
-                      placeholder="e.g. sarfraj"
-                      style={{ width: '100%', padding: '9px 12px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                    />
-                    {fieldErrors.username && (
-                      <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px', display: 'block' }}>
-                        {fieldErrors.username}
-                      </span>
-                    )}
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          color: '#94a3b8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <Phone size={14} />
+                      </div>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        value={formData.phone}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                        placeholder="e.g. +91 98765 43210"
+                        style={{ width: '100%', padding: '9px 12px 9px 34px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                      />
+                    </div>
                   </div>
 
                   {/* Email Address */}
@@ -481,24 +751,40 @@ export const MyProfileModal = ({ isOpen, onClose }) => {
                     )}
                   </div>
 
-                  {/* Department */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px', display: 'block' }}>
-                      Assigned Department
-                    </label>
-                    <select
-                      className="form-control"
-                      value={formData.department}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, department: e.target.value }))}
-                      style={{ width: '100%', padding: '9px 12px', fontSize: '0.875rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                    >
-                      {DEPARTMENTS.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Hierarchy & Reporting Information for Manager / User */}
+                  {!isSuperAdmin && (
+                    <div className="form-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '4px', display: 'block' }}>
+                        Hierarchy Alignment (Reporting Superior)
+                      </label>
+                      <div
+                        style={{
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '0.84rem',
+                          color: '#1e293b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '6px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Shield size={14} color="#2563eb" />
+                          <span>
+                            Whom to Report:{' '}
+                            <strong style={{ color: '#0f172a' }}>{user.reportsToName || 'Executive Leadership (Super Admin)'}</strong>
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', background: '#ffffff', padding: '2px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {isManager ? 'Direct Management Hierarchy' : 'Operational Team Member'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>

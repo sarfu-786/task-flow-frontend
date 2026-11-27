@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Target,
   CheckCircle2,
@@ -43,13 +43,18 @@ export const LeadMetricDetailDialog = ({
   } = useLeads();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const tableContainerRef = useRef(null);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when modal is open and reset scroll position to 0
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
       setSearchTerm('');
+      if (tableContainerRef.current) {
+        tableContainerRef.current.scrollLeft = 0;
+        tableContainerRef.current.scrollTop = 0;
+      }
     } else {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
@@ -58,7 +63,7 @@ export const LeadMetricDetailDialog = ({
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
     };
-  }, [open]);
+  }, [open, metricType]);
 
   const isCallsView = metricType === 'calls' || metricType === 'contacted';
 
@@ -860,6 +865,7 @@ export const LeadMetricDetailDialog = ({
             }}
           >
             <div
+              ref={tableContainerRef}
               style={{
                 overflowX: 'auto',
                 overflowY: 'auto',
@@ -869,8 +875,8 @@ export const LeadMetricDetailDialog = ({
               }}
             >
               {isCallsView ? (
-                /* CALL LOGS TABLE */
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1050px' }}>
+                /* CALL LOGS TABLE - STREAMLINED & RESPONSIVE */
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr
                       style={{
@@ -885,37 +891,28 @@ export const LeadMetricDetailDialog = ({
                       <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', width: '40px', textAlign: 'center' }}>
                         #
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Call Date
-                      </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Call Time
-                      </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '150px' }}>
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '170px' }}>
                         Lead / Prospect
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '135px', whiteSpace: 'nowrap' }}>
+                        Call Date & Time
+                      </th>
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '110px', whiteSpace: 'nowrap' }}>
                         Call Status
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '110px', whiteSpace: 'nowrap' }}>
                         Disposition
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Call Duration
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '125px', whiteSpace: 'nowrap' }}>
+                        Next Follow-Up
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Next Follow-up Date
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '150px' }}>
+                        Remarks & Notes
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Next Follow-up Time
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '115px', whiteSpace: 'nowrap' }}>
+                        Logged By
                       </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', minWidth: '180px' }}>
-                        Remarks
-                      </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                        Performed By
-                      </th>
-                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', minWidth: '85px' }}>
+                      <th style={{ padding: '12px 14px', color: '#64748b', fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', minWidth: '75px', whiteSpace: 'nowrap' }}>
                         Actions
                       </th>
                     </tr>
@@ -923,7 +920,7 @@ export const LeadMetricDetailDialog = ({
                   <tbody>
                     {filteredCalls.length === 0 ? (
                       <tr>
-                        <td colSpan="12" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                        <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                           <PhoneCall size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />
                           <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
                             {searchTerm ? 'No call logs matching your search query.' : config.emptyMessage}
@@ -949,7 +946,7 @@ export const LeadMetricDetailDialog = ({
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           >
-                            {/* Sr. No */}
+                            {/* 1. Sr. No */}
                             <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                               <span
                                 style={{
@@ -968,57 +965,26 @@ export const LeadMetricDetailDialog = ({
                               </span>
                             </td>
 
-                            {/* Call Date */}
-                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <Calendar size={13} color="#d97706" />
-                                <span>{formatDate(call.date)}</span>
-                              </div>
-                            </td>
-
-                            {/* Call Time */}
-                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <Clock3 size={12} color="#64748b" />
-                                  {call.time || '—'}
-                                </span>
-                                {call.callType && (
-                                  <span
-                                    style={{
-                                      fontSize: '0.66rem',
-                                      fontWeight: 700,
-                                      padding: '1px 5px',
-                                      borderRadius: '4px',
-                                      backgroundColor: call.callType === 'Incoming' ? '#ecfdf5' : '#eff6ff',
-                                      color: call.callType === 'Incoming' ? '#059669' : '#2563eb',
-                                      border: `1px solid ${call.callType === 'Incoming' ? '#a7f3d0' : '#bfdbfe'}`,
-                                    }}
-                                  >
-                                    {call.callType}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Lead / Prospect */}
+                            {/* 2. Lead / Prospect */}
                             <td style={{ padding: '12px 14px' }}>
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span
-                                    style={{
-                                      fontSize: '0.7rem',
-                                      fontWeight: 800,
-                                      padding: '1px 5px',
-                                      borderRadius: '4px',
-                                      backgroundColor: '#eff6ff',
-                                      color: '#2563eb',
-                                      border: '1px solid #bfdbfe',
-                                    }}
-                                  >
-                                    {call.leadId}
-                                  </span>
-                                  <strong style={{ fontSize: '0.84rem', color: '#0f172a' }}>{call.leadName}</strong>
+                                  {call.leadId && (
+                                    <span
+                                      style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#eff6ff',
+                                        color: '#2563eb',
+                                        border: '1px solid #bfdbfe',
+                                      }}
+                                    >
+                                      {call.leadId}
+                                    </span>
+                                  )}
+                                  <strong style={{ fontSize: '0.84rem', color: '#0f172a' }}>{call.leadName || 'Unnamed Lead'}</strong>
                                 </div>
                                 {call.leadCompany && (
                                   <div style={{ fontSize: '0.74rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -1035,7 +1001,52 @@ export const LeadMetricDetailDialog = ({
                               </div>
                             </td>
 
-                            {/* Call Status */}
+                            {/* 3. Call Date & Time + Duration */}
+                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <Calendar size={13} color="#d97706" />
+                                <span>{formatDate(call.date)}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                                {call.time && (
+                                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                    <Clock3 size={11} color="#94a3b8" />
+                                    {call.time}
+                                  </span>
+                                )}
+                                {call.callType && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.64rem',
+                                      fontWeight: 700,
+                                      padding: '0px 4px',
+                                      borderRadius: '3px',
+                                      backgroundColor: call.callType === 'Incoming' ? '#ecfdf5' : '#eff6ff',
+                                      color: call.callType === 'Incoming' ? '#059669' : '#2563eb',
+                                      border: `1px solid ${call.callType === 'Incoming' ? '#a7f3d0' : '#bfdbfe'}`,
+                                    }}
+                                  >
+                                    {call.callType}
+                                  </span>
+                                )}
+                                {call.duration && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.66rem',
+                                      fontWeight: 600,
+                                      color: '#475569',
+                                      backgroundColor: '#f1f5f9',
+                                      padding: '1px 5px',
+                                      borderRadius: '3px',
+                                    }}
+                                  >
+                                    {call.duration}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 4. Call Status */}
                             <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <span
                                 style={{
@@ -1063,7 +1074,7 @@ export const LeadMetricDetailDialog = ({
                               </span>
                             </td>
 
-                            {/* Disposition */}
+                            {/* 5. Disposition */}
                             <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <span
                                 style={{
@@ -1081,74 +1092,47 @@ export const LeadMetricDetailDialog = ({
                               </span>
                             </td>
 
-                            {/* Call Duration */}
+                            {/* 6. Next Follow-Up */}
                             <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                              <span
-                                style={{
-                                  fontSize: '0.78rem',
-                                  fontWeight: call.duration ? 700 : 400,
-                                  color: call.duration ? '#0f172a' : '#94a3b8',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  backgroundColor: call.duration ? '#f8fafc' : 'transparent',
-                                  padding: call.duration ? '2px 6px' : '0',
-                                  borderRadius: '4px',
-                                  border: call.duration ? '1px solid #e2e8f0' : 'none',
-                                }}
-                              >
-                                {call.duration || '—'}
-                              </span>
-                            </td>
-
-                            {/* Next Follow-up Date */}
-                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                              <span
-                                style={{
-                                  fontSize: '0.78rem',
-                                  color: call.nextFollowUpDate ? '#1e293b' : '#94a3b8',
-                                  fontWeight: call.nextFollowUpDate ? 600 : 400,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                }}
-                              >
-                                {call.nextFollowUpDate ? (
-                                  <>
+                              {call.nextFollowUpDate ? (
+                                <div>
+                                  <div
+                                    style={{
+                                      fontSize: '0.78rem',
+                                      color: '#0f172a',
+                                      fontWeight: 700,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                  >
                                     <Calendar size={12} color="#059669" />
-                                    {formatDate(call.nextFollowUpDate)}
-                                  </>
-                                ) : (
-                                  '—'
-                                )}
-                              </span>
+                                    <span>{formatDate(call.nextFollowUpDate)}</span>
+                                  </div>
+                                  {call.nextFollowUpTime && (
+                                    <div
+                                      style={{
+                                        fontSize: '0.72rem',
+                                        color: '#64748b',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        marginTop: '1px',
+                                      }}
+                                    >
+                                      <Clock3 size={10} color="#94a3b8" />
+                                      <span>{call.nextFollowUpTime}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>—</span>
+                              )}
                             </td>
 
-                            {/* Next Follow-up Time */}
-                            <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                              <span
-                                style={{
-                                  fontSize: '0.78rem',
-                                  color: call.nextFollowUpTime ? '#334155' : '#94a3b8',
-                                  fontWeight: call.nextFollowUpTime ? 600 : 400,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                }}
-                              >
-                                {call.nextFollowUpTime ? (
-                                  <>
-                                    <Clock3 size={11} color="#64748b" />
-                                    {call.nextFollowUpTime}
-                                  </>
-                                ) : (
-                                  '—'
-                                )}
-                              </span>
-                            </td>
-
-                            {/* Remarks */}
-                            <td style={{ padding: '12px 14px', minWidth: '180px', maxWidth: '260px' }}>
+                            {/* 7. Remarks & Notes */}
+                            <td style={{ padding: '12px 14px', minWidth: '150px', maxWidth: '240px' }}>
                               <div style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.35 }}>
                                 {call.leadResponse && (
                                   <div style={{ fontStyle: 'italic', color: '#0f172a', marginBottom: '2px', fontWeight: 500 }}>
@@ -1171,7 +1155,7 @@ export const LeadMetricDetailDialog = ({
                               </div>
                             </td>
 
-                            {/* Performed By */}
+                            {/* 8. Logged By */}
                             <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <div
@@ -1197,7 +1181,7 @@ export const LeadMetricDetailDialog = ({
                               </div>
                             </td>
 
-                            {/* Actions */}
+                            {/* 9. Actions */}
                             <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                 <button
@@ -1208,21 +1192,29 @@ export const LeadMetricDetailDialog = ({
                                   }}
                                   title="View Lead Details & Full History"
                                   style={{
-                                    padding: '5px 8px',
+                                    width: '28px',
+                                    height: '28px',
+                                    padding: 0,
                                     borderRadius: '6px',
                                     border: '1px solid #e2e8f0',
                                     backgroundColor: '#ffffff',
                                     color: '#475569',
                                     cursor: 'pointer',
-                                    display: 'flex',
+                                    display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px',
-                                    fontSize: '0.72rem',
-                                    fontWeight: 600,
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                    e.currentTarget.style.color = '#1e293b';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#ffffff';
+                                    e.currentTarget.style.color = '#475569';
                                   }}
                                 >
-                                  <Eye size={12} />
-                                  <span>View</span>
+                                  <Eye size={14} />
                                 </button>
 
                                 <button
@@ -1233,21 +1225,27 @@ export const LeadMetricDetailDialog = ({
                                   }}
                                   title="Log Follow-up Call"
                                   style={{
-                                    padding: '5px 8px',
+                                    width: '28px',
+                                    height: '28px',
+                                    padding: 0,
                                     borderRadius: '6px',
-                                    border: 'none',
+                                    border: '1px solid #fde68a',
                                     backgroundColor: '#fffbeb',
                                     color: '#d97706',
                                     cursor: 'pointer',
-                                    display: 'flex',
+                                    display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px',
-                                    fontSize: '0.72rem',
-                                    fontWeight: 700,
+                                    justifyContent: 'center',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fef3c7';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fffbeb';
                                   }}
                                 >
-                                  <PhoneCall size={12} />
-                                  <span>Call</span>
+                                  <PhoneCall size={13} />
                                 </button>
                               </div>
                             </td>

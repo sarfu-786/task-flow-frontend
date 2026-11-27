@@ -338,7 +338,7 @@ export const EnhancedLeadTable = () => {
               .filter((u) => u && u.status !== 'Rejected' && u.status !== 'Pending')
               .map((u) => (
                 <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                  {u.name || u.username}
+                  {u.name || u.email || 'User'}
                 </option>
               ))}
           </select>

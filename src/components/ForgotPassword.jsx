@@ -48,7 +48,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
     e.preventDefault();
     setErrorMsg('');
     if (!usernameOrEmail.trim()) {
-      setFieldErrors({ usernameOrEmail: 'Username or email address is required' });
+      setFieldErrors({ usernameOrEmail: 'Email address is required' });
       return;
     }
     setFieldErrors({});
@@ -67,7 +67,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
       }
     } catch (err) {
       setIsLoading(false);
-      setErrorMsg(err.message || 'Failed to request OTP. Please verify your username/email.');
+      setErrorMsg(err.message || 'Failed to request OTP. Please verify your email address.');
     }
   };
 
@@ -191,7 +191,7 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
           </div>
           <h1 className="login-title" style={{ fontSize: '1.6rem' }}>Reset Password</h1>
           <p className="login-subtitle">
-            {step === 'email' && 'Enter your username or email address to receive a secure reset OTP'}
+            {step === 'email' && 'Enter your registered email address to receive a secure reset OTP'}
             {step === 'otp' && 'Enter the 6-digit OTP code to verify your account identity'}
             {step === 'reset' && 'Create and confirm your new secure account password'}
             {step === 'success' && 'Your password has been reset successfully!'}
@@ -334,12 +334,12 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
           </div>
         )}
 
-        {/* STEP 1: Enter Email / Username */}
+        {/* STEP 1: Enter Email */}
         {step === 'email' && (
           <form onSubmit={handleRequestOtp} noValidate>
             <div className="form-group" style={{ marginBottom: '22px' }}>
               <label className="form-label" htmlFor="forgot-email">
-                Username or Email Address <span className="required">*</span>
+                Email Address <span className="required">*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <div
@@ -357,17 +357,17 @@ export const ForgotPassword = ({ onBackToLogin, onSuccessReset }) => {
                 </div>
                 <input
                   id="forgot-email"
-                  type="text"
+                  type="email"
                   className="form-control"
                   style={{ paddingLeft: '38px' }}
-                  placeholder="Enter your registered username or email"
+                  placeholder="Enter your registered email address"
                   value={usernameOrEmail}
                   onChange={(e) => {
                     setUsernameOrEmail(e.target.value);
                     if (fieldErrors.usernameOrEmail) setFieldErrors((prev) => ({ ...prev, usernameOrEmail: '' }));
                   }}
                   disabled={isLoading}
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
               {fieldErrors.usernameOrEmail && (

@@ -27,6 +27,7 @@ import {
   EyeOff,
   Lock,
   AtSign,
+  Phone,
 } from 'lucide-react';
 
 export const UserProfile = () => {
@@ -61,6 +62,7 @@ export const UserProfile = () => {
     name: '',
     username: '',
     email: '',
+    phone: '',
     department: 'Internet Work',
     avatar: '',
     newPassword: '',
@@ -134,6 +136,7 @@ export const UserProfile = () => {
       name: user?.name || '',
       username: user?.username || '',
       email: user?.email || '',
+      phone: user?.phone || '',
       department: user?.department || 'Internet Work',
       avatar: user?.avatar || '',
       newPassword: '',
@@ -251,12 +254,6 @@ export const UserProfile = () => {
       errs.name = 'Full name is required';
     }
 
-    if (!formData.username || !formData.username.trim()) {
-      errs.username = 'Username is required';
-    } else if (formData.username.trim().length < 2) {
-      errs.username = 'Username must be at least 2 characters long';
-    }
-
     if (!formData.email || !formData.email.trim()) {
       errs.email = 'Email address is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email.trim())) {
@@ -287,9 +284,10 @@ export const UserProfile = () => {
     try {
       const payload = {
         name: formData.name.trim(),
-        username: formData.username.trim().toLowerCase(),
+        username: formData.username && formData.username.trim() ? formData.username.trim().toLowerCase() : (user?.username || (formData.email ? formData.email.split('@')[0] : 'user')),
         email: formData.email.trim().toLowerCase(),
-        department: formData.department.trim(),
+        phone: formData.phone?.trim() || '',
+        department: user?.department || 'Operations',
         avatar: formData.avatar,
       };
 
@@ -549,7 +547,7 @@ export const UserProfile = () => {
                 </button>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 12px 0' }}>
-                @{user?.username} • {user?.email}
+                {user?.email}
               </p>
 
               {/* Profile Image Action Buttons */}
@@ -677,16 +675,6 @@ export const UserProfile = () => {
 
             <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <AtSign size={13} />
-                Username
-              </span>
-              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px', display: 'block' }}>
-                @{user?.username}
-              </span>
-            </div>
-
-            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Mail size={13} />
                 Email Address
               </span>
@@ -697,11 +685,31 @@ export const UserProfile = () => {
 
             <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Phone size={13} />
+                Contact Number
+              </span>
+              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px', display: 'block' }}>
+                {user?.phone || 'Not provided'}
+              </span>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Building size={13} />
                 Department
               </span>
               <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '4px', display: 'block' }}>
                 {user?.department || 'Internet Work'}
+              </span>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={13} />
+                Whom to Report
+              </span>
+              <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2563eb', marginTop: '4px', display: 'block' }}>
+                {user?.reportsToName || 'Executive Leadership (Super Admin)'}
               </span>
             </div>
 
@@ -918,30 +926,6 @@ export const UserProfile = () => {
                   {formErrors.name && <span className="form-error-msg" style={{ color: '#dc2626', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>{formErrors.name}</span>}
                 </div>
 
-                {/* Username */}
-                <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label className="form-label" htmlFor="edit-username">
-                    Username <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>@</span>
-                    <input
-                      id="edit-username"
-                      type="text"
-                      className={`form-control ${formErrors.username ? 'is-invalid' : ''}`}
-                      style={{ paddingLeft: '30px' }}
-                      placeholder="e.g. sarfaraz01"
-                      value={formData.username}
-                      onChange={(e) => {
-                        setFormData({ ...formData, username: e.target.value });
-                        if (formErrors.username) setFormErrors({ ...formErrors, username: '' });
-                      }}
-                      required
-                    />
-                  </div>
-                  {formErrors.username && <span className="form-error-msg" style={{ color: '#dc2626', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>{formErrors.username}</span>}
-                </div>
-
                 {/* Email Address */}
                 <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="form-label" htmlFor="edit-email">
@@ -962,27 +946,19 @@ export const UserProfile = () => {
                   {formErrors.email && <span className="form-error-msg" style={{ color: '#dc2626', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>{formErrors.email}</span>}
                 </div>
 
-                {/* Department */}
+                {/* Contact / Phone Number */}
                 <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label className="form-label" htmlFor="edit-department">
-                    Department
+                  <label className="form-label" htmlFor="edit-phone">
+                    Contact / Phone Number
                   </label>
-                  <select
-                    id="edit-department"
-                    className="form-control select-filter"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  >
-                    <option value="Internet Work">Internet Work</option>
-                    <option value="Documentation">Documentation</option>
-                    <option value="Backend">Backend</option>
-                    <option value="Social Media">Social Media</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Human Resources">Human Resources</option>
-                    <option value="Finance">Finance</option>
-                  </select>
+                  <input
+                    id="edit-phone"
+                    type="tel"
+                    className="form-control"
+                    placeholder="e.g. +91 98765 43210"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
                 </div>
 
                 {/* Collapsible Change Password Section */}

@@ -25,11 +25,11 @@ import {
 const getManagerName = (p) => {
   if (p.managerName) return p.managerName;
   if (p.projectManager) {
-    if (typeof p.projectManager === 'object') return p.projectManager.name || p.projectManager.username || 'Unassigned';
+    if (typeof p.projectManager === 'object') return p.projectManager.name || p.projectManager.email || 'Unassigned';
     return String(p.projectManager);
   }
   if (p.manager) {
-    if (typeof p.manager === 'object') return p.manager.name || p.manager.username || 'Unassigned';
+    if (typeof p.manager === 'object') return p.manager.name || p.manager.email || 'Unassigned';
     return String(p.manager);
   }
   return 'Unassigned';

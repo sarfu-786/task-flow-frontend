@@ -7,12 +7,10 @@ import {
   FolderKanban,
   Save,
   AlertCircle,
-  Sparkles,
   Layers,
   Calendar,
   IndianRupee,
   Users,
-  Copy,
   Plus,
   Trash2,
   CheckCircle2,
@@ -23,7 +21,6 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
   const {
     createProject,
     updateProject,
-    templates,
     isCreateModalOpen,
     setIsCreateModalOpen,
     isEditModalOpen,
@@ -254,35 +251,6 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
 
   if (!isOpen) return null;
 
-  const handleApplyTemplate = (tmpl) => {
-    if (!tmpl) return;
-    setFormData((prev) => ({
-      ...prev,
-      budget: tmpl.defaultBudget || prev.budget,
-      budgetedHours: tmpl.defaultEstimatedHours || prev.budgetedHours,
-      phases: (tmpl.phases || []).map((p, idx) => ({
-        name: p.name,
-        status: idx === 0 ? 'In Progress' : 'Upcoming',
-        order: p.order || idx + 1,
-      })),
-      milestones: (tmpl.milestones || []).map((m) => ({
-        title: m.title || m.name || 'Project Milestone',
-        status: 'Upcoming',
-        isCompleted: false,
-        progress: 0,
-        phaseName: m.phaseName || m.phase || '',
-      })),
-      tasks: (tmpl.tasks || []).map((t) => ({
-        title: t.title || t.name || 'Project Task',
-        phaseName: t.phaseName || t.phase || '',
-        estimatedHours: t.estimatedHours || 8,
-        priority: t.priority || 'Medium',
-        status: 'To Do',
-      })),
-    }));
-    setActiveTab('basic');
-  };
-
   const handleAddTeamMember = () => {
     if (!newMemberName.trim()) return;
     setFormData((prev) => ({
@@ -498,7 +466,6 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
             { id: 'timeline', label: 'Timeline & Phases', icon: Calendar },
             { id: 'financial', label: 'Financial & Budget', icon: IndianRupee },
             { id: 'team', label: 'Team & Roles', icon: Users },
-            ...(!isEdit ? [{ id: 'template', label: 'Templates', icon: Sparkles }] : []),
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1266,58 +1233,6 @@ export const ProjectModal = ({ isOpen: propIsOpen, onClose: propOnClose, project
                     <span>Add</span>
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: TEMPLATES */}
-          {activeTab === 'template' && !isEdit && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-                Choose a pre-configured template to bootstrap delivery phases, milestone gates, and task dependencies:
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-                {(templates || []).map((tmpl, tmplIdx) => (
-                  <div
-                    key={tmpl.templateId || tmpl.id || tmpl._id || `tpl-${tmplIdx}`}
-                    onClick={() => handleApplyTemplate(tmpl)}
-                    style={{
-                      padding: '16px',
-                      borderRadius: '14px',
-                      border: '1.5px solid #e2e8f0',
-                      backgroundColor: '#ffffff',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#2563eb';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.08)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>
-                        {tmpl.name}
-                      </h4>
-                      <Copy size={15} style={{ color: '#2563eb' }} />
-                    </div>
-                    <p style={{ margin: '6px 0 10px 0', fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>
-                      {tmpl.description}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>
-                      <span>{tmpl.phases?.length || 0} Phases</span>
-                      <span>•</span>
-                      <span>{tmpl.milestones?.length || 0} Milestones</span>
-                      <span>•</span>
-                      <span>{tmpl.tasks?.length || 0} Tasks</span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           )}

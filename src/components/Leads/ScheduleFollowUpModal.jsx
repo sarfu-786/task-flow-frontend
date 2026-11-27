@@ -191,7 +191,7 @@ export const ScheduleFollowUpModal = () => {
               >
                 {activeUsers.map((u) => (
                   <option key={u._id || u.id} value={u.name || u.username}>
-                    {u.name || u.username} ({u.role || 'User'})
+                    {u.name || u.email || 'User'} ({u.role || 'User'})
                   </option>
                 ))}
               </select>

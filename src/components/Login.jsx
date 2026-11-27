@@ -35,6 +35,13 @@ export const Login = ({
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('taskflow_remember_email'));
+    } catch {
+      return false;
+    }
+  });
 
   // Validation & Error Handling
   const [fieldErrors, setFieldErrors] = useState({});
@@ -51,6 +58,15 @@ export const Login = ({
   useEffect(() => {
     if (initialEmail) {
       setEmail(initialEmail);
+    } else {
+      try {
+        const savedEmail = localStorage.getItem('taskflow_remember_email');
+        if (savedEmail) {
+          setEmail(savedEmail);
+        }
+      } catch (err) {
+        console.warn('Could not read remembered email:', err);
+      }
     }
     if (initialSuccessMsg) {
       setSuccessBanner(initialSuccessMsg);
@@ -93,7 +109,17 @@ export const Login = ({
     const res = await login(email.trim(), password);
     setIsLoading(false);
 
-    if (!res.success) {
+    if (res.success) {
+      try {
+        if (rememberMe) {
+          localStorage.setItem('taskflow_remember_email', email.trim());
+        } else {
+          localStorage.removeItem('taskflow_remember_email');
+        }
+      } catch (err) {
+        console.warn('Could not persist remembered email:', err);
+      }
+    } else {
       if (res.status === 403 || res.approvalStatus) {
         setApprovalWarning(res.message);
       } else {
@@ -410,7 +436,7 @@ export const Login = ({
                     height: '46px',
                     paddingLeft: '44px',
                     paddingRight: '14px',
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                     border: `1.5px solid ${fieldErrors.email ? '#ef4444' : '#e2e8f0'}`,
                     background: '#ffffff',
                     fontSize: '0.92rem',
@@ -488,7 +514,7 @@ export const Login = ({
                     height: '46px',
                     paddingLeft: '44px',
                     paddingRight: '44px',
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                     border: `1.5px solid ${fieldErrors.password ? '#ef4444' : '#e2e8f0'}`,
                     background: '#ffffff',
                     fontSize: '0.92rem',
@@ -540,8 +566,43 @@ export const Login = ({
               )}
             </div>
 
-            {/* Forgot Password Link */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            {/* Remember Me Checkbox & Forgot Password Link */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '18px',
+                marginTop: '4px',
+              }}
+            >
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.82rem',
+                  color: '#475569',
+                  userSelect: 'none',
+                  fontWeight: 500,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '4px',
+                    accentColor: '#1d68f7',
+                    cursor: 'pointer',
+                  }}
+                />
+                <span>Remember me</span>
+              </label>
+
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
@@ -549,7 +610,7 @@ export const Login = ({
                   background: 'transparent',
                   border: 'none',
                   color: '#1d68f7',
-                  fontSize: '0.84rem',
+                  fontSize: '0.82rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   padding: 0,
@@ -569,7 +630,7 @@ export const Login = ({
               style={{
                 width: '100%',
                 height: '46px',
-                borderRadius: '999px',
+                borderRadius: '12px',
                 background: 'linear-gradient(135deg, #1d68f7, #1d4ed8)',
                 border: 'none',
                 color: '#ffffff',
@@ -620,35 +681,13 @@ export const Login = ({
             </button>
           </form>
 
-          {/* OR Divider */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              margin: '14px 0',
-            }}
-          >
-            <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-            <span
-              style={{
-                padding: '0 12px',
-                color: '#94a3b8',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                letterSpacing: '0.6px',
-              }}
-            >
-              OR
-            </span>
-            <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-          </div>
-
           {/* Register Link */}
           <div
             style={{
               textAlign: 'center',
               fontSize: '0.84rem',
               color: '#475569',
+              marginTop: '18px',
               marginBottom: '14px',
             }}
           >
@@ -902,25 +941,45 @@ export const Login = ({
               width: '100%',
               maxWidth: '660px',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'flex-end',
               justifyContent: 'flex-end',
               marginTop: '4px',
               transform: 'translate(3%, 3%)',
             }}
           >
-            <img
-              src={laptopHeroImg}
-              alt="TaskFlow Enterprise Devices"
-              style={{
-                width: '100%',
-                height: 'auto',
-                maxHeight: '315px',
-                objectFit: 'contain',
-                display: 'block',
-                userSelect: 'none',
-                pointerEvents: 'none',
-              }}
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <img
+                src={laptopHeroImg}
+                alt="TaskFlow Enterprise Devices"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '315px',
+                  objectFit: 'contain',
+                  display: 'block',
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                  WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+                  maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+                  filter: 'drop-shadow(0 14px 28px rgba(15, 23, 42, 0.12))',
+                }}
+              />
+              {/* Subtle ground contact shadow so devices rest naturally on the surface */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '6px',
+                  left: '12%',
+                  right: '6%',
+                  height: '22px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, rgba(15, 23, 42, 0.22) 0%, rgba(15, 23, 42, 0) 70%)',
+                  pointerEvents: 'none',
+                  zIndex: -1,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

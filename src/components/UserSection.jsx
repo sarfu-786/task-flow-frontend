@@ -33,6 +33,7 @@ import {
   Upload,
   Camera,
   Crown,
+  Phone,
   ListTodo,
   Layers,
   Sparkles,
@@ -247,6 +248,7 @@ export const UserSection = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     username: '',
     role: 'User',
     department: 'Customer Support & Helpdesk',
@@ -266,6 +268,7 @@ export const UserSection = () => {
       setFormData({
         name: selectedUser.name || '',
         email: selectedUser.email || '',
+        phone: selectedUser.phone || '',
         username: selectedUser.username || '',
         role: selectedUser.role || 'User',
         department: selectedUser.department || 'Customer Support & Helpdesk',
@@ -279,6 +282,7 @@ export const UserSection = () => {
       setFormData({
         name: '',
         email: '',
+        phone: '',
         username: '',
         role: 'User',
         department: 'Customer Support & Helpdesk',
@@ -301,7 +305,6 @@ export const UserSection = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errs.email = 'Please provide a valid email';
     }
-    if (!formData.username.trim()) errs.username = 'Username is required';
     if (modalMode === 'create' && !formData.password.trim()) {
       errs.password = 'Initial password is required';
     }
@@ -316,14 +319,18 @@ export const UserSection = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    const payload = {
+      ...formData,
+      username: formData.username && formData.username.trim() ? formData.username.trim() : (formData.email ? formData.email.split('@')[0] : 'user'),
+    };
     let res;
     if (modalMode === 'edit' && selectedUser) {
-      res = await updateUser(selectedUser._id, formData);
+      res = await updateUser(selectedUser._id, payload);
       if (res.success && res.user && currentUser && (currentUser._id === selectedUser._id || currentUser.id === selectedUser._id)) {
         updateUserProfile(res.user);
       }
     } else {
-      res = await createUser(formData);
+      res = await createUser(payload);
     }
     setIsSubmitting(false);
 
@@ -828,20 +835,19 @@ export const UserSection = () => {
                   {formErrors.email && <span className="form-error-msg">{formErrors.email}</span>}
                 </div>
 
-                {/* Username */}
+                {/* Contact / Phone Number */}
                 <div className="form-group">
-                  <label className="form-label" htmlFor="emp-username">
-                    Username <span className="required">*</span>
+                  <label className="form-label" htmlFor="emp-phone">
+                    Contact / Phone Number
                   </label>
                   <input
-                    id="emp-username"
-                    type="text"
+                    id="emp-phone"
+                    type="tel"
                     className="form-control"
-                    placeholder="e.g. sarah_j"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    placeholder="e.g. +91 98765 43210"
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
-                  {formErrors.username && <span className="form-error-msg">{formErrors.username}</span>}
                 </div>
 
                 {/* Role & Department Row */}

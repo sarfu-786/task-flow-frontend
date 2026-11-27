@@ -128,6 +128,7 @@ export const EmployeeDrilldownModal = ({
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     username: '',
     role: 'User',
     department: 'Operations',
@@ -165,6 +166,7 @@ export const EmployeeDrilldownModal = ({
     setEditFormData({
       name: member.name || '',
       email: member.email || '',
+      phone: member.phone || '',
       username: member.username || '',
       role: member.role || (Array.isArray(member.roles) && member.roles[0]) || 'User',
       department: member.department || 'Operations',
@@ -180,7 +182,6 @@ export const EmployeeDrilldownModal = ({
     const errors = {};
     if (!editFormData.name.trim()) errors.name = 'Name is required';
     if (!editFormData.email.trim()) errors.email = 'Email is required';
-    if (!editFormData.username.trim()) errors.username = 'Username is required';
     if (editFormData.password && editFormData.password.length < 4) {
       errors.password = 'Password must be at least 4 characters';
     }
@@ -193,7 +194,8 @@ export const EmployeeDrilldownModal = ({
     const payload = {
       name: editFormData.name.trim(),
       email: editFormData.email.trim(),
-      username: editFormData.username.trim(),
+      phone: (editFormData.phone || '').trim(),
+      username: editFormData.username && editFormData.username.trim() ? editFormData.username.trim() : (editingUser?.username || editFormData.email.split('@')[0]),
       role: editFormData.role,
       roles: [editFormData.role],
       department: editFormData.department,
@@ -648,14 +650,14 @@ export const EmployeeDrilldownModal = ({
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Username <span style={{ color: '#ef4444' }}>*</span></label>
+                    <label className="form-label">Contact / Phone Number</label>
                     <input
-                      type="text"
+                      type="tel"
                       className="form-control"
-                      value={editFormData.username}
-                      onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
+                      placeholder="e.g. +91 98765 43210"
+                      value={editFormData.phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
                     />
-                    {editFormErrors.username && <span className="form-error-msg">{editFormErrors.username}</span>}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

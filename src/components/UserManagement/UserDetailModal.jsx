@@ -16,6 +16,7 @@ import {
   Users,
   Target,
   AlertCircle,
+  Phone,
 } from 'lucide-react';
 import { useTasks } from '../../context/TaskContext';
 
@@ -261,7 +262,7 @@ export const UserDetailModal = ({
           </div>
 
           {/* Quick Info Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
             <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Mail size={12} /> Email Address
@@ -273,10 +274,19 @@ export const UserDetailModal = ({
 
             <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Phone size={12} /> Contact Number
+              </span>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a', display: 'block', marginTop: '4px' }}>
+                {user.phone || 'Not Provided'}
+              </span>
+            </div>
+
+            <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Building size={12} /> Department
               </span>
               <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a', display: 'block', marginTop: '4px' }}>
-                {user.department || 'Operations'}
+                {user.department || (isSuperAdmin ? 'Executive Leadership' : 'Operations')}
               </span>
             </div>
 

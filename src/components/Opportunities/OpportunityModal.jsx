@@ -352,310 +352,310 @@ export const OpportunityModal = () => {
               </div>
             )}
             <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {/* Opportunity Name */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <TrendingUp size={14} color="#059669" />
-                <span>Opportunity / Deal Name <span style={{ color: '#ef4444' }}>*</span></span>
-              </label>
-              <input
-                type="text"
-                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                placeholder="e.g. Acme Enterprise Rollout"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                autoFocus
-              />
-              {errors.name && <span className="form-error-msg">{errors.name}</span>}
-            </div>
-
-            {/* Company Name */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Building size={14} color="#059669" />
-                <span>Company Name</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Acme Corp"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              />
-            </div>
-
-            {/* Contact Person */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <UserIcon size={14} color="#059669" />
-                <span>Contact Person</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Rahul Sharma"
-                value={formData.contactPerson}
-                onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-              />
-            </div>
-
-            {/* Phone */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Phone size={14} color="#059669" />
-                <span>Phone Number</span>
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. +91 98765 43210"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-
-            {/* Email */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Mail size={14} color="#059669" />
-                <span>Email Address</span>
-              </label>
-              <input
-                type="email"
-                className="form-control"
-                placeholder="e.g. rahul@acme.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-
-            {/* Lead Source */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Share2 size={14} color="#059669" />
-                <span>Lead Source</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.leadSource}
-                onChange={(e) => setFormData({ ...formData, leadSource: e.target.value })}
-              >
-                <option value="Website">Website</option>
-                <option value="Justdial">Justdial</option>
-                <option value="Instamart">Instamart</option>
-                <option value="IndiaMART">IndiaMART</option>
-                <option value="TradeIndia">TradeIndia</option>
-                <option value="Google Ads">Google Ads</option>
-                <option value="Meta Ads">Meta Ads</option>
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Referral">Referral</option>
-                <option value="Inbound Call">Inbound Call</option>
-                <option value="Outbound Call">Outbound Call</option>
-                <option value="Organic Search">Organic Search</option>
-                <option value="Event/Exhibition">Event/Exhibition</option>
-                <option value="Walk-In">Walk-In</option>
-                <option value="Partner / Affiliate">Partner / Affiliate</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            {/* Related Lead */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Link size={14} color="#059669" />
-                <span>Linked Lead Record</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.relatedLead || ''}
-                onChange={handleLeadSelect}
-              >
-                <option value="">-- Optional / None --</option>
-                {leads.map((l) => (
-                  <option key={l._id} value={l._id}>
-                    {l.name} {l.company ? `(${l.company})` : ''} [{l.status}]
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Deal Amount */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <DollarSign size={14} color="#059669" />
-                <span>Deal Value / Amount (₹)</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
-                placeholder="e.g. 450000"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              />
-              {errors.amount && <span className="form-error-msg">{errors.amount}</span>}
-            </div>
-
-            {/* Stage */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Flag size={14} color="#059669" />
-                <span>Pipeline Stage</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.stage}
-                onChange={(e) => handleStageChange(e.target.value)}
-              >
-                {STAGES.map((s) => (
-                  <option key={s} value={s}>
-                    {s} ({STAGE_DEFAULT_PROBABILITIES[s] !== undefined ? `${STAGE_DEFAULT_PROBABILITIES[s]}%` : ''})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Probability */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Percent size={14} color="#059669" />
-                <span>Win Probability (%)</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                className="form-control"
-                value={formData.probability}
-                onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
-              />
-            </div>
-
-            {/* Expected Close Date */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Calendar size={14} color="#059669" />
-                <span>Expected Close Date</span>
-              </label>
-              <input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                className={`form-control ${errors.expectedCloseDate ? 'is-invalid' : ''}`}
-                value={formData.expectedCloseDate}
-                onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
-              />
-              {errors.expectedCloseDate && <span className="form-error-msg">{errors.expectedCloseDate}</span>}
-            </div>
-
-            {/* Priority */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <Flag size={14} color="#059669" />
-                <span>Priority</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-
-            {/* Assigned To */}
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <UserIcon size={14} color="#059669" />
-                <span>Assigned Deal Owner</span>
-              </label>
-              <select
-                className="form-control select-filter"
-                value={formData.assignedTo}
-                onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              >
-                {assignableUsers.map((u) => (
-                  <option key={u._id || u.id || u.email} value={u.name || u.username}>
-                    {u.name || u.username} ({u.role || 'Member'})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Conditional Lost Reason Section if stage is Lost */}
-            {isLostStage && (
-              <div
-                style={{
-                  gridColumn: 'span 2',
-                  padding: '14px 16px',
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 700, fontSize: '0.9rem' }}>
-                  <AlertTriangle size={16} />
-                  <span>Lost Deal Details & Reason</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
-                      Primary Lost Reason <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <select
-                      className="form-control"
-                      value={formData.lostReason}
-                      onChange={(e) => setFormData({ ...formData, lostReason: e.target.value })}
-                      style={{ background: '#fff', borderColor: '#fca5a5' }}
-                    >
-                      {LOST_REASONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
-                      Lost Reason Details / Feedback
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="e.g. Budget slashed by 40% / Competitor offered ₹3.2L"
-                      value={formData.lostReasonDetails}
-                      onChange={(e) => setFormData({ ...formData, lostReasonDetails: e.target.value })}
-                      style={{ background: '#fff', borderColor: '#fca5a5' }}
-                    />
-                  </div>
-                </div>
+              {/* Opportunity Name */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <TrendingUp size={14} color="#059669" />
+                  <span>Opportunity / Deal Name <span style={{ color: '#ef4444' }}>*</span></span>
+                </label>
+                <input
+                  type="text"
+                  className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                  placeholder="e.g. Acme Enterprise Rollout"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  autoFocus
+                />
+                {errors.name && <span className="form-error-msg">{errors.name}</span>}
               </div>
-            )}
 
-            {/* Notes */}
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
-                <FileText size={14} color="#059669" />
-                <span>Opportunity Notes & Next Steps</span>
-              </label>
-              <textarea
-                className="form-control"
-                rows={3}
-                placeholder="Key requirements, client decision makers, proposal details..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
+              {/* Company Name */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Building size={14} color="#059669" />
+                  <span>Company Name</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Acme Corp"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                />
+              </div>
+
+              {/* Contact Person */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <UserIcon size={14} color="#059669" />
+                  <span>Contact Person</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Rahul Sharma"
+                  value={formData.contactPerson}
+                  onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Phone size={14} color="#059669" />
+                  <span>Phone Number</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. +91 98765 43210"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+
+              {/* Email */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Mail size={14} color="#059669" />
+                  <span>Email Address</span>
+                </label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="e.g. rahul@acme.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              {/* Lead Source */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Share2 size={14} color="#059669" />
+                  <span>Lead Source</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.leadSource}
+                  onChange={(e) => setFormData({ ...formData, leadSource: e.target.value })}
+                >
+                  <option value="Website">Website</option>
+                  <option value="Justdial">Justdial</option>
+                  <option value="Instamart">Instamart</option>
+                  <option value="IndiaMART">IndiaMART</option>
+                  <option value="TradeIndia">TradeIndia</option>
+                  <option value="Google Ads">Google Ads</option>
+                  <option value="Meta Ads">Meta Ads</option>
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Inbound Call">Inbound Call</option>
+                  <option value="Outbound Call">Outbound Call</option>
+                  <option value="Organic Search">Organic Search</option>
+                  <option value="Event/Exhibition">Event/Exhibition</option>
+                  <option value="Walk-In">Walk-In</option>
+                  <option value="Partner / Affiliate">Partner / Affiliate</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Related Lead */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Link size={14} color="#059669" />
+                  <span>Linked Lead Record</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.relatedLead || ''}
+                  onChange={handleLeadSelect}
+                >
+                  <option value="">-- Optional / None --</option>
+                  {leads.map((l) => (
+                    <option key={l._id} value={l._id}>
+                      {l.name} {l.company ? `(${l.company})` : ''} [{l.status}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Deal Amount */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <DollarSign size={14} color="#059669" />
+                  <span>Deal Value / Amount (₹)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
+                  placeholder="e.g. 450000"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                />
+                {errors.amount && <span className="form-error-msg">{errors.amount}</span>}
+              </div>
+
+              {/* Stage */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Flag size={14} color="#059669" />
+                  <span>Pipeline Stage</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.stage}
+                  onChange={(e) => handleStageChange(e.target.value)}
+                >
+                  {STAGES.map((s) => (
+                    <option key={s} value={s}>
+                      {s} ({STAGE_DEFAULT_PROBABILITIES[s] !== undefined ? `${STAGE_DEFAULT_PROBABILITIES[s]}%` : ''})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Probability */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Percent size={14} color="#059669" />
+                  <span>Win Probability (%)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="form-control"
+                  value={formData.probability}
+                  onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
+                />
+              </div>
+
+              {/* Expected Close Date */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Calendar size={14} color="#059669" />
+                  <span>Expected Close Date</span>
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className={`form-control ${errors.expectedCloseDate ? 'is-invalid' : ''}`}
+                  value={formData.expectedCloseDate}
+                  onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
+                />
+                {errors.expectedCloseDate && <span className="form-error-msg">{errors.expectedCloseDate}</span>}
+              </div>
+
+              {/* Priority */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <Flag size={14} color="#059669" />
+                  <span>Priority</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+
+              {/* Assigned To */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <UserIcon size={14} color="#059669" />
+                  <span>Assigned Deal Owner</span>
+                </label>
+                <select
+                  className="form-control select-filter"
+                  value={formData.assignedTo}
+                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                >
+                  {assignableUsers.map((u) => (
+                    <option key={u._id || u.id || u.email} value={u.name || u.username}>
+                      {u.name || u.email || 'Member'} ({u.role || 'Member'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Conditional Lost Reason Section if stage is Lost */}
+              {isLostStage && (
+                <div
+                  style={{
+                    gridColumn: 'span 2',
+                    padding: '14px 16px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 700, fontSize: '0.9rem' }}>
+                    <AlertTriangle size={16} />
+                    <span>Lost Deal Details & Reason</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
+                        Primary Lost Reason <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        className="form-control"
+                        value={formData.lostReason}
+                        onChange={(e) => setFormData({ ...formData, lostReason: e.target.value })}
+                        style={{ background: '#fff', borderColor: '#fca5a5' }}
+                      >
+                        {LOST_REASONS.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: '0.82rem', color: '#991b1b' }}>
+                        Lost Reason Details / Feedback
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Budget slashed by 40% / Competitor offered ₹3.2L"
+                        value={formData.lostReasonDetails}
+                        onChange={(e) => setFormData({ ...formData, lostReasonDetails: e.target.value })}
+                        style={{ background: '#fff', borderColor: '#fca5a5' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <FileText size={14} color="#059669" />
+                  <span>Opportunity Notes & Next Steps</span>
+                </label>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="Key requirements, client decision makers, proposal details..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
+          <div className="modal-footer" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }}>
             <button type="button" className="btn btn-secondary" onClick={closeOpportunityModal} disabled={isSubmitting}>
               Cancel
             </button>

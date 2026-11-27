@@ -353,7 +353,7 @@ export const ConvertLeadModal = () => {
               >
                 {(users || []).map((u) => (
                   <option key={u._id || u.id} value={u.name || u.username}>
-                    {u.name || u.username} ({u.role || 'Member'})
+                    {u.name || u.email || 'Member'} ({u.role || 'Member'})
                   </option>
                 ))}
               </select>

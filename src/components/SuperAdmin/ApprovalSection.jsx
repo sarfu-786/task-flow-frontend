@@ -700,7 +700,7 @@ export const ApprovalSection = () => {
                                     {item.name}
                                   </div>
                                   <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                                    @{item.username || 'user'} • {item.role || 'User'}
+                                    {item.role || 'User'}
                                   </div>
                                 </div>
                               </div>

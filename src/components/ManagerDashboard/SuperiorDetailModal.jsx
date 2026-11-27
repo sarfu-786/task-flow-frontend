@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   Mail,
   Building,
+  Phone,
   Network,
   Users,
   Briefcase,
@@ -60,6 +61,7 @@ export const SuperiorDetailModal = ({
   const role = matchedUser?.role || (isSuperAdmin ? 'Super Admin' : 'Senior Manager');
   const department = matchedUser?.department || (isSuperAdmin ? 'Executive Leadership' : 'Operations Management');
   const email = matchedUser?.email || (isSuperAdmin ? 'sarfrajahamad068@gmail.com' : 'manager@organization.com');
+  const phone = matchedUser?.phone || (isSuperAdmin ? '+91 98765 01234' : '');
   const avatar = matchedUser?.avatar || '';
 
   // Calculate direct subordinates under this superior
@@ -269,7 +271,7 @@ export const SuperiorDetailModal = ({
           </div>
 
           {/* Details Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
             <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Mail size={12} /> Contact Email
@@ -278,6 +280,17 @@ export const SuperiorDetailModal = ({
                 {email}
               </span>
             </div>
+
+            {phone && (
+              <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Phone size={12} /> Contact Phone
+                </span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a', display: 'block', marginTop: '4px' }}>
+                  {phone}
+                </span>
+              </div>
+            )}
 
             <div style={{ padding: '12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
